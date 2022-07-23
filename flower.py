@@ -1,3 +1,4 @@
+import copy
 import random
 from datetime import datetime, timedelta
 
@@ -69,6 +70,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             return result
         
         # 操作部分
+        elif message == '领取花店初始礼包':
+            reply = FlowerService.receive_beginner_gifts(qq, username)
+            result.reply_text.append(reply)
+            return result
         elif message == '花店签到':
             reply = FlowerService.user_sign_in(qq, username)
             result.reply_text.append(reply)
@@ -243,7 +248,27 @@ class ContextHandler:
                 
                 flower_dao.insert_user(user)
                 delete_context(qq)
-                return bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“花店签到”试试吧'
+                return bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
+        # 新手指引
+        elif isinstance(context, BeginnerGuide):
+            if message == '关闭新手指引':
+                delete_context(qq)
+                return '已为您关闭新手指引'
+            if context.step == 0:
+                if message == '花店签到':
+                    self.block_transmission = False
+                    context.step += 1
+                    return '很好你已经完成了签到！每日签到可以获取金币。接下来试试“花店数据”。\n您可以输入“关闭新手指引”来取消指引。'
+            elif context.step == 1:
+                if message == '花店数据':
+                    self.block_transmission = False
+                    context.step += 1
+                    return '在这里你可以看见一些玩家的基本数据，接下来试试“花店仓库”。\n您可以输入“关闭新手指引”来取消指引。'
+            elif context.step == 2:
+                if message == '花店仓库':
+                    self.block_transmission = False
+                    delete_context(qq)
+                    return '在这里你可以看见你的物资。新手指引结束了（这句话后面再改）。'
 
 
 class FlowerService:
@@ -543,6 +568,34 @@ class FlowerService:
                     break
                 length -= 1
         return ans
+    
+    @classmethod
+    def receive_beginner_gifts(cls, qq: int, username: str):
+        """
+        领取初始礼包
+        :param qq: qq
+        :param username: 用户名
+        :return: 结果
+        """
+        user: User = get_user(qq, username)
+        if user.beginner_pack:
+            return user.username + '，你已经领取过初始礼包了'
+        item: DecorateItem = DecorateItem()
+        item.item_name = '野草种子'
+        item.number = 5
+        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        item.item_name = '野花种子'
+        item.number = 5
+        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        item.item_name = '小黄花种子'
+        item.number = 5
+        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        item.item_name = '小红花种子'
+        item.number = 5
+        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        context: BeginnerGuide = BeginnerGuide()
+        insert_context(qq, context)
+        return '领取成功！接下来输入“花店签到”试试'
 
 
 if __name__ == '__main__':

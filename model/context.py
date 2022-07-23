@@ -19,6 +19,11 @@ class RegisterContext(BaseContext):
         self.username = username
 
 
+class BeginnerGuide(BaseContext):
+    def __init__(self):
+        super().__init__(2, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+
+
 _context: Dict[int, BaseContext] = {}
 
 
@@ -45,4 +50,3 @@ def insert_context(key: int, context: BaseContext):
 def delete_context(key: int):
     if key in _context:
         del _context[key]
-        

@@ -12,5 +12,5 @@ __all__ = [
     "Result", "SystemData",
     
     "get_context", "insert_context", "delete_context",
-    "RegisterContext"
+    "RegisterContext", "BeginnerGuide"
 ]

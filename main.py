@@ -54,6 +54,11 @@ async def add_flower(message: Message):
     """
     result: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,
                                    message.at_list)
+    # 上下文的处理消息要放到最后一条去
+    if len(result.reply_text) > 0:
+        context_reply: str = result.reply_text[0]
+        del result.reply_text[0]
+        result.reply_text.append(context_reply)
     return Response(code=0, message="success", data=result)
 
 
