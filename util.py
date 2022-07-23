@@ -130,11 +130,23 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
     """
     copy_items = copy.deepcopy(warehouse.items)
     for item in items:
-        item_obj: Item = flower_dao.select_item_by_id(item.item_id)
+        # 物体是否是新创建的
+        create_item: bool = False
+        if item.item_id != '':
+            item_obj: Item = flower_dao.select_item_by_id(item.item_id)
+        else:
+            item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+            create_item: bool = True
         if item_obj is None or item_obj.name == '':
             raise ItemNotFoundException('物品' + item.item_name + '不存在')
-        if item.number < 0:
-            raise ItemNegativeNumberException('物品' + item_obj.name + '数量不能为负数')
+        if item.number <= 0:
+            raise ItemNegativeNumberException('物品' + item_obj.name + '数量不能为负数或零')
+        if create_item:
+            item.item_id = item_obj.get_id()
+            item.item_type = item_obj.item_type
+            item.durability = item_obj.max_durability
+            item.max_durability = item_obj.max_durability
+            item.rot_second = item_obj.rot_second
         for i in copy_items:
             if i.item_id == item.item_id:
                 if i.number + item.number <= item_obj.max_stack:
@@ -149,10 +161,12 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             if len(copy_items) >= warehouse.max_size:
                 raise WareHouseSizeNotEnoughException('背包容量不足')
             if item.number > item_obj.max_stack:
-                copy_items.append(DecorateItem(item_id=item.item_id, number=item_obj.max_stack))
+                append_item = copy.deepcopy(item)
+                append_item.number = item_obj.max_stack
+                copy_items.append(append_item)
                 item.number -= item_obj.max_stack
             else:
-                copy_items.append(DecorateItem(item_id=item.item_id, number=item.number))
+                copy_items.append(copy.deepcopy(item))
                 item.number = 0
     warehouse.items = copy_items
 
@@ -166,9 +180,11 @@ def remove_items(warehouse: WareHouse, items: List[DecorateItem]):
     """
     copy_items = copy.deepcopy(warehouse.items)
     for item in items:
-        item_obj: Item = flower_dao.select_item_by_id(item.item_id)
+        item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+        if item_obj is None or item_obj.name == '':
+            raise ItemNotFoundException('物品' + item.item_name + '不存在')
         for i in copy_items:
-            if i.item_id == item.item_id:
+            if i.item_name == item.item_name:
                 if i.number >= item.number:
                     i.number -= item.number
                     item.number = 0
@@ -178,7 +194,7 @@ def remove_items(warehouse: WareHouse, items: List[DecorateItem]):
                     i.number = 0
                     item.number -= temp
         if item.number > 0:
-            raise ItemNotEnoughException('物品' + item_obj.name + '不足')
+            raise ItemNotEnoughException('物品' + item.item_name + '不足')
     warehouse.items = copy_items
 
 

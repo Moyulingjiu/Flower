@@ -89,9 +89,29 @@ def class_to_dict(obj) -> Dict:
             ans[key] = obj.__dict__[key].value
         elif isinstance(obj.__dict__[key], InnerClass):
             ans[key] = class_to_dict(obj.__dict__[key])
+        elif isinstance(obj.__dict__[key], list):
+            ans[key] = []
+            for item in obj.__dict__[key]:
+                ans[key].append(class_to_dict(item))
+        elif isinstance(obj.__dict__[key], dict):
+            ans[key] = class_to_dict(obj.__dict__[key])
         else:
             ans[key] = obj.__dict__[key]
     return ans
+
+
+def dict_to_inner_class(d: Dict) -> object or None:
+    if d['class_type'] == 'Condition':
+        return dict_to_class(d, Condition())
+    elif d['class_type'] == 'Conditions':
+        return dict_to_class(d, Conditions())
+    elif d['class_type'] == 'Farm':
+        return dict_to_class(d, Farm())
+    elif d['class_type'] == 'DecorateItem':
+        return dict_to_class(d, DecorateItem())
+    elif d['class_type'] == 'WareHouse':
+        return dict_to_class(d, WareHouse())
+    return None
 
 
 def dict_to_class(d: Dict, o) -> object or None:
@@ -109,18 +129,19 @@ def dict_to_class(d: Dict, o) -> object or None:
             o.__dict__[key] = str(d[key])
         elif isinstance(d[key], dict):
             if 'class_type' in d[key]:
-                if d[key]['class_type'] == 'Condition':
-                    o.__dict__[key] = dict_to_class(d[key], Condition())
-                elif d[key]['class_type'] == 'Conditions':
-                    o.__dict__[key] = dict_to_class(d[key], Conditions())
-                elif d[key]['class_type'] == 'Farm':
-                    o.__dict__[key] = dict_to_class(d[key], Farm())
-                elif d[key]['class_type'] == 'DecorateItem':
-                    o.__dict__[key] = dict_to_class(d[key], DecorateItem())
-                elif d[key]['class_type'] == 'WareHouse':
-                    o.__dict__[key] = dict_to_class(d[key], WareHouse())
+                o.__dict__[key] = dict_to_inner_class(d[key])
             else:
                 o.__dict__[key] = d[key]
+        elif isinstance(d[key], list):
+            o.__dict__[key] = []
+            if len(d[key]) > 0:
+                if isinstance(d[key][0], dict):
+                    for item in d[key]:
+                        inner_o = dict_to_inner_class(item)
+                        if inner_o is not None:
+                            o.__dict__[key].append(inner_o)
+                else:
+                    o.__dict__ = d[key]
         else:
             o.__dict__[key] = d[key]
     return o

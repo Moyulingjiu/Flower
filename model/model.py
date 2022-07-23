@@ -415,7 +415,7 @@ class DecorateItem(InnerClass):
     def __init__(self, item_id: str = '', item_type: ItemType = ItemType.unknown, item_name: str = '', number: int = 0,
                  durability: int = 0, max_durability: int = 0, rot_second: int = 0, create: datetime = datetime.now(),
                  update: datetime = datetime.now()):
-        super().__init__('ItemDecorate')
+        super().__init__('DecorateItem')
         self.item_id = item_id  # 物品id
         self.item_name = item_name  # 物品名字
         self.item_type = item_type  # 物品类型
@@ -437,11 +437,14 @@ class DecorateItem(InnerClass):
             critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
             ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
         return ans
-    
+
     def __repr__(self):
         return self.__str__()
     
     def is_valid(self) -> bool:
+        # 没有东西
+        if self.number < 1:
+            return False
         # 腐烂了
         if self.rot_second > 0:
             now: datetime = datetime.now()

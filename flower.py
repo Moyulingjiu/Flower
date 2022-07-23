@@ -1,9 +1,7 @@
 import random
-
-import global_value
-from util import *
-import flower_dao
 from datetime import datetime, timedelta
+
+from util import *
 
 
 def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
@@ -96,7 +94,7 @@ class AdminHandler:
     @classmethod
     def handle(cls, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
         if message[:4] == '给予金币':
-            data: str = message[4:]
+            data: str = message[4:].strip()
             try:
                 origin_gold: float = float(data)
                 origin_gold *= 100.0
@@ -115,6 +113,32 @@ class AdminHandler:
                 return Result.init('成功给予金币给' + str(update_number) + '人')
             else:
                 return Result.init('未能给予任何人金币')
+        elif message[:4] == '给予物品':
+            data: str = message[4:].strip()
+            data_list: List[str] = data.split(' ')
+            if len(data_list) == 0 or len(data_list) > 2:
+                raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
+            item_name = data_list[0]
+            try:
+                item_number = int(data_list[1])
+            except ValueError:
+                raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
+            item: DecorateItem = DecorateItem()
+            item.item_name = item_name
+            item.number = item_number
+            update_number: int = 0
+            if len(at_list) == 0:
+                cls.give_item(qq, qq, item)
+                update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.give_item(target_qq, qq, item):
+                        update_number += 1
+            if update_number > 0:
+                return Result.init('成功给予' + item_name + '给' + str(update_number) + '人')
+            else:
+                return Result.init('未能给予任何人' + item_name)
+        
         return Result.init()
     
     @classmethod
@@ -132,10 +156,29 @@ class AdminHandler:
             user.gold += gold
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
-            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
             return True
         except UserNotRegisteredException:
             return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+    
+    @classmethod
+    def give_item(cls, qq: int, operator_id: int, item: DecorateItem) -> bool:
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        try:
+            user: User = get_user(qq, '')
+            util.insert_items(user.warehouse, [item])
+            user.update(str(operator_id))
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        except ItemNotFoundException:
+            return False
+        except ItemNegativeNumberException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
 
 class ContextHandler:
@@ -444,7 +487,7 @@ class FlowerService:
                 reply += '\n' + str(item)
                 index += 1
             reply += '\n------'
-            reply += '总计页码：' + str(total_page)
+            reply += '\n总计页码：' + str(total_page)
         return reply
     
     @classmethod
