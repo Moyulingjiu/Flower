@@ -319,7 +319,14 @@ class ItemType(Enum):
     """
     unknown = 'unknown'  # 未知物品
     seed = 'seed'  # 种子
-    farm_equipment = 'farm_equipment'  # 农场装备
+    
+    @classmethod
+    def view_name(cls, item_type) -> str:
+        if item_type == cls.unknown:
+            return '未知物品'
+        elif item_type == cls.seed:
+            return '种子'
+        return ''
 
 
 class Item(EntityClass):
@@ -337,7 +344,33 @@ class Item(EntityClass):
         self.description = description  # 描述
         self.max_stack = max_stack  # 最大叠加数量
         self.max_durability = max_durability  # 最大耐久度
-        self.rot_second = rot_second  # 腐烂的秒
+        self.rot_second = rot_second  # 腐烂的秒数
+    
+    def __str__(self):
+        result = '名字：' + self.name
+        result += '\n类别：' + ItemType.view_name(self.item_type)
+        result += '\n最大堆叠：' + str(self.max_stack)
+        if self.max_durability > 0:
+            result += '\n耐久：' + str(self.max_durability)
+        if self.rot_second > 0:
+            result += '\n腐烂：'
+            left_second = self.rot_second
+            if left_second >= 86400:
+                result += str(left_second // 86400) + '天'
+                left_second %= 86400
+            if left_second >= 3600:
+                result += str(left_second // 3600) + '小时'
+                left_second %= 3600
+            if left_second >= 60:
+                result += str(left_second // 60) + '分钟'
+                left_second %= 60
+            if left_second > 0:
+                result += str(left_second) + '秒'
+        result += '\n描述：' + self.description
+        return result
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class DecorateItem(InnerClass):

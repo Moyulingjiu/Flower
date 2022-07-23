@@ -66,6 +66,20 @@ def show_cities_name(city_list: List[City]) -> str:
         return ''
 
 
+def show_items_name(item_list: List[Item]) -> str:
+    """
+    根据物品列表获取城市名列表
+    :param item_list: 物品列表
+    :return: 城市名
+    """
+    if len(item_list) == 0:
+        return ''
+    ans = '\n可能是'
+    for item in item_list:
+        ans += item.name + '、'
+    return ans[:-1]
+
+
 def get_climate_list(climate_ids: List[str]) -> str:
     """
     根据气候id列表获取气候名列表

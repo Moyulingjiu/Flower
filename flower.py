@@ -48,6 +48,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     raise TypeException('格式错误，格式“花店仓库【页码】”')
             reply = FlowerService.view_warehouse(qq, username, page)
             return Result.init(reply)
+        elif message[:4] == '花店物品':
+            data = message[4:].strip()
+            reply = FlowerService.view_item(data)
+            return Result.init(reply)
         
         # 操作部分
         elif message == '花店签到':
@@ -174,7 +178,7 @@ class ContextHandler:
                 
                 flower_dao.insert_user(user)
                 delete_context(qq)
-                return bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！'
+                return bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“花店签到”试试吧'
 
 
 class FlowerService:
@@ -442,6 +446,38 @@ class FlowerService:
             reply += '\n------'
             reply += '总计页码：' + str(total_page)
         return reply
+    
+    @classmethod
+    def view_item(cls, item_name: str) -> str:
+        """
+        查询物品
+        :param item_name: 物品名字
+        :return: 物品
+        """
+        item: Item = flower_dao.select_item_by_name(item_name)
+        if item.name == item_name:
+            return str(item)
+        
+        ans = '没有找到物品：' + item_name
+        item_list: List[Item] = flower_dao.select_item_like_name(item_name)
+        if len(item_list) > 0:
+            ans += show_items_name(item_list)
+        else:
+            length: int = len(item_name) - 1
+            init: bool = False
+            while length > 0:
+                for i in range(len(item_name) - length):
+                    item_list: List[Item] = flower_dao.select_item_like_name(item_name[i:i + length])
+                    items_name: str = show_items_name(item_list)
+                    if len(item_list) > 0:
+                        ans += items_name
+                        init = True
+                        if len(ans) > 200:
+                            break
+                if init:
+                    break
+                length -= 1
+        return ans
 
 
 if __name__ == '__main__':
