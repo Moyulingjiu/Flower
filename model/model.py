@@ -359,6 +359,8 @@ class ItemType(Enum):
     """
     unknown = 'unknown'  # 未知物品
     seed = 'seed'  # 种子
+    fertilizer = 'fertilizer'  # 化肥
+    props = 'props'  # 特殊道具
     
     @classmethod
     def view_name(cls, item_type) -> str:
@@ -366,6 +368,10 @@ class ItemType(Enum):
             return '未知物品'
         elif item_type == cls.seed:
             return '种子'
+        elif item_type == cls.fertilizer:
+            return '化肥'
+        elif item_type == cls.props:
+            return '特殊道具'
         return ''
     
     @classmethod
@@ -374,6 +380,10 @@ class ItemType(Enum):
             item_type = 'ItemType.' + item_type
         if item_type == str(cls.seed):
             return cls.seed
+        elif item_type == str(cls.fertilizer):
+            return cls.fertilizer
+        elif item_type == str(cls.props):
+            return cls.props
         return cls.unknown
 
 

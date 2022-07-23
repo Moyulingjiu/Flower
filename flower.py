@@ -585,18 +585,19 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         item: DecorateItem = DecorateItem()
-        item.item_name = '野草种子'
+        
+        # 初始获取两种种子
+        seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
+        for i in range(2):
+            seed = random.choice(seed_list)
+            item.item_name = seed
+            item.number = 5
+            AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        
+        item.item_name = '初级化肥'
         item.number = 5
         AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-        item.item_name = '野花种子'
-        item.number = 5
-        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-        item.item_name = '小黄花种子'
-        item.number = 5
-        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-        item.item_name = '小红花种子'
-        item.number = 5
-        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        
         context: BeginnerGuide = BeginnerGuide()
         insert_context(qq, context)
         return '领取成功！接下来输入“花店签到”试试'
