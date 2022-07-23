@@ -424,6 +424,7 @@ def select_flower_by_id(_id: str) -> Flower:
         result = mongo_flower.find_one({"_id": ObjectId(_id)})
         flower: Flower = Flower()
         dict_to_class(result, flower)
+        flower.level = FlowerLevel.get_level(str(flower.level))
         redis_db.set(redis_flower_prefix + _id, serialization(flower), ex=get_long_random_expire())
         return flower
 
@@ -441,6 +442,7 @@ def select_flower_by_name(name: str) -> Flower:
         result = mongo_flower.find_one({"name": name, "is_delete": 0})
         flower: Flower = Flower()
         dict_to_class(result, flower)
+        flower.level = FlowerLevel.get_level(str(flower.level))
         redis_db.set(redis_flower_prefix + name, serialization(flower), ex=get_long_random_expire())
         return flower
 
@@ -507,6 +509,7 @@ def select_item_by_id(item_id: str) -> Item:
         result = mongo_item.find_one({"_id": ObjectId(item_id)})
         item: Item = Item()
         dict_to_class(result, item)
+        item.item_type = ItemType.get_type(str(item.item_type))
         redis_db.set(redis_item_prefix + item_id, serialization(item), ex=get_long_random_expire())
         return item
 
@@ -524,6 +527,7 @@ def select_item_by_name(name: str) -> Item:
         result = mongo_item.find_one({"name": name, "is_delete": 0})
         item: Item = Item()
         dict_to_class(result, item)
+        item.item_type = ItemType.get_type(str(item.item_type))
         redis_db.set(redis_item_prefix + name, serialization(item), ex=get_long_random_expire())
         return item
 
@@ -543,6 +547,7 @@ def select_item_like_name(name: str) -> List[Item]:
         for item_result in result:
             item: Item = Item()
             dict_to_class(item_result, item)
+            item.item_type = ItemType.get_type(str(item.item_type))
             item_list.append(item)
         redis_db.set(redis_item_like_prefix + name, serialization(item_list), ex=get_long_random_expire())
         return item_list

@@ -267,7 +267,7 @@ class FlowerService:
         if flower is None or flower.name != name:
             return '没有找到花名' + name
         res = '名字：' + flower.name
-        res += '\n等级：' + str(flower.level)
+        res += '\n等级：' + FlowerLevel.view_level(flower.level)
         if len(flower.climate_id) > 0:
             res += '\n适宜气候：' + get_climate_list(flower.climate_id)
         elif len(flower.op_climate_id) > 0:

@@ -227,6 +227,32 @@ class FlowerLevel(Enum):
     B = 'B'
     C = 'C'
     D = 'D'
+    
+    @classmethod
+    def view_level(cls, level) -> str:
+        if level == cls.S:
+            return 'S'
+        elif level == cls.A:
+            return 'A'
+        elif level == cls.B:
+            return 'B'
+        elif level == cls.C:
+            return 'C'
+        return 'D'
+    
+    @classmethod
+    def get_level(cls, level: str):
+        if not level.startswith('FlowerLevel.'):
+            level = 'FlowerLevel.' + level
+        if level == str(cls.S):
+            return cls.S
+        elif level == str(cls.A):
+            return cls.A
+        elif level == str(cls.B):
+            return cls.B
+        elif level == str(cls.C):
+            return cls.C
+        return cls.D
 
 
 class Flower(EntityClass):
@@ -327,6 +353,14 @@ class ItemType(Enum):
         elif item_type == cls.seed:
             return '种子'
         return ''
+    
+    @classmethod
+    def get_type(cls, item_type: str):
+        if not item_type.startswith('ItemType.'):
+            item_type = 'ItemType.' + item_type
+        if item_type == str(cls.seed):
+            return cls.seed
+        return cls.unknown
 
 
 class Item(EntityClass):
