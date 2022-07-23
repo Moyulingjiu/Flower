@@ -577,9 +577,13 @@ class FlowerService:
         :param username: 用户名
         :return: 结果
         """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user: User = get_user(qq, username)
         if user.beginner_pack:
             return user.username + '，你已经领取过初始礼包了'
+        user.beginner_pack = True
+        flower_dao.update_user_by_qq(user)
+        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         item: DecorateItem = DecorateItem()
         item.item_name = '野草种子'
         item.number = 5
