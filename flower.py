@@ -1,5 +1,6 @@
 import random
 
+import global_value
 from util import *
 import flower_dao
 from datetime import datetime, timedelta

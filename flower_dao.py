@@ -179,7 +179,7 @@ def insert_region(region: Region) -> str:
     :return: id
     """
     result = mongo_region.insert_one(class_to_dict(region))
-    redis_db.delete(redis_region_prefix + region.get_id())
+    redis_db.delete(redis_region_prefix + str(result.inserted_id))
     redis_db.delete(redis_region_prefix + region.name)
     return result.inserted_id
 
@@ -208,7 +208,7 @@ def insert_terrain(terrain: Terrain) -> str:
     :return: id
     """
     result = mongo_terrain.insert_one(class_to_dict(terrain))
-    redis_db.delete(redis_terrain_prefix + terrain.get_id())
+    redis_db.delete(redis_terrain_prefix + str(result.inserted_id))
     redis_db.delete(redis_terrain_prefix + terrain.name)
     return result.inserted_id
 
@@ -238,7 +238,7 @@ def insert_climate(climate: Climate) -> str:
     """
     result = mongo_climate.insert_one(class_to_dict(climate))
     redis_db.delete(redis_climate_prefix + climate.name)
-    redis_db.delete(redis_climate_prefix + climate.get_id())
+    redis_db.delete(redis_climate_prefix + str(result.inserted_id))
     return result.inserted_id
 
 
@@ -284,7 +284,7 @@ def insert_soil(soil: Soil) -> str:
     """
     result = mongo_soil.insert_one(class_to_dict(soil))
     redis_db.delete(redis_soil_prefix + soil.name)
-    redis_db.delete(redis_soil_prefix + soil.get_id())
+    redis_db.delete(redis_soil_prefix + str(result.inserted_id))
     return result.inserted_id
 
 
@@ -340,7 +340,7 @@ def insert_city(city: City) -> str:
     :return: id
     """
     result = mongo_city.insert_one(class_to_dict(city))
-    redis_db.delete(redis_city_prefix + city.get_id())
+    redis_db.delete(redis_city_prefix + str(result.inserted_id))
     redis_db.delete(redis_city_prefix + city.city_name)
     return result.inserted_id
 
@@ -406,7 +406,7 @@ def insert_flower(flower: Flower) -> str:
     :return: id
     """
     result = mongo_flower.insert_one(class_to_dict(flower))
-    redis_db.delete(redis_flower_prefix + flower.get_id())
+    redis_db.delete(redis_flower_prefix + str(result.inserted_id))
     redis_db.delete(redis_flower_prefix + flower.name)
     return result.inserted_id
 
@@ -555,7 +555,7 @@ def insert_item(item: Item) -> str:
     :return: id
     """
     result = mongo_item.insert_one(class_to_dict(item))
-    redis_db.delete(redis_item_prefix + result.inserted_id)
+    redis_db.delete(redis_item_prefix + str(result.inserted_id))
     return result.inserted_id
 
 

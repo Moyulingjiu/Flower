@@ -8,6 +8,7 @@ import copy
 from model import *
 from exceptions import *
 import flower_dao
+import global_value
 
 
 def get_user(qq: int, username: str) -> User:
