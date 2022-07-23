@@ -52,9 +52,9 @@ async def add_flower(message: Message):
     :param message: 消息
     :return: 结果
     """
-    ans: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,
-                                message.at_list)
-    return Response(code=0, message="success", data=ans)
+    result: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,
+                                   message.at_list)
+    return Response(code=0, message="success", data=result)
 
 
 if __name__ == '__main__':

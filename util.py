@@ -2,13 +2,13 @@
 工具函数文件
 """
 
+import copy
 from enum import Enum
 from typing import List
-import copy
-from model import *
-from exceptions import *
+
 import flower_dao
-import global_value
+from exceptions import *
+from model import *
 
 
 def get_user(qq: int, username: str) -> User:

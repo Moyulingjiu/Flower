@@ -43,12 +43,26 @@ class Result(BaseModel):
     返回类
     """
     
-    reply_text: str
-    reply_image: str = ''
+    reply_text: List[str] = []
+    reply_image: List[str] = []
     at_list: List[int] = None
     
     @classmethod
-    def init(cls, reply_text: str = '', reply_image: str = '', at_list: List[int] = None) -> 'Result':
+    def init(cls, reply_text: List[str] or str = None, reply_image: List[str] or str = None,
+             at_list: List[int] = None) -> 'Result':
+        if reply_text is None:
+            reply_text = []
+        elif isinstance(reply_text, str):
+            reply_text = [reply_text]
+        
+        if reply_image is None:
+            reply_image = []
+        elif isinstance(reply_image, str):
+            reply_image = [reply_image]
+            
+        if at_list is None:
+            at_list = []
+        
         return Result(reply_text=reply_text, reply_image=reply_image, at_list=at_list)
 
 
@@ -437,7 +451,7 @@ class DecorateItem(InnerClass):
             critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
             ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
         return ans
-
+    
     def __repr__(self):
         return self.__str__()
     

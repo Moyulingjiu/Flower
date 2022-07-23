@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta
 
 from util import *
+import flower_dao
 
 
 def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
@@ -16,26 +17,40 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     :return: 结果
     """
     try:
-        reply = ContextHandler.handle(message, qq, username, bot_qq, bot_name, at_list)
+        # 处理上下文需要加锁，避免两个线程同时处理到一个上下文
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        context_handler: ContextHandler = ContextHandler()
+        reply = context_handler.handle(message, qq, username, bot_qq, bot_name, at_list)
+        # result
+        result: Result = Result.init()
         if reply != '':
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            # 如果阻断传播就已经可以停止了
+            if context_handler.block_transmission:
+                return result
+        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         
         # 数据查询部分
         if message[:4] == '查询城市' and message[4:].strip() != '':
             reply = FlowerService.query_city(message[4:].strip())
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message[:4] == '查询土壤' and message[4:].strip() != '':
             reply = FlowerService.query_soil(message[4:].strip())
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message[:3] == '查询花' and message[3:].strip() != '':
             reply = FlowerService.query_flower(message[3:].strip())
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message[:4] == '花店数据':
             reply = FlowerService.query_user_data(qq, username)
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message == '初始化花店':
             reply = FlowerService.init_user(qq, username)
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message[:4] == '花店仓库':
             data = message[4:].strip()
             page = 0
@@ -45,16 +60,19 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 except ValueError:
                     raise TypeException('格式错误，格式“花店仓库【页码】”')
             reply = FlowerService.view_warehouse(qq, username, page)
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message[:4] == '花店物品':
             data = message[4:].strip()
             reply = FlowerService.view_item(data)
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         
         # 操作部分
         elif message == '花店签到':
             reply = FlowerService.user_sign_in(qq, username)
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         elif message[:2] == '转账':
             data: str = message[2:]
             if len(at_list) == 0:
@@ -66,7 +84,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             except ValueError:
                 raise TypeException('格式错误，格式“@xxx 转账 【数字】”')
             reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
-            return Result.init(reply)
+            result.reply_text.append(reply)
+            return result
         
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
@@ -110,9 +129,9 @@ class AdminHandler:
                     if cls.give_gold(target_qq, qq, gold):
                         update_number += 1
             if update_number > 0:
-                return Result.init('成功给予金币给' + str(update_number) + '人')
+                return Result.init(['成功给予金币给' + str(update_number) + '人'])
             else:
-                return Result.init('未能给予任何人金币')
+                return Result.init(['未能给予任何人金币'])
         elif message[:4] == '给予物品':
             data: str = message[4:].strip()
             data_list: List[str] = data.split(' ')
@@ -135,9 +154,9 @@ class AdminHandler:
                     if cls.give_item(target_qq, qq, item):
                         update_number += 1
             if update_number > 0:
-                return Result.init('成功给予' + item_name + '给' + str(update_number) + '人')
+                return Result.init(['成功给予' + item_name + '给' + str(update_number) + '人'])
             else:
-                return Result.init('未能给予任何人' + item_name)
+                return Result.init(['未能给予任何人' + item_name])
         
         return Result.init()
     
@@ -167,7 +186,7 @@ class AdminHandler:
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         try:
             user: User = get_user(qq, '')
-            util.insert_items(user.warehouse, [item])
+            insert_items(user.warehouse, [item])
             user.update(str(operator_id))
             flower_dao.update_user_by_qq(user)
             return True
@@ -186,8 +205,10 @@ class ContextHandler:
     上下文处理器
     """
     
-    @classmethod
-    def handle(cls, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> str:
+    def __init__(self):
+        self.block_transmission: bool = True  # 是否阻断消息继续传递，默认阻断
+    
+    def handle(self, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> str:
         """
         上下文处理
         :param message: 消息
@@ -198,6 +219,7 @@ class ContextHandler:
         :param at_list: 艾特列表
         :return: 结果
         """
+        self.block_transmission = True
         context = get_context(qq)
         if context is None:
             return ''
