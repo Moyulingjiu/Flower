@@ -328,7 +328,7 @@ class Item(EntityClass):
     """
     
     def __init__(self, name: str = '', item_type: ItemType = ItemType.unknown, description: str = '',
-                 max_stack: int = 0,
+                 max_stack: int = 0, max_durability: int = 0, rot_second: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -336,6 +336,8 @@ class Item(EntityClass):
         self.item_type = item_type  # 物品类型
         self.description = description  # 描述
         self.max_stack = max_stack  # 最大叠加数量
+        self.max_durability = max_durability  # 最大耐久度
+        self.rot_second = rot_second  # 腐烂的秒
 
 
 class DecorateItem(InnerClass):
@@ -343,12 +345,47 @@ class DecorateItem(InnerClass):
     物品栈类
     """
     
-    def __init__(self, item_id: str = '', item_type: ItemType = ItemType.unknown, item_name: str = '', number: int = 0):
+    def __init__(self, item_id: str = '', item_type: ItemType = ItemType.unknown, item_name: str = '', number: int = 0,
+                 durability: int = 0, max_durability: int = 0, rot_second: int = 0, create: datetime = datetime.now(),
+                 update: datetime = datetime.now()):
         super().__init__('ItemDecorate')
         self.item_id = item_id  # 物品id
         self.item_name = item_name  # 物品名字
         self.item_type = item_type  # 物品类型
         self.number = number  # 数量
+        
+        self.durability = durability  # 耐久度
+        self.max_durability = max_durability  # 最大耐久度
+        self.rot_second = rot_second  # 腐烂的秒
+        self.create = create  # 创建时间（用于一些物品失效检测）
+        self.update = update  # 修改时间
+    
+    def __str__(self):
+        ans = self.item_name
+        if self.number > 1:
+            ans += 'x' + str(self.number)
+        if self.max_durability > 0:
+            ans += '（耐久' + '%.2f' % (self.durability / self.max_durability) + '）'
+        if self.rot_second > 0:
+            critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
+            ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
+        return ans
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    def is_valid(self) -> bool:
+        # 腐烂了
+        if self.rot_second > 0:
+            now: datetime = datetime.now()
+            critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
+            if now >= critical_time:
+                return False
+        # 耐久度没了
+        if self.max_durability > 0:
+            if self.durability <= 0:
+                return False
+        return True
 
 
 class WareHouse(InnerClass):
@@ -363,13 +400,20 @@ class WareHouse(InnerClass):
         self.items = items
         self.max_size = max_size  # 仓库容量
     
-    def check_item(self) -> None:
+    def check_item(self) -> bool:
         """
         检查物品有效性
         :return: none
         """
-        # todo: 检查物品是否有效
-        pass
+        result: bool = False
+        remove_item: List[DecorateItem] = []
+        for item in self.items:
+            if not item.is_valid():
+                remove_item.append(item)
+                result = True
+        for item in remove_item:
+            self.items.remove(item)
+        return result
 
 
 class SignRecord(EntityClass):

@@ -436,9 +436,7 @@ class FlowerService:
                     continue
                 if index > (page + 1) * page_size:
                     break
-                reply += '\n' + item.item_name
-                if item.number > 1:
-                    reply += 'x' + str(item.number)
+                reply += '\n' + str(item)
                 index += 1
             reply += '\n------'
             reply += '总计页码：' + str(total_page)

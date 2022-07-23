@@ -22,6 +22,9 @@ def get_user(qq: int, username: str) -> User:
         raise UserNotRegisteredException('用户' + str(qq) + '未注册')
     if user.auto_get_name and username != '':
         user.username = username
+    # 清理背包中过期的物品
+    if user.warehouse.check_item():
+        flower_dao.update_user_by_qq(user)
     return user
 
 
