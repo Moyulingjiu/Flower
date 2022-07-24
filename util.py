@@ -229,7 +229,5 @@ def get_weather(city: City) -> Weather:
     weather: Weather = flower_dao.select_weather_by_city_id(city.get_id())
     if weather.city_id != city.get_id():
         weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id())
-        # 如果爬取失败了就不要入库
-        if weather.city_id == city.get_id():
-            flower_dao.insert_weather(weather)
+        flower_dao.insert_weather(weather)
     return weather

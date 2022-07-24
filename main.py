@@ -63,5 +63,4 @@ async def add_flower(message: Message):
 
 
 if __name__ == '__main__':
-    # todo: 增加后台任务，每天晚上凌晨三点开始爬取所有城市当天的天气状况
     uvicorn.run(app, host='0.0.0.0', port=8000)

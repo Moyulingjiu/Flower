@@ -45,12 +45,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.query_flower(message[3:].strip())
             result.reply_text.append(reply)
             return result
-        elif message[:4] == '花店数据':
-            reply = FlowerService.query_user_data(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '初始化花店':
-            reply = FlowerService.init_user(qq, username)
+        elif message == '花店数据':
+            reply = FlowerService.view_user_data(qq, username)
             result.reply_text.append(reply)
             return result
         elif message[:4] == '花店仓库':
@@ -74,9 +70,16 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_weather(data)
             result.reply_text.append(reply)
             return result
-        
+        elif message == '花店农场':
+            reply = FlowerService.view_user_farm(qq, username)
+            result.reply_text.append(reply)
+            return result
         
         # 操作部分
+        elif message == '初始化花店':
+            reply = FlowerService.init_user(qq, username)
+            result.reply_text.append(reply)
+            return result
         elif message == '领取花店初始礼包':
             reply = FlowerService.receive_beginner_gifts(qq, username)
             result.reply_text.append(reply)
@@ -159,8 +162,8 @@ class AdminHandler:
             item.number = item_number
             update_number: int = 0
             if len(at_list) == 0:
-                cls.give_item(qq, qq, item)
-                update_number += 1
+                if cls.give_item(qq, qq, item):
+                    update_number += 1
             else:
                 for target_qq in at_list:
                     if cls.give_item(target_qq, qq, item):
@@ -208,6 +211,8 @@ class AdminHandler:
             return False
         except ItemNegativeNumberException:
             return False
+        except WareHouseSizeNotEnoughException:
+            return False
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
@@ -252,6 +257,14 @@ class ContextHandler:
                 
                 user.city_id = city.get_id()
                 user.born_city_id = city.get_id()
+                
+                # 农场的处理
+                user.farm.soil_id = city.soil_id
+                soil: Soil = flower_dao.select_soil_by_id(city.soil_id)
+                user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
+                user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
+                weather: Weather = get_weather(city)
+                user.farm.temperature = (weather.max_temperature + weather.min_temperature) / 2
                 
                 flower_dao.insert_user(user)
                 delete_context(qq)
@@ -396,7 +409,7 @@ class FlowerService:
         return res
     
     @classmethod
-    def query_user_data(cls, qq, username: str) -> str:
+    def view_user_data(cls, qq: int, username: str) -> str:
         """
         查询用户数据
         :param qq: qq
@@ -419,6 +432,45 @@ class FlowerService:
         res += '\n金币：' + '%.2f' % (user.gold / 100)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         return res
+    
+    @classmethod
+    def view_user_farm(cls, qq: int, username: str) -> str:
+        """
+        根据用户查询其农场
+        :param qq: qq号
+        :param username: 用户名
+        :return: 农场信息
+        """
+        user: User = get_user(qq, username)
+        city: City = flower_dao.select_city_by_id(user.city_id)
+        soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+        climate: Climate = flower_dao.select_climate_by_id(city.climate_id)
+        weather: Weather = get_weather(city)
+        flower: Flower = Flower()
+        if user.farm.flower_id != '':
+            flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
+        now: datetime = datetime.now()
+        now_temperature = abs(now.hour - 12) * (weather.max_temperature - weather.min_temperature)
+        
+        reply = user.username + '的农场：'
+        reply += '\n所在地：' + city.city_name
+        reply += '\n气候：' + climate.name
+        reply += '\n土壤：' + soil.name
+        
+        reply += '\n气温：' + str(user.farm.temperature)
+        if user.farm.temperature > now_temperature:
+            reply += '（↓）'
+        elif user.farm.temperature < now_temperature:
+            reply += '（↑）'
+        else:
+            reply += '（=）'
+        reply += '\n湿度：' + str(user.farm.humidity)
+        reply += '\n营养：' + str(user.farm.nutrition)
+        
+        if flower.get_id() != '':
+            reply += '\n种植的花：' + flower.name
+        
+        return reply
     
     @classmethod
     def init_user(cls, qq: int, username: str) -> str:

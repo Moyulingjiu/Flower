@@ -360,10 +360,11 @@ class Farm(InnerClass):
     用户-花类（农场）
     """
     
-    def __init__(self, flower_id: str = '', hour: float = 0.0, perfect_hour: float = 0.0, bad_hour: float = 0.0,
-                 humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
+    def __init__(self, soil_id: str = '', flower_id: str = '', hour: float = 0.0, perfect_hour: float = 0.0,
+                 bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
                  last_check_time: datetime = datetime.now()):
         super().__init__('Farm')
+        self.soil_id = soil_id  # 土壤id
         self.flower_id = flower_id  # 花的id
         self.hour = hour  # 植物生长的小时数
         self.perfect_hour = perfect_hour  # 累计的完美的小时数
