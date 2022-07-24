@@ -289,7 +289,7 @@ class ContextHandler:
                     self.block_transmission = False
                     delete_context(qq)
                     return '在这里你可以看见你的物资。新手指引结束了（这句话后面再改）。'
-
+        return ''
 
 class FlowerService:
     @classmethod
