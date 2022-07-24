@@ -7,7 +7,7 @@ __all__ = [
     "FixPointNumber",
     "Region", "Terrain", "Climate", "Soil", "City",
     "Condition", "Conditions", "ConditionLevel", "FlowerLevel", "Flower",
-    "User", "SignRecord",
+    "User", "SignRecord", "Weather",
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType",
     "Result", "SystemData",
     

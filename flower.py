@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from util import *
 import flower_dao
+import weather_getter
 
 
 def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:

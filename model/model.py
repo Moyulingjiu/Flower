@@ -59,7 +59,7 @@ class Result(BaseModel):
             reply_image = []
         elif isinstance(reply_image, str):
             reply_image = [reply_image]
-            
+        
         if at_list is None:
             at_list = []
         
@@ -336,16 +336,36 @@ class Flower(EntityClass):
         return True
 
 
+class Weather(EntityClass):
+    """
+    天气类（每个城市的天气）
+    """
+    
+    def __init__(self, city_id: str = '', weather_type: str = '', min_temperature: int = 0,
+                 max_temperature: int = 0, humidity: int = 0,
+                 create_time: datetime = datetime.now(), create_id: str = '0',
+                 update_time: datetime = datetime.now(), update_id: str = '0', is_delete: int = 0,
+                 _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        self.city_id = city_id
+        self.weather_type = weather_type
+        self.min_temperature = min_temperature
+        self.max_temperature = max_temperature
+        self.humidity = humidity
+
+
 class Farm(InnerClass):
     """
     用户-花类（农场）
     """
     
-    def __init__(self, flower_id: str = '', hour: float = 0.0, bad_hour: float = 0.0, humidity: float = 0.0,
-                 nutrition: float = 0.0, temperature: float = 0.0, last_check_time: datetime = datetime.now()):
+    def __init__(self, flower_id: str = '', hour: float = 0.0, perfect_hour: float = 0.0, bad_hour: float = 0.0,
+                 humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
+                 last_check_time: datetime = datetime.now()):
         super().__init__('Farm')
         self.flower_id = flower_id  # 花的id
         self.hour = hour  # 植物生长的小时数
+        self.perfect_hour = perfect_hour  # 累计的完美的小时数
         self.bad_hour = bad_hour  # 糟糕的小时数
         self.humidity = humidity  # 上一次检查的湿度
         self.nutrition = nutrition  # 上一次检查的营养
@@ -394,6 +414,7 @@ class Item(EntityClass):
     
     def __init__(self, name: str = '', item_type: ItemType = ItemType.unknown, description: str = '',
                  max_stack: int = 0, max_durability: int = 0, rot_second: int = 0,
+                 humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -403,6 +424,10 @@ class Item(EntityClass):
         self.max_stack = max_stack  # 最大叠加数量
         self.max_durability = max_durability  # 最大耐久度
         self.rot_second = rot_second  # 腐烂的秒数
+        
+        self.humidity = humidity  # 上一次检查的湿度
+        self.nutrition = nutrition  # 上一次检查的营养
+        self.temperature = temperature  # 上一次检查的温度
     
     def __str__(self):
         result = '名字：' + self.name

@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime, timedelta
 import pickle
 import random
 import time
@@ -25,6 +26,7 @@ mongo_city = mongo_db["city"]  # 城市
 mongo_flower = mongo_db["flower"]  # 花卉
 mongo_user = mongo_db["user"]  # 用户
 mongo_item = mongo_db["item"]  # 物品
+mongo_weather = mongo_db['weather']  # 天气
 
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
 
@@ -41,6 +43,7 @@ redis_city_prefix = "city_"  # 城市redis前缀（城市id）
 redis_flower_prefix = "flower_"  # 花redis前缀（花id）
 redis_user_prefix = "user_"  # 用户redis前缀（用户qq）
 redis_item_prefix = "item_"  # 物品redis前缀（物品id）
+redis_weather_prefix = 'weather_'  # 天气redis前缀（城市id+日期）
 
 redis_city_like_prefix = 'city_like_'  # 城市模糊匹配前缀
 redis_item_like_prefix = 'item_like_'  # 物品模糊匹配前缀
@@ -141,7 +144,7 @@ def dict_to_class(d: Dict, o) -> object or None:
                         if inner_o is not None:
                             o.__dict__[key].append(inner_o)
                 else:
-                    o.__dict__ = d[key]
+                    o.__dict__[key] = d[key]
         else:
             o.__dict__[key] = d[key]
     return o
@@ -609,4 +612,38 @@ def insert_system_data(system_data: SystemData) -> str:
     """
     result = mongo_system.insert_one(class_to_dict(system_data))
     redis_db.delete(redis_system_data_prefix)
+    return result.inserted_id
+
+
+def select_weather_by_city_id(city_id: str, weather_time: datetime = datetime.now()):
+    """
+    获取天气
+    :param city_id: 城市id
+    :param weather_time: 日期
+    :return: 结果
+    """
+    # 根据城市id和日期时间戳来获取
+    redis_ans = redis_db.get(redis_weather_prefix + city_id + '_' + weather_time.strftime('%Y_%m_%d'))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        today: datetime = datetime(weather_time.year, weather_time.month, weather_time.day)
+        tomorrow: datetime = today + timedelta(days=1)
+        result = mongo_weather.find_one(
+            {"city_id": city_id, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0})
+        weather: Weather = Weather()
+        dict_to_class(result, weather)
+        redis_db.set(redis_weather_prefix + city_id + '_' + weather_time.strftime('%Y_%m_%d'), serialization(weather),
+                     ex=get_long_random_expire())
+        return weather
+
+
+def insert_weather(weather: Weather) -> str:
+    """
+    插入天气
+    :param weather: 天气
+    :return: id
+    """
+    result = mongo_weather.insert_one(class_to_dict(weather))
+    redis_db.delete(redis_weather_prefix + weather.city_id + '_' + weather.create_time.strftime('%Y_%m_%d'))
     return result.inserted_id
