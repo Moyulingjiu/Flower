@@ -64,4 +64,8 @@ def get_city_weather(city_name: str, city_id: str) -> Weather:
         weather.weather_type = weather_type[0].text
         return weather
     except ValueError:
+        print('天气爬取：ValueError')
+        return Weather()
+    except IndexError:
+        print('天气爬取：IndexError')
         return Weather()
