@@ -231,3 +231,21 @@ def get_weather(city: City) -> Weather:
         weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id())
         flower_dao.insert_weather(weather)
     return weather
+
+
+def analysis_item(data: str) -> DecorateItem:
+    data_list: List[str] = data.split(' ')
+    if len(data_list) == 0 or len(data_list) > 2:
+        raise TypeException('')
+    item_name = data_list[0]
+    if len(data_list) == 1:
+        item_number = 1
+    else:
+        try:
+            item_number = int(data_list[1])
+        except ValueError:
+            raise TypeException('')
+    item: DecorateItem = DecorateItem()
+    item.item_name = item_name
+    item.number = item_number
+    return item

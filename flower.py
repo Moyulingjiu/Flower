@@ -101,6 +101,15 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
             result.reply_text.append(reply)
             return result
+        elif message[:2] == '丢弃':
+            data = message[2:]
+            try:
+                item: DecorateItem = analysis_item(data)
+                reply = FlowerService.throw_item(qq, username, item)
+                result.reply_text.append(reply)
+                return result
+            except TypeException:
+                raise TypeException('格式错误，格式“丢弃 【物品名字】 【数量】”')
         
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
@@ -149,17 +158,11 @@ class AdminHandler:
                 return Result.init(['未能给予任何人金币'])
         elif message[:4] == '给予物品':
             data: str = message[4:].strip()
-            data_list: List[str] = data.split(' ')
-            if len(data_list) == 0 or len(data_list) > 2:
-                raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
-            item_name = data_list[0]
             try:
-                item_number = int(data_list[1])
-            except ValueError:
+                item: DecorateItem = analysis_item(data)
+            except TypeException:
                 raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
-            item: DecorateItem = DecorateItem()
-            item.item_name = item_name
-            item.number = item_number
+            
             update_number: int = 0
             if len(at_list) == 0:
                 if cls.give_item(qq, qq, item):
@@ -169,9 +172,9 @@ class AdminHandler:
                     if cls.give_item(target_qq, qq, item):
                         update_number += 1
             if update_number > 0:
-                return Result.init(['成功给予' + item_name + '给' + str(update_number) + '人'])
+                return Result.init(['成功给予' + item.item_name + '给' + str(update_number) + '人'])
             else:
-                return Result.init(['未能给予任何人' + item_name])
+                return Result.init(['未能给予任何人' + item.item_name])
         
         return Result.init()
     
@@ -290,6 +293,7 @@ class ContextHandler:
                     delete_context(qq)
                     return '在这里你可以看见你的物资。新手指引结束了（这句话后面再改）。'
         return ''
+
 
 class FlowerService:
     @classmethod
@@ -629,7 +633,7 @@ class FlowerService:
         return ans
     
     @classmethod
-    def receive_beginner_gifts(cls, qq: int, username: str):
+    def receive_beginner_gifts(cls, qq: int, username: str) -> str:
         """
         领取初始礼包
         :param qq: qq
@@ -673,6 +677,21 @@ class FlowerService:
         reply += '\n最高气温：' + str(weather.max_temperature) + '℃'
         reply += '\n湿度：' + str(weather.humidity) + '%'
         return reply
+    
+    @classmethod
+    def throw_item(cls, qq: int, username: str, item: DecorateItem) -> str:
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        user: User = get_user(qq, username)
+        try:
+            remove_items(user.warehouse, [item])
+            flower_dao.update_user_by_qq(user)
+            return user.username + '，丢弃成功'
+        except ItemNotFoundException:
+            return user.username + '，没有该物品'
+        except ItemNotEnoughException:
+            return user.username + '，物品不足'
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
 
 if __name__ == '__main__':
