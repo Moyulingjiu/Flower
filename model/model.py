@@ -341,13 +341,14 @@ class Weather(EntityClass):
     天气类（每个城市的天气）
     """
     
-    def __init__(self, city_id: str = '', weather_type: str = '', min_temperature: int = 0,
+    def __init__(self, city_id: str = '', city_name: str = '', weather_type: str = '', min_temperature: int = 0,
                  max_temperature: int = 0, humidity: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0',
                  update_time: datetime = datetime.now(), update_id: str = '0', is_delete: int = 0,
                  _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
         self.city_id = city_id
+        self.city_name = city_name
         self.weather_type = weather_type
         self.min_temperature = min_temperature
         self.max_temperature = max_temperature

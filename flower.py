@@ -69,6 +69,12 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_item(data)
             result.reply_text.append(reply)
             return result
+        elif message[:4] == '花店天气':
+            data = message[4:].strip()
+            reply = FlowerService.view_weather(data)
+            result.reply_text.append(reply)
+            return result
+        
         
         # 操作部分
         elif message == '领取花店初始礼包':
@@ -602,6 +608,19 @@ class FlowerService:
         context: BeginnerGuide = BeginnerGuide()
         insert_context(qq, context)
         return '领取成功！接下来输入“花店签到”试试'
+    
+    @classmethod
+    def view_weather(cls, city_name: str) -> str:
+        city: City = flower_dao.select_city_by_name(city_name)
+        if city.city_name != city_name:
+            weather: Weather = weather_getter.get_city_weather(city_name, 'none')
+        else:
+            weather: Weather = get_weather(city)
+        reply = weather.city_name + '，' + weather.weather_type
+        reply += '\n最低气温：' + str(weather.min_temperature) + '℃'
+        reply += '\n最高气温：' + str(weather.max_temperature) + '℃'
+        reply += '\n湿度：' + str(weather.humidity) + '%'
+        return reply
 
 
 if __name__ == '__main__':

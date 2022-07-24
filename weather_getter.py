@@ -57,11 +57,11 @@ def get_city_weather(city_name: str, city_id: str) -> Weather:
         
         weather: Weather = Weather()
         weather.city_id = city_id
+        weather.city_name = city_name
         weather.min_temperature = int(min_temperature[0].text.replace('°', ''))
         weather.max_temperature = int(max_temperature[0].text.replace('°', ''))
         weather.humidity = int(humidity[0].text.replace('湿度: ', '').replace('%', ''))
         weather.weather_type = weather_type[0].text
-        print(weather.__dict__)
         return weather
     except ValueError:
         return Weather()

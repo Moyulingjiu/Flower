@@ -9,6 +9,7 @@ from typing import List
 import flower_dao
 from exceptions import *
 from model import *
+import weather_getter
 
 
 def get_user(qq: int, username: str) -> User:
@@ -217,3 +218,16 @@ def get_user_right(qq: int):
     if qq == 0 or qq == 1597867839:
         return UserRight.ADMIN
     return UserRight.ADMIN
+
+
+def get_weather(city: City) -> Weather:
+    """
+    根据城市获取天气
+    :param city: 城市
+    :return: 天气
+    """
+    weather: Weather = flower_dao.select_weather_by_city_id(city.get_id())
+    if weather.city_id != city.get_id():
+        weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id())
+        flower_dao.insert_weather(weather)
+    return weather
