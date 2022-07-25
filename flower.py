@@ -1,7 +1,6 @@
 import random
 from datetime import datetime, timedelta
 
-import flower_dao
 from util import *
 
 
@@ -22,7 +21,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         context_handler: ContextHandler = ContextHandler()
         result: Result = context_handler.handle(message, qq, username, bot_qq, bot_name, at_list)
         # 如果阻断传播就已经可以停止了
-        if (len(result.reply_text) != 0 or len(result.reply_image) != 0) and context_handler.block_transmission:
+        if (len(result.context_reply_text) != 0 or len(
+                result.context_reply_image) != 0) and context_handler.block_transmission:
             return result
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         
@@ -113,9 +113,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         if get_user_right(qq) == UserRight.ADMIN:
             return AdminHandler.handle(message, qq, username, bot_qq, bot_name, at_list)
     except UserNotRegisteredException:
-        return Result.init('您还未初始化花店账号，请输入“初始化花店”进行初始化')
+        return Result.init(reply_text='您还未初始化花店账号，请输入“初始化花店”进行初始化')
     except UserBeLockedException:
-        return Result.init('操作超时，请稍后再试\n出现的原因可能有：\n1.您的操作过于频繁，请稍后再试\n2.账号风险行为，耐心等待两小时重置')
+        return Result.init(reply_text='操作超时，请稍后再试\n出现的原因可能有：\n1.您的操作过于频繁，请稍后再试\n2.账号风险行为，耐心等待两小时重置')
     except AtListNullException as e:
         return Result.init(e.message)
     except TypeException as e:
@@ -151,9 +151,9 @@ class AdminHandler:
                     if cls.give_gold(target_qq, qq, gold):
                         update_number += 1
             if update_number > 0:
-                return Result.init(['成功给予金币给' + str(update_number) + '人'])
+                return Result.init(reply_text=['成功给予金币给' + str(update_number) + '人'])
             else:
-                return Result.init(['未能给予任何人金币'])
+                return Result.init(reply_text=['未能给予任何人金币'])
         elif message[:4] == '给予物品':
             data: str = message[4:].strip()
             try:
@@ -170,9 +170,9 @@ class AdminHandler:
                     if cls.give_item(target_qq, qq, item):
                         update_number += 1
             if update_number > 0:
-                return Result.init(['成功给予' + item.item_name + '给' + str(update_number) + '人'])
+                return Result.init(reply_text=['成功给予' + item.item_name + '给' + str(update_number) + '人'])
             else:
-                return Result.init(['未能给予任何人' + item.item_name])
+                return Result.init(reply_text=['未能给予任何人' + item.item_name])
         
         return Result.init()
     
@@ -251,13 +251,13 @@ class ContextHandler:
                 if message == '取消':
                     del_context_list.append(context)
                     reply = '已为您取消注册'
-                    result.reply_text.append(reply)
+                    result.context_reply_text.append(reply)
                     continue
                 if context.step == 0:
                     city: City = flower_dao.select_city_by_name(message)
                     if city is None or city.city_name != message:
                         reply = FlowerService.query_city(message) + '\n请选择一座城市，只支持地级市（你可以输入“取消”来取消初始化账户）。'
-                        result.reply_text.append(reply)
+                        result.context_reply_text.append(reply)
                         continue
                     user: User = User()
                     user.qq = qq
@@ -279,31 +279,31 @@ class ContextHandler:
                     flower_dao.insert_user(user)
                     del_context_list.append(context)
                     reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
-                    result.reply_text.append(reply)
+                    result.context_reply_text.append(reply)
             # 新手指引
             elif isinstance(context, BeginnerGuideContext):
                 if message == '关闭新手指引':
                     del_context_list.append(context)
                     reply = '已为您关闭新手指引'
-                    result.reply_text.append(reply)
+                    result.context_reply_text.append(reply)
                 if context.step == 0:
                     if message == '花店签到':
                         self.block_transmission = False
                         context.step += 1
                         reply = '很好你已经完成了签到！每日签到可以获取金币。接下来试试“花店数据”。\n您可以输入“关闭新手指引”来取消指引。'
-                        result.reply_text.append(reply)
+                        result.context_reply_text.append(reply)
                 elif context.step == 1:
                     if message == '花店数据':
                         self.block_transmission = False
                         context.step += 1
                         reply = '在这里你可以看见一些玩家的基本数据，接下来试试“花店仓库”。\n您可以输入“关闭新手指引”来取消指引。'
-                        result.reply_text.append(reply)
+                        result.context_reply_text.append(reply)
                 elif context.step == 2:
                     if message == '花店仓库':
                         self.block_transmission = False
                         del_context_list.append(context)
                         reply = '在这里你可以看见你的新手物资。新手指引结束了（这句话后面再改）。'
-                        result.reply_text.append(reply)
+                        result.context_reply_text.append(reply)
             # 丢弃所有物品
             elif isinstance(context, ThrowAllItemContext):
                 del_context_list.append(context)
@@ -311,11 +311,12 @@ class ContextHandler:
                 user: User = get_user(qq, username)
                 if message != '确认':
                     reply = user.username + '，已取消清空花店仓库'
-                    result.reply_text.append(reply)
+                    result.context_reply_text.append(reply)
+                    continue
                 user.warehouse.items = []
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，已为您清空花店仓库'
-                result.reply_text.append(reply)
+                result.context_reply_text.append(reply)
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result

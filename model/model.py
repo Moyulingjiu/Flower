@@ -43,13 +43,21 @@ class Result(BaseModel):
     返回类
     """
     
+    context_reply_text: List[str] = []
+    context_reply_image: List[str] = []
     reply_text: List[str] = []
     reply_image: List[str] = []
     at_list: List[int] = None
     
     @classmethod
-    def init(cls, reply_text: List[str] or str = None, reply_image: List[str] or str = None,
+    def init(cls, context_reply_text: List[str] = None, context_reply_image: List[str] = None,
+             reply_text: List[str] or str = None, reply_image: List[str] or str = None,
              at_list: List[int] = None) -> 'Result':
+        if context_reply_text is None:
+            context_reply_text = []
+        if context_reply_image is None:
+            context_reply_image = []
+        
         if reply_text is None:
             reply_text = []
         elif isinstance(reply_text, str):
@@ -63,7 +71,8 @@ class Result(BaseModel):
         if at_list is None:
             at_list = []
         
-        return Result(reply_text=reply_text, reply_image=reply_image, at_list=at_list)
+        return Result(context_reply_text=context_reply_text, context_reply_image=context_reply_image,
+                      reply_text=reply_text, reply_image=reply_image, at_list=at_list)
 
 
 class Region(EntityClass):
