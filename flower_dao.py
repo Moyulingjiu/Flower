@@ -186,7 +186,7 @@ def lock(key: str, wait_time: int = lock_wait_time, try_interval: int = lock_try
     raise UserBeLockedException('用户被锁定')
 
 
-def unlock(key: str) -> bool:
+def unlock(key: str) -> int:
     """
     解锁
     :param key: 字段名
