@@ -184,16 +184,15 @@ def remove_items(warehouse: WareHouse, items: List[DecorateItem]):
         item_obj: Item = flower_dao.select_item_by_name(item.item_name)
         if item_obj is None or item_obj.name == '':
             raise ItemNotFoundException('物品' + item.item_name + '不存在')
-        for i in copy_items:
+        for i in copy_items[::-1]:
             if i.item_name == item.item_name:
                 if i.number >= item.number:
                     i.number -= item.number
                     item.number = 0
                     break
                 else:
-                    temp: int = item.number - i.number
+                    item.number -= i.number
                     i.number = 0
-                    item.number -= temp
         if item.number > 0:
             raise ItemNotEnoughException('物品' + item.item_name + '不足')
     warehouse.items = copy_items
