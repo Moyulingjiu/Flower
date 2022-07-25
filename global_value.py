@@ -3,9 +3,11 @@
 """
 
 # 时间
-minute_second = 60
-hour_second = 3600
-day_second = hour_second * 24
-week_second = day_second * 7
-month_second = day_second * 30
-year_second = day_second * 365
+minute_second: int = 60
+ten_minute_second: int = 10 * 60
+hour_second: int = 3600
+day_second: int = hour_second * 24
+half_day_second: int = hour_second * 12
+week_second: int = day_second * 7
+month_second: int = day_second * 30
+year_second: int = day_second * 365

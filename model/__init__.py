@@ -11,6 +11,5 @@ __all__ = [
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
     "Result", "SystemData",
     
-    "get_context", "insert_context", "delete_context",
-    "RegisterContext", "BeginnerGuide", "ThrowAllItem"
+    "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext"
 ]

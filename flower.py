@@ -1,6 +1,7 @@
 import random
 from datetime import datetime, timedelta
 
+import flower_dao
 from util import *
 
 
@@ -19,16 +20,12 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         # 处理上下文需要加锁，避免两个线程同时处理到一个上下文
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         context_handler: ContextHandler = ContextHandler()
-        reply = context_handler.handle(message, qq, username, bot_qq, bot_name, at_list)
-        # result
-        result: Result = Result.init()
-        if reply != '':
-            result.reply_text.append(reply)
-            # 如果阻断传播就已经可以停止了
-            if context_handler.block_transmission:
-                return result
+        result: Result = context_handler.handle(message, qq, username, bot_qq, bot_name, at_list)
+        # 如果阻断传播就已经可以停止了
+        if (len(result.reply_text) != 0 or len(result.reply_image) != 0) and context_handler.block_transmission:
+            return result
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-
+        
         # 数据查询部分
         if message[:4] == '查询城市' and message[4:].strip() != '':
             reply = FlowerService.query_city(message[4:].strip())
@@ -71,7 +68,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_user_farm(qq, username)
             result.reply_text.append(reply)
             return result
-
+        
         # 操作部分
         elif message == '初始化花店':
             reply = FlowerService.init_user(qq, username)
@@ -111,7 +108,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.throw_all_items(qq, username)
             result.reply_text.append(reply)
             return result
-
+        
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
             return AdminHandler.handle(message, qq, username, bot_qq, bot_name, at_list)
@@ -134,7 +131,7 @@ class AdminHandler:
     """
     管理员指令处理器
     """
-
+    
     @classmethod
     def handle(cls, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
         if message[:4] == '给予金币':
@@ -163,7 +160,7 @@ class AdminHandler:
                 item: DecorateItem = analysis_item(data)
             except TypeException:
                 raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
-
+            
             update_number: int = 0
             if len(at_list) == 0:
                 if cls.give_item(qq, qq, item):
@@ -176,9 +173,9 @@ class AdminHandler:
                 return Result.init(['成功给予' + item.item_name + '给' + str(update_number) + '人'])
             else:
                 return Result.init(['未能给予任何人' + item.item_name])
-
+        
         return Result.init()
-
+    
     @classmethod
     def give_gold(cls, qq: int, operator_id: int, gold: int) -> bool:
         """
@@ -199,7 +196,7 @@ class AdminHandler:
             return False
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-
+    
     @classmethod
     def give_item(cls, qq: int, operator_id: int, item: DecorateItem) -> bool:
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
@@ -225,11 +222,11 @@ class ContextHandler:
     """
     上下文处理器
     """
-
+    
     def __init__(self):
         self.block_transmission: bool = True  # 是否阻断消息继续传递，默认阻断
-
-    def handle(self, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> str:
+    
+    def handle(self, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
         """
         上下文处理
         :param message: 消息
@@ -241,71 +238,87 @@ class ContextHandler:
         :return: 结果
         """
         self.block_transmission = True
-        context = get_context(qq)
-        if context is None:
-            return ''
-        # 账号注册
-        if isinstance(context, RegisterContext):
-            if message == '取消':
-                delete_context(qq)
-                return '已为您取消注册'
-            if context.step == 0:
-                city: City = flower_dao.select_city_by_name(message)
-                if city is None or city.city_name != message:
-                    return FlowerService.query_city(message) + '\n请选择一座城市，只支持地级市（你可以输入“取消”来取消初始化账户）。'
-                user: User = User()
-                user.qq = qq
-                user.username = username
-                user.create_id = str(bot_qq)
-                user.update(bot_qq)
-
-                user.city_id = city.get_id()
-                user.born_city_id = city.get_id()
-
-                # 农场的处理
-                user.farm.soil_id = city.soil_id
-                soil: Soil = flower_dao.select_soil_by_id(city.soil_id)
-                user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
-                user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
-                weather: Weather = get_weather(city)
-                user.farm.temperature = (weather.max_temperature + weather.min_temperature) / 2
-
-                flower_dao.insert_user(user)
-                delete_context(qq)
-                return bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
-        # 新手指引
-        elif isinstance(context, BeginnerGuide):
-            if message == '关闭新手指引':
-                delete_context(qq)
-                return '已为您关闭新手指引'
-            if context.step == 0:
-                if message == '花店签到':
-                    self.block_transmission = False
-                    context.step += 1
-                    return '很好你已经完成了签到！每日签到可以获取金币。接下来试试“花店数据”。\n您可以输入“关闭新手指引”来取消指引。'
-            elif context.step == 1:
-                if message == '花店数据':
-                    self.block_transmission = False
-                    context.step += 1
-                    return '在这里你可以看见一些玩家的基本数据，接下来试试“花店仓库”。\n您可以输入“关闭新手指引”来取消指引。'
-            elif context.step == 2:
-                if message == '花店仓库':
-                    self.block_transmission = False
-                    delete_context(qq)
-                    return '在这里你可以看见你的物资。新手指引结束了（这句话后面再改）。'
-        # 丢弃所有物品
-        elif isinstance(context, ThrowAllItem):
-            delete_context(qq)
-            # context 会自动lock无需手动加锁
-            user: User = get_user(qq, username)
-            if message != '确认':
-                flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-                return user.username + '，已取消清空花店仓库'
-            user.warehouse.items = []
-            flower_dao.update_user_by_qq(user)
-            return user.username + '，已为您清空花店仓库'
-
-        return ''
+        context_list: List = flower_dao.get_context(qq)
+        del_context_list: List = [context for context in context_list if context.is_expired()]
+        result: Result = Result.init()
+        if len(context_list) == 0:
+            return result
+        for context in context_list:
+            if context in del_context_list:
+                continue
+            # 账号注册
+            if isinstance(context, RegisterContext):
+                if message == '取消':
+                    del_context_list.append(context)
+                    reply = '已为您取消注册'
+                    result.reply_text.append(reply)
+                    continue
+                if context.step == 0:
+                    city: City = flower_dao.select_city_by_name(message)
+                    if city is None or city.city_name != message:
+                        reply = FlowerService.query_city(message) + '\n请选择一座城市，只支持地级市（你可以输入“取消”来取消初始化账户）。'
+                        result.reply_text.append(reply)
+                        continue
+                    user: User = User()
+                    user.qq = qq
+                    user.username = username
+                    user.create_id = str(bot_qq)
+                    user.update(bot_qq)
+                    
+                    user.city_id = city.get_id()
+                    user.born_city_id = city.get_id()
+                    
+                    # 农场的处理
+                    user.farm.soil_id = city.soil_id
+                    soil: Soil = flower_dao.select_soil_by_id(city.soil_id)
+                    user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
+                    user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
+                    weather: Weather = get_weather(city)
+                    user.farm.temperature = (weather.max_temperature + weather.min_temperature) / 2
+                    
+                    flower_dao.insert_user(user)
+                    del_context_list.append(context)
+                    reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
+                    result.reply_text.append(reply)
+            # 新手指引
+            elif isinstance(context, BeginnerGuideContext):
+                if message == '关闭新手指引':
+                    del_context_list.append(context)
+                    reply = '已为您关闭新手指引'
+                    result.reply_text.append(reply)
+                if context.step == 0:
+                    if message == '花店签到':
+                        self.block_transmission = False
+                        context.step += 1
+                        reply = '很好你已经完成了签到！每日签到可以获取金币。接下来试试“花店数据”。\n您可以输入“关闭新手指引”来取消指引。'
+                        result.reply_text.append(reply)
+                elif context.step == 1:
+                    if message == '花店数据':
+                        self.block_transmission = False
+                        context.step += 1
+                        reply = '在这里你可以看见一些玩家的基本数据，接下来试试“花店仓库”。\n您可以输入“关闭新手指引”来取消指引。'
+                        result.reply_text.append(reply)
+                elif context.step == 2:
+                    if message == '花店仓库':
+                        self.block_transmission = False
+                        del_context_list.append(context)
+                        reply = '在这里你可以看见你的新手物资。新手指引结束了（这句话后面再改）。'
+                        result.reply_text.append(reply)
+            # 丢弃所有物品
+            elif isinstance(context, ThrowAllItemContext):
+                del_context_list.append(context)
+                # context 会自动lock无需手动加锁
+                user: User = get_user(qq, username)
+                if message != '确认':
+                    reply = user.username + '，已取消清空花店仓库'
+                    result.reply_text.append(reply)
+                user.warehouse.items = []
+                flower_dao.update_user_by_qq(user)
+                reply = user.username + '，已为您清空花店仓库'
+                result.reply_text.append(reply)
+        for context in del_context_list:
+            flower_dao.remove_context(qq, context)
+        return result
 
 
 class FlowerService:
@@ -353,7 +366,7 @@ class FlowerService:
                '地形：' + terrain.name + '\n' + \
                '气候：' + climate.name + '\n' + \
                '土壤：' + soil.name
-
+    
     @classmethod
     def query_soil(cls, name: str) -> str:
         """
@@ -380,7 +393,7 @@ class FlowerService:
         if len(soil.max_change_nutrition_soil_id) != 0:
             res += '\n最高营养变化土壤：' + get_soil_list(soil.max_change_nutrition_soil_id)
         return res
-
+    
     @classmethod
     def query_flower(cls, name: str) -> str:
         """
@@ -407,11 +420,11 @@ class FlowerService:
             res += '\n不适宜土壤：' + get_soil_list(flower.op_soil_id)
         elif len(flower.soil_id) == 0 and len(flower.op_soil_id) == 0:
             res += '\n适宜土壤：所有土壤'
-
+        
         res += '\n吸收水分：' + str(flower.water_absorption) + '/小时'
         res += '\n吸收营养：' + str(flower.nutrition_absorption) + '/小时'
         res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
-
+        
         res += '\n种子：'
         res += '\n\t周期：' + str(flower.seed_time) + '小时'
         res += show_conditions(flower.seed_condition)
@@ -422,9 +435,9 @@ class FlowerService:
         res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
         res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
         res += show_conditions(flower.mature_condition)
-
+        
         return res
-
+    
     @classmethod
     def view_user_data(cls, qq: int, username: str) -> str:
         """
@@ -449,7 +462,7 @@ class FlowerService:
         res += '\n金币：' + '%.2f' % (user.gold / 100)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         return res
-
+    
     @classmethod
     def view_user_farm(cls, qq: int, username: str) -> str:
         """
@@ -468,12 +481,12 @@ class FlowerService:
             flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
         now: datetime = datetime.now()
         now_temperature = abs(now.hour - 12) * (weather.max_temperature - weather.min_temperature)
-
+        
         reply = user.username + '的农场：'
         reply += '\n所在地：' + city.city_name
         reply += '\n气候：' + climate.name
         reply += '\n土壤：' + soil.name
-
+        
         reply += '\n气温：' + str(user.farm.temperature)
         if user.farm.temperature > now_temperature:
             reply += '（↓）'
@@ -483,12 +496,12 @@ class FlowerService:
             reply += '（=）'
         reply += '\n湿度：' + str(user.farm.humidity)
         reply += '\n营养：' + str(user.farm.nutrition)
-
+        
         if flower.get_id() != '':
             reply += '\n种植的花：' + flower.name
-
+        
         return reply
-
+    
     @classmethod
     def init_user(cls, qq: int, username: str) -> str:
         """
@@ -501,12 +514,10 @@ class FlowerService:
             user: User = get_user(qq, username)
             return user.username + '您已经有账号了'
         except UserNotRegisteredException:
-            context = get_context(qq)
-            if context is None:
-                context = RegisterContext(qq, username)
-                insert_context(qq, context)
-                return username + '，请选择一座城市，只支持地级市。'
-
+            context = RegisterContext(qq, username)
+            flower_dao.insert_context(qq, context)
+            return username + '，请选择一座城市，只支持地级市。'
+    
     @classmethod
     def user_sign_in(cls, qq: int, username: str) -> str:
         """
@@ -542,7 +553,7 @@ class FlowerService:
         flower_dao.insert_sign_record(sign_record)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         return res
-
+    
     @classmethod
     def transfer_accounts(cls, qq: int, username: str, at_list: List[int], gold: int) -> str:
         """
@@ -578,7 +589,7 @@ class FlowerService:
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         reply += '\n转账有20%手续费'
         return reply
-
+    
     @classmethod
     def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30):
         """
@@ -612,7 +623,7 @@ class FlowerService:
             reply += '\n------'
             reply += '\n总计页码：' + str(total_page)
         return reply
-
+    
     @classmethod
     def view_item(cls, item_name: str) -> str:
         """
@@ -623,7 +634,7 @@ class FlowerService:
         item: Item = flower_dao.select_item_by_name(item_name)
         if item.name == item_name:
             return str(item)
-
+        
         ans = '没有找到物品：' + item_name
         item_list: List[Item] = flower_dao.select_item_like_name(item_name)
         if len(item_list) > 0:
@@ -644,7 +655,7 @@ class FlowerService:
                     break
                 length -= 1
         return ans
-
+    
     @classmethod
     def receive_beginner_gifts(cls, qq: int, username: str) -> str:
         """
@@ -661,7 +672,7 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         item: DecorateItem = DecorateItem()
-
+        
         # 初始获取两种种子
         seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
         for i in range(2):
@@ -669,15 +680,15 @@ class FlowerService:
             item.item_name = seed
             item.number = 5
             AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-
+        
         item.item_name = '初级化肥'
         item.number = 5
         AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-
-        context: BeginnerGuide = BeginnerGuide()
-        insert_context(qq, context)
+        
+        context: BeginnerGuideContext = BeginnerGuideContext()
+        flower_dao.insert_context(qq, context)
         return '领取成功！接下来输入“花店签到”试试'
-
+    
     @classmethod
     def view_weather(cls, city_name: str) -> str:
         city: City = flower_dao.select_city_by_name(city_name)
@@ -690,7 +701,7 @@ class FlowerService:
         reply += '\n最高气温：' + str(weather.max_temperature) + '℃'
         reply += '\n湿度：' + str(weather.humidity) + '%'
         return reply
-
+    
     @classmethod
     def throw_item(cls, qq: int, username: str, item: DecorateItem) -> str:
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
@@ -705,14 +716,14 @@ class FlowerService:
             return user.username + '，物品不足'
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-
+    
     @classmethod
     def throw_all_items(cls, qq: int, username: str) -> str:
         user: User = get_user(qq, username)
         if len(user.warehouse.items) == 0:
             return user.username + '，你的花店仓库没有物品'
-        context: ThrowAllItem = ThrowAllItem()
-        insert_context(qq, context)
+        context: ThrowAllItemContext = ThrowAllItemContext()
+        flower_dao.insert_context(qq, context)
         return user.username + '，请输入“确认”丢弃所有花店仓库的物品'
 
 

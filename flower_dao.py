@@ -12,20 +12,21 @@ from redis import ConnectionPool, StrictRedis
 
 from exceptions import *
 from model import *
+import global_value
 
 # MongoDB
 mongo_client = pymongo.MongoClient('mongodb://root:123456@localhost:27017/')
-mongo_db = mongo_client["xiaoqi"]
+mongo_db = mongo_client['xiaoqi']
 
-mongo_system = mongo_db["system"]  # 系统
-mongo_region = mongo_db["region"]  # 地区
-mongo_terrain = mongo_db["terrain"]  # 地形
-mongo_climate = mongo_db["climate"]  # 气候
-mongo_soil = mongo_db["soil"]  # 土壤
-mongo_city = mongo_db["city"]  # 城市
-mongo_flower = mongo_db["flower"]  # 花卉
-mongo_user = mongo_db["user"]  # 用户
-mongo_item = mongo_db["item"]  # 物品
+mongo_system = mongo_db['system']  # 系统
+mongo_region = mongo_db['region']  # 地区
+mongo_terrain = mongo_db['terrain']  # 地形
+mongo_climate = mongo_db['climate']  # 气候
+mongo_soil = mongo_db['soil']  # 土壤
+mongo_city = mongo_db['city']  # 城市
+mongo_flower = mongo_db['flower']  # 花卉
+mongo_user = mongo_db['user']  # 用户
+mongo_item = mongo_db['item']  # 物品
 mongo_weather = mongo_db['weather']  # 天气
 
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
@@ -34,27 +35,30 @@ mongo_sign_record = mongo_db['sign_record']  # 签到记录
 redis_pool = ConnectionPool(host='localhost', port='6379', db=1, password='123456', decode_responses=True)
 redis_db = StrictRedis(connection_pool=redis_pool)
 
-redis_system_data_prefix = 'system_data'  # 系统数据前缀（有且仅有一个）
-redis_region_prefix = "region_"  # 地区redis前缀（地区id）
-redis_terrain_prefix = "terrain_"  # 地形redis前缀（地形id）
-redis_climate_prefix = "climate_"  # 气候redis前缀（气候id）
-redis_soil_prefix = "soil_"  # 土壤redis前缀（土壤id）
-redis_city_prefix = "city_"  # 城市redis前缀（城市id）
-redis_flower_prefix = "flower_"  # 花redis前缀（花id）
-redis_user_prefix = "user_"  # 用户redis前缀（用户qq）
-redis_item_prefix = "item_"  # 物品redis前缀（物品id）
-redis_weather_prefix = 'weather_'  # 天气redis前缀（城市id+日期）
+redis_global_prefix = 'flower_'  # redis全局前缀
+redis_system_data_prefix = redis_global_prefix + 'system_data'  # 系统数据前缀（有且仅有一个）
+redis_region_prefix = redis_global_prefix + 'region_'  # 地区redis前缀（地区id）
+redis_terrain_prefix = redis_global_prefix + 'terrain_'  # 地形redis前缀（地形id）
+redis_climate_prefix = redis_global_prefix + 'climate_'  # 气候redis前缀（气候id）
+redis_soil_prefix = redis_global_prefix + 'soil_'  # 土壤redis前缀（土壤id）
+redis_city_prefix = redis_global_prefix + 'city_'  # 城市redis前缀（城市id）
+redis_flower_prefix = redis_global_prefix + 'flower_'  # 花redis前缀（花id）
+redis_user_prefix = redis_global_prefix + 'user_'  # 用户redis前缀（用户qq）
+redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品id）
+redis_weather_prefix = redis_global_prefix + 'weather_'  # 天气redis前缀（城市id+日期）
 
-redis_city_like_prefix = 'city_like_'  # 城市模糊匹配前缀
-redis_item_like_prefix = 'item_like_'  # 物品模糊匹配前缀
-redis_warehouse_item_like_prefix = 'warehouse_item_like_'  # 仓库内的物品匹配前缀
+redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
+redis_item_like_prefix = redis_global_prefix + 'item_like_'  # 物品模糊匹配前缀
+redis_warehouse_item_like_prefix = redis_global_prefix + 'warehouse_item_like_'  # 仓库内的物品匹配前缀
 
-redis_user_lock_prefix = 'user_lock_'  # 用户锁前缀
+redis_user_lock_prefix = redis_global_prefix + 'user_lock_'  # 用户锁前缀
+redis_user_context_prefix = redis_global_prefix + 'user_context_'  # 用户上下文前缀
 
 ####################################################################################################
 # 全局常量
-expire_time_seconds: int = 600  # 很容易短期改变的值
-long_expire_time_seconds: int = 3600 * 12  # 长期才会改变的值
+expire_time_seconds: int = global_value.minute_second  # 很容易短期改变的值
+long_expire_time_seconds: int = global_value.half_day_second  # 长期才会改变的值
+context_expire_time_seconds: int = global_value.week_second  # 上下文的过期时间
 
 lock_wait_time = 5000  # 锁等待时间（尝试五秒）
 lock_try_interval = 500  # 锁等待时间（每五百毫秒尝试一次）
@@ -649,3 +653,40 @@ def insert_weather(weather: Weather) -> str:
     result = mongo_weather.insert_one(class_to_dict(weather))
     redis_db.delete(redis_weather_prefix + weather.city_id + '_' + weather.create_time.strftime('%Y_%m_%d'))
     return result.inserted_id
+
+
+####################################################################################################
+# 上下文处理
+def insert_context(qq: int, context) -> bool:
+    """
+    插入上下文
+    :param qq:
+    :param context:
+    :return:
+    """
+    if not isinstance(context, BaseContext):
+        return False
+    redis_db.lpush(redis_user_context_prefix + str(qq), serialization(context))
+    redis_db.expire(redis_user_context_prefix + str(qq), context_expire_time_seconds)
+    return True
+
+
+def remove_context(qq: int, context):
+    """
+    删除上下文
+    :param qq: qq号
+    :param context: 上下文
+    :return: none
+    """
+    redis_db.lrem(redis_user_context_prefix + str(qq), 0, serialization(context))
+
+
+def get_context(qq: int) -> List:
+    """
+    查询某个人的上下文
+    :param qq: QQ号
+    :return: 上下文列表
+    """
+    context_list = redis_db.lrange(redis_user_context_prefix + str(qq), 0, -1)
+    ans = [deserialize(context) for context in context_list]
+    return ans
