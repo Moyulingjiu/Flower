@@ -367,26 +367,6 @@ class Weather(EntityClass):
         self.humidity = humidity
 
 
-class Farm(InnerClass):
-    """
-    用户-花类（农场）
-    """
-    
-    def __init__(self, soil_id: str = '', flower_id: str = '', hour: float = 0.0, perfect_hour: float = 0.0,
-                 bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
-                 last_check_time: datetime = datetime.now()):
-        super().__init__('Farm')
-        self.soil_id = soil_id  # 土壤id
-        self.flower_id = flower_id  # 花的id
-        self.hour = hour  # 植物生长的小时数
-        self.perfect_hour = perfect_hour  # 累计的完美的小时数
-        self.bad_hour = bad_hour  # 糟糕的小时数
-        self.humidity = humidity  # 上一次检查的湿度
-        self.nutrition = nutrition  # 上一次检查的营养
-        self.temperature = temperature  # 上一次检查的温度
-        self.last_check_time = last_check_time  # 上一次检查时间
-
-
 class ItemType(Enum):
     """
     物品类型枚举类
@@ -543,6 +523,8 @@ class DecorateItem(InnerClass):
         self.update = update  # 修改时间
     
     def __str__(self):
+        if self.item_id == '' and self.item_name == '':
+            return '无'
         ans = self.item_name
         if self.flower_quality != FlowerQuality.not_flower:
             ans += '-' + FlowerQuality.view_name(self.flower_quality)
@@ -616,6 +598,39 @@ class WareHouse(InnerClass):
         for item in remove_item:
             self.items.remove(item)
         return result
+
+
+class Farm(InnerClass):
+    """
+    用户-花类（农场）
+    """
+    
+    def __init__(self, soil_id: str = '', flower_id: str = '', hour: float = 0.0, perfect_hour: float = 0.0,
+                 bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
+                 last_check_time: datetime = datetime.now(),
+                 thermometer: DecorateItem = DecorateItem(), soil_monitoring_station: DecorateItem = DecorateItem(),
+                 s_capacity: int = 0, a_capacity: int = 0, b_capacity: int = 0, c_capacity: int = 0,
+                 d_capacity: int = 0):
+        super().__init__('Farm')
+        self.soil_id = soil_id  # 土壤id
+        self.flower_id = flower_id  # 花的id
+        self.hour = hour  # 植物生长的小时数
+        self.perfect_hour = perfect_hour  # 累计的完美的小时数
+        self.bad_hour = bad_hour  # 糟糕的小时数
+        self.humidity = humidity  # 上一次检查的湿度
+        self.nutrition = nutrition  # 上一次检查的营养
+        self.temperature = temperature  # 上一次检查的温度
+        self.last_check_time = last_check_time  # 上一次检查时间
+        
+        self.thermometer = thermometer  # 农场的温度计
+        self.soil_monitoring_station = soil_monitoring_station  # 农场的土壤检测站
+        
+        # 每个等级的花的容积
+        self.s_capacity = s_capacity
+        self.a_capacity = a_capacity
+        self.b_capacity = b_capacity
+        self.c_capacity = c_capacity
+        self.d_capacity = d_capacity
 
 
 class SignRecord(EntityClass):
