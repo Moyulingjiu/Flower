@@ -110,6 +110,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             except TypeException:
                 raise TypeException('格式错误，格式“丢弃 【物品名字】 【数量】”')
+        elif message == '清空花店仓库':
+            reply = FlowerService.throw_all_items(qq, username)
+            result.reply_text.append(reply)
+            return result
 
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
@@ -292,6 +296,19 @@ class ContextHandler:
                     self.block_transmission = False
                     delete_context(qq)
                     return '在这里你可以看见你的物资。新手指引结束了（这句话后面再改）。'
+        # 丢弃所有物品
+        elif isinstance(context, ThrowAllItem):
+            delete_context(qq)
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, username)
+            if message != '确认':
+                flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+                return user.username + '，已取消清空花店仓库'
+            user.warehouse.items = []
+            flower_dao.update_user_by_qq(user)
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+            return user.username + '，已为您清空花店参控股'
+
         return ''
 
 
@@ -692,6 +709,15 @@ class FlowerService:
             return user.username + '，物品不足'
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def throw_all_items(cls, qq: int, username: str) -> str:
+        user: User = get_user(qq, username)
+        if len(user.warehouse.items) == 0:
+            return user.username + '，你的花店仓库没有物品'
+        context: ThrowAllItem = ThrowAllItem()
+        insert_context(qq, context)
+        return user.username + '，请输入“确认”丢弃所有花店仓库的物品'
 
 
 if __name__ == '__main__':
