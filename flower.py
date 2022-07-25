@@ -495,8 +495,8 @@ class FlowerService:
             reply += '（↑）'
         else:
             reply += '（=）'
-        reply += '\n湿度：' + str(user.farm.humidity)
-        reply += '\n营养：' + str(user.farm.nutrition)
+        reply += '\n土壤湿度：' + str(user.farm.humidity)
+        reply += '\n土壤营养：' + str(user.farm.nutrition)
         
         reply += '\n温度计：' + str(user.farm.thermometer)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
