@@ -282,7 +282,7 @@ class Flower(EntityClass):
                  mature_condition: Conditions = Conditions(),
                  water_absorption: int = 0, nutrition_absorption: int = 0,
                  seed_time: int = 0, grow_time: int = 0, mature_time: int = 0,
-                 overripe_time: int = 0, withered_time: int = 0,
+                 overripe_time: int = 0, withered_time: int = 0, flower_yield: int = 1,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -310,6 +310,9 @@ class Flower(EntityClass):
         self.mature_time = mature_time  # 成熟的时间
         self.overripe_time = overripe_time  # 过熟的时间
         self.withered_time = withered_time  # 枯萎的时间（这个是累计一定时间后将会枯萎）
+        
+        # 产量
+        self.flower_yield = flower_yield  # 花的产量
     
     def valid_climate(self, climate_id: str) -> bool:
         """
@@ -381,8 +384,11 @@ class ItemType(Enum):
     """
     unknown = 'unknown'  # 未知物品
     seed = 'seed'  # 种子
+    flower = 'flower'  # 花
     fertilizer = 'fertilizer'  # 化肥
     props = 'props'  # 特殊道具
+    thermometer = 'thermometer'  # 温度计（用于农场）
+    soil_monitoring_station = 'soil_monitoring_station'  # 土壤检测站（用于农场）
     
     @classmethod
     def view_name(cls, item_type) -> str:
@@ -390,10 +396,16 @@ class ItemType(Enum):
             return '未知物品'
         elif item_type == cls.seed:
             return '种子'
+        elif item_type == cls.flower:
+            return '花'
         elif item_type == cls.fertilizer:
             return '化肥'
         elif item_type == cls.props:
             return '特殊道具'
+        elif item_type == cls.thermometer:
+            return '温度计'
+        elif item_type == cls.soil_monitoring_station:
+            return '土壤监测站'
         return ''
     
     @classmethod
@@ -402,11 +414,52 @@ class ItemType(Enum):
             item_type = 'ItemType.' + item_type
         if item_type == str(cls.seed):
             return cls.seed
+        elif item_type == str(cls.flower):
+            return cls.flower
         elif item_type == str(cls.fertilizer):
             return cls.fertilizer
         elif item_type == str(cls.props):
             return cls.props
+        elif item_type == str(cls.thermometer):
+            return cls.thermometer
+        elif item_type == str(cls.soil_monitoring_station):
+            return cls.soil_monitoring_station
         return cls.unknown
+
+
+class FlowerQuality(Enum):
+    """
+    花的品质枚举类
+    """
+    
+    not_flower = 'not_flower'
+    perfect = 'perfect'
+    normal = 'normal'
+    bad = 'bad'
+    
+    @classmethod
+    def view_name(cls, flower_quality) -> str:
+        if flower_quality == cls.not_flower:
+            return '不是花'
+        elif flower_quality == cls.perfect:
+            return '完美'
+        elif flower_quality == cls.normal:
+            return '一般'
+        elif flower_quality == cls.bad:
+            return '差'
+        return ''
+    
+    @classmethod
+    def get_type(cls, flower_quality: str):
+        if not flower_quality.startswith('FlowerQuality.'):
+            flower_quality = 'FlowerQuality.' + flower_quality
+        if flower_quality == str(cls.perfect):
+            return cls.perfect
+        elif flower_quality == str(cls.normal):
+            return cls.normal
+        elif flower_quality == str(cls.bad):
+            return cls.bad
+        return cls.not_flower
 
 
 class Item(EntityClass):
@@ -464,8 +517,9 @@ class DecorateItem(InnerClass):
     """
     
     def __init__(self, item_id: str = '', item_type: ItemType = ItemType.unknown, item_name: str = '', number: int = 0,
-                 durability: int = 0, max_durability: int = 0, rot_second: int = 0, create: datetime = datetime.now(),
-                 update: datetime = datetime.now()):
+                 durability: int = 0, max_durability: int = 0, rot_second: int = 0,
+                 flower_quality: FlowerQuality = FlowerQuality.not_flower,
+                 create: datetime = datetime.now(), update: datetime = datetime.now()):
         super().__init__('DecorateItem')
         self.item_id = item_id  # 物品id
         self.item_name = item_name  # 物品名字
@@ -475,11 +529,14 @@ class DecorateItem(InnerClass):
         self.durability = durability  # 耐久度
         self.max_durability = max_durability  # 最大耐久度
         self.rot_second = rot_second  # 腐烂的秒
+        self.flower_quality = flower_quality  # 花的品质
         self.create = create  # 创建时间（用于一些物品失效检测）
         self.update = update  # 修改时间
     
     def __str__(self):
         ans = self.item_name
+        if self.flower_quality != FlowerQuality.not_flower:
+            ans += '-' + FlowerQuality.view_name(self.flower_quality)
         if self.number > 1:
             ans += 'x' + str(self.number)
         if self.max_durability > 0:
@@ -491,6 +548,21 @@ class DecorateItem(InnerClass):
     
     def __repr__(self):
         return self.__str__()
+    
+    def __eq__(self, other):
+        if not isinstance(other, DecorateItem):
+            return False
+        if other.item_id != '' and self.item_id != '' and self.item_id != other.item_id:
+            return False
+        if self.item_name != other.item_name:
+            return False
+        if self.max_durability != 0 and self.durability != other.durability:
+            return False
+        if self.rot_second != 0 and self.create != other.create:
+            return False
+        if self.flower_quality != FlowerQuality.not_flower and self.flower_quality != other.flower_quality:
+            return False
+        return True
     
     def is_valid(self) -> bool:
         # 没有东西

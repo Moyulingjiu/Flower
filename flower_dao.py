@@ -54,7 +54,7 @@ redis_user_lock_prefix = 'user_lock_'  # 用户锁前缀
 ####################################################################################################
 # 全局常量
 expire_time_seconds: int = 600  # 很容易短期改变的值
-long_expire_time_seconds: int = 3600  # 长期才会改变的值
+long_expire_time_seconds: int = 3600 * 12  # 长期才会改变的值
 
 lock_wait_time = 5000  # 锁等待时间（尝试五秒）
 lock_try_interval = 500  # 锁等待时间（每五百毫秒尝试一次）
@@ -111,7 +111,9 @@ def dict_to_inner_class(d: Dict) -> object or None:
     elif d['class_type'] == 'Farm':
         return dict_to_class(d, Farm())
     elif d['class_type'] == 'DecorateItem':
-        return dict_to_class(d, DecorateItem())
+        o = dict_to_class(d, DecorateItem())
+        o.flower_quality = FlowerQuality.get_type(o.flower_quality)
+        return o
     elif d['class_type'] == 'WareHouse':
         return dict_to_class(d, WareHouse())
     return None

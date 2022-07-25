@@ -8,7 +8,7 @@ __all__ = [
     "Region", "Terrain", "Climate", "Soil", "City",
     "Condition", "Conditions", "ConditionLevel", "FlowerLevel", "Flower",
     "User", "SignRecord", "Weather",
-    "Farm", "Item", "DecorateItem", "WareHouse", "ItemType",
+    "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
     "Result", "SystemData",
     
     "get_context", "insert_context", "delete_context",
