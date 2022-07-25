@@ -296,15 +296,14 @@ class ContextHandler:
         # 丢弃所有物品
         elif isinstance(context, ThrowAllItem):
             delete_context(qq)
-            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            # context 会自动lock无需手动加锁
             user: User = get_user(qq, username)
             if message != '确认':
                 flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
                 return user.username + '，已取消清空花店仓库'
             user.warehouse.items = []
             flower_dao.update_user_by_qq(user)
-            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-            return user.username + '，已为您清空花店参控股'
+            return user.username + '，已为您清空花店仓库'
 
         return ''
 
