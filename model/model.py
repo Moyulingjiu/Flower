@@ -378,6 +378,7 @@ class ItemType(Enum):
     props = 'props'  # 特殊道具
     thermometer = 'thermometer'  # 温度计（用于农场）
     soil_monitoring_station = 'soil_monitoring_station'  # 土壤检测站（用于农场）
+    watering_pot = 'watering_pot'  # 浇水壶（用于农场）
     
     @classmethod
     def view_name(cls, item_type) -> str:
@@ -395,6 +396,8 @@ class ItemType(Enum):
             return '温度计'
         elif item_type == cls.soil_monitoring_station:
             return '土壤监测站'
+        elif item_type == cls.watering_pot:
+            return '浇水壶'
         return ''
     
     @classmethod
@@ -413,6 +416,8 @@ class ItemType(Enum):
             return cls.thermometer
         elif item_type == str(cls.soil_monitoring_station):
             return cls.soil_monitoring_station
+        elif item_type == str(cls.watering_pot):
+            return cls.watering_pot
         return cls.unknown
 
 
@@ -609,6 +614,7 @@ class Farm(InnerClass):
                  bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
                  last_check_time: datetime = datetime.now(),
                  thermometer: DecorateItem = DecorateItem(), soil_monitoring_station: DecorateItem = DecorateItem(),
+                 watering_pot: DecorateItem = DecorateItem(),
                  s_capacity: int = 0, a_capacity: int = 0, b_capacity: int = 0, c_capacity: int = 0,
                  d_capacity: int = 0):
         super().__init__('Farm')
@@ -624,6 +630,7 @@ class Farm(InnerClass):
         
         self.thermometer = thermometer  # 农场的温度计
         self.soil_monitoring_station = soil_monitoring_station  # 农场的土壤检测站
+        self.watering_pot = watering_pot  # 农场的浇水壶
         
         # 每个等级的花的容积
         self.s_capacity = s_capacity

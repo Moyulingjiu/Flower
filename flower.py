@@ -115,7 +115,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     except UserNotRegisteredException:
         return Result.init(reply_text='您还未初始化花店账号，请输入“初始化花店”进行初始化')
     except UserBeLockedException:
-        return Result.init(reply_text='操作超时，请稍后再试\n出现的原因可能有：\n1.您的操作过于频繁，请稍后再试\n2.账号风险行为，耐心等待两小时重置')
+        return Result.init(reply_text='操作超时，请稍后再试\n出现的原因可能有：\n1.您的操作过于频繁，请稍后再试\n2.账号风险行为，耐心等待两小时重置\n3.网络波动')
     except AtListNullException as e:
         return Result.init(e.message)
     except TypeException as e:
@@ -685,6 +685,7 @@ class FlowerService:
             item.number = 5
             AdminHandler.give_item(qq, qq, copy.deepcopy(item))
         
+        # 领取化肥
         item.item_name = '初级化肥'
         item.number = 5
         AdminHandler.give_item(qq, qq, copy.deepcopy(item))
@@ -695,6 +696,11 @@ class FlowerService:
     
     @classmethod
     def view_weather(cls, city_name: str) -> str:
+        """
+        查看天气
+        :param city_name: 城市名
+        :return: 结果
+        """
         city: City = flower_dao.select_city_by_name(city_name)
         if city.city_name != city_name:
             weather: Weather = weather_getter.get_city_weather(city_name, 'none')
@@ -708,6 +714,13 @@ class FlowerService:
     
     @classmethod
     def throw_item(cls, qq: int, username: str, item: DecorateItem) -> str:
+        """
+        丢弃一件物品
+        :param qq: qq
+        :param username: 用户名
+        :param item: 物品
+        :return: 结果
+        """
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user: User = get_user(qq, username)
         try:
@@ -723,12 +736,28 @@ class FlowerService:
     
     @classmethod
     def throw_all_items(cls, qq: int, username: str) -> str:
+        """
+        丢弃所有物品
+        :param qq: qq
+        :param username: 用户名
+        :return: 结果
+        """
         user: User = get_user(qq, username)
         if len(user.warehouse.items) == 0:
             return user.username + '，你的花店仓库没有物品'
         context: ThrowAllItemContext = ThrowAllItemContext()
         flower_dao.insert_context(qq, context)
-        return user.username + '，请输入“确认”丢弃所有花店仓库的物品'
+        return user.username + '，请输入“确认”丢弃所有花店仓库的物品，其余任何回复视为取消'
+    
+    @classmethod
+    def plant_flower(cls, qq: int, username: str, flower_name: str) -> str:
+        """
+        种植植物
+        :param qq:
+        :param username:
+        :param flower_name:
+        :return:
+        """
 
 
 if __name__ == '__main__':
