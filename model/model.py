@@ -1,3 +1,4 @@
+# coding=utf-8
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import List
@@ -379,6 +380,7 @@ class ItemType(Enum):
     thermometer = 'thermometer'  # 温度计（用于农场）
     soil_monitoring_station = 'soil_monitoring_station'  # 土壤检测站（用于农场）
     watering_pot = 'watering_pot'  # 浇水壶（用于农场）
+    weather_station = 'weather_station'  # 气象监控站（适用于农场）
     
     @classmethod
     def view_name(cls, item_type) -> str:
@@ -398,6 +400,8 @@ class ItemType(Enum):
             return '土壤监测站'
         elif item_type == cls.watering_pot:
             return '浇水壶'
+        elif item_type == cls.weather_station:
+            return '气象监控站'
         return ''
     
     @classmethod
@@ -418,6 +422,8 @@ class ItemType(Enum):
             return cls.soil_monitoring_station
         elif item_type == str(cls.watering_pot):
             return cls.watering_pot
+        elif item_type == str(cls.weather_station):
+            return cls.weather_station
         return cls.unknown
 
 
@@ -463,7 +469,7 @@ class Item(EntityClass):
     
     def __init__(self, name: str = '', item_type: ItemType = ItemType.unknown, description: str = '',
                  max_stack: int = 0, max_durability: int = 0, rot_second: int = 0,
-                 humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
+                 humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0, level: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -477,11 +483,14 @@ class Item(EntityClass):
         self.humidity = humidity  # 上一次检查的湿度
         self.nutrition = nutrition  # 上一次检查的营养
         self.temperature = temperature  # 上一次检查的温度
+        self.level = level  # 级别（用于检测农场的气象站等）
     
     def __str__(self):
         result = '名字：' + self.name
         result += '\n类别：' + ItemType.view_name(self.item_type)
         result += '\n最大堆叠：' + str(self.max_stack)
+        if self.level > 0:
+            result += '\n级别：' + str(self.level)
         if self.max_durability > 0:
             result += '\n耐久：' + str(self.max_durability)
         if self.rot_second > 0:
@@ -605,12 +614,44 @@ class WareHouse(InnerClass):
         return result
 
 
+class FlowerState(Enum):
+    no_flower = 'no_flower'  # 不是花
+    perfect = 'perfect'  # 完美
+    normal = 'normal'  # 正常
+    withered = 'withered'  # 枯萎
+    
+    @classmethod
+    def view_name(cls, flower_state) -> str:
+        if flower_state == cls.not_flower:
+            return '未种植花'
+        elif flower_state == cls.perfect:
+            return '完美'
+        elif flower_state == cls.normal:
+            return '正常'
+        elif flower_state == cls.withered:
+            return '枯萎'
+        return ''
+    
+    @classmethod
+    def get_type(cls, flower_state: str):
+        if not flower_state.startswith('FlowerState.'):
+            flower_state = 'FlowerQuality.' + flower_state
+        if flower_state == str(cls.perfect):
+            return cls.perfect
+        elif flower_state == str(cls.normal):
+            return cls.normal
+        elif flower_state == str(cls.withered):
+            return cls.bad
+        return cls.not_flower
+
+
 class Farm(InnerClass):
     """
     用户-花类（农场）
     """
     
-    def __init__(self, soil_id: str = '', flower_id: str = '', hour: float = 0.0, perfect_hour: float = 0.0,
+    def __init__(self, soil_id: str = '', flower_id: str = '', flower_state: FlowerState = FlowerState.no_flower,
+                 hour: float = 0.0, perfect_hour: float = 0.0,
                  bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
                  last_check_time: datetime = datetime.now(),
                  thermometer: DecorateItem = DecorateItem(), soil_monitoring_station: DecorateItem = DecorateItem(),

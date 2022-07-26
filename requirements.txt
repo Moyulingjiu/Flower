@@ -1,0 +1,8 @@
+apscheduler~=3.9.1
+fastapi~=0.70.1
+requests~=2.26.0
+redis~=3.5.3
+pymongo~=4.1.1
+pydantic~=1.8.2
+uvicorn~=0.15.0
+beautifulsoup4~=4.10.0

@@ -1,3 +1,4 @@
+# coding=utf-8
 import random
 from datetime import datetime, timedelta
 
@@ -65,7 +66,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_weather(data)
             result.reply_text.append(reply)
             return result
-        elif message == '花店农场':
+        elif message == '花店农场信息':
             reply = FlowerService.view_user_farm(qq, username)
             result.reply_text.append(reply)
             return result
@@ -280,7 +281,7 @@ class ContextHandler:
                     user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
                     user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
                     weather: Weather = get_weather(city)
-                    user.farm.temperature = (weather.max_temperature + weather.min_temperature) / 2
+                    user.farm.temperature = (weather.max_temperature - weather.min_temperature) * 3 / 4 + weather.min_temperature
                     
                     flower_dao.insert_user(user)
                     del_context_list.append(context)
@@ -506,6 +507,7 @@ class FlowerService:
         
         reply += '\n温度计：' + str(user.farm.thermometer)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
+        reply += '\n浇水壶：' + str(user.farm.watering_pot)
         
         if flower.get_id() != '':
             reply += '\n种植的花：' + flower.name

@@ -253,3 +253,7 @@ def analysis_item(data: str) -> DecorateItem:
     item.item_name = item_name
     item.number = item_number
     return item
+
+
+def update_farm(user: User, city: City, soil: Soil, weather: Weather):
+    pass

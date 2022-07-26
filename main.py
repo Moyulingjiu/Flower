@@ -1,3 +1,4 @@
+# coding=utf-8
 import datetime
 
 from fastapi import FastAPI
@@ -32,7 +33,7 @@ def calibration():
     校准
     :return: 时间校准
     """
-    return Response(code=0, message='success', data=Result.init(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    return Response(code=0, message='success', data=Result.init(reply_text=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
 
 @app.post("/draw")

@@ -1,3 +1,4 @@
+# coding=utf-8
 from model.model import *
 from model.context import *
 from model.fix_point_number import FixPointNumber

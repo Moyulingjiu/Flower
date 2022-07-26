@@ -1,3 +1,4 @@
+# coding=utf-8
 from exceptions.my_exception import *
 
 __all__ = [

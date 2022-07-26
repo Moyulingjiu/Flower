@@ -1,3 +1,4 @@
+# coding=utf-8
 class FixPointNumber:
     """
     定点数
