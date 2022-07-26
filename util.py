@@ -3,8 +3,9 @@
 """
 
 import copy
+from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 
 import flower_dao
 from exceptions import *
@@ -255,5 +256,44 @@ def analysis_item(data: str) -> DecorateItem:
     return item
 
 
-def update_farm(user: User, city: City, soil: Soil, weather: Weather):
+def get_now_temperature(weather: Weather) -> float:
+    """
+    获取当前的温度
+    :param weather: 天气
+    :return: 当前温度
+    """
+    now: datetime = datetime.now()
+    return ((12.0 - abs(now.hour - 12)) / 12.0) * (
+                weather.max_temperature - weather.min_temperature) + weather.min_temperature
+
+
+def get_farm_information(qq: int, username: str) -> Tuple[User, City, Soil, Climate, Weather, Flower]:
+    """
+    获取农场的所有信息
+    :param qq: qq
+    :param username: 用户名
+    :return: 用户、城市、土地、天气、气候、花
+    """
+    user: User = get_user(qq, username)
+    city: City = flower_dao.select_city_by_id(user.city_id)
+    soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+    climate: Climate = flower_dao.select_climate_by_id(city.climate_id)
+    weather: Weather = get_weather(city)
+    flower: Flower = Flower()
+    if user.farm.flower_id != '':
+        flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
+    return user, city, soil, climate, weather, flower
+
+
+def update_farm(user: User, city: City, soil: Soil, climate: Climate, weather: Weather, flower: Flower) -> None:
+    """
+    更新农场
+    :param user: 用户
+    :param city: 城市
+    :param soil: 泥土
+    :param weather: 天气
+    :param climate: 气候
+    :param flower: 花
+    :return: none
+    """
     pass

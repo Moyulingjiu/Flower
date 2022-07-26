@@ -66,7 +66,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_weather(data)
             result.reply_text.append(reply)
             return result
-        elif message == '花店农场信息':
+        elif message == '花店农场设备':
+            reply = FlowerService.view_user_farm_equipment(qq, username)
+            result.reply_text.append(reply)
+            return result
+        elif message == '花店农场':
             reply = FlowerService.view_user_farm(qq, username)
             result.reply_text.append(reply)
             return result
@@ -281,7 +285,8 @@ class ContextHandler:
                     user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
                     user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
                     weather: Weather = get_weather(city)
-                    user.farm.temperature = (weather.max_temperature - weather.min_temperature) * 3 / 4 + weather.min_temperature
+                    user.farm.temperature = (
+                                                    weather.max_temperature - weather.min_temperature) * 3 / 4 + weather.min_temperature
                     
                     flower_dao.insert_user(user)
                     del_context_list.append(context)
@@ -472,23 +477,16 @@ class FlowerService:
         return res
     
     @classmethod
-    def view_user_farm(cls, qq: int, username: str) -> str:
+    def view_user_farm_equipment(cls, qq: int, username: str) -> str:
         """
-        根据用户查询其农场
+        根据用户查询其农场设备
         :param qq: qq号
         :param username: 用户名
         :return: 农场信息
         """
-        user: User = get_user(qq, username)
-        city: City = flower_dao.select_city_by_id(user.city_id)
-        soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
-        climate: Climate = flower_dao.select_climate_by_id(city.climate_id)
-        weather: Weather = get_weather(city)
-        flower: Flower = Flower()
-        if user.farm.flower_id != '':
-            flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
-        now: datetime = datetime.now()
-        now_temperature = abs(now.hour - 12) * (weather.max_temperature - weather.min_temperature)
+        user, city, soil, climate, weather, flower = get_farm_information(qq, username)
+        now_temperature = get_now_temperature(weather)
+        update_farm(user, city, soil, climate, weather, flower)
         
         reply = user.username + '的农场：'
         reply += '\n所在地：' + city.city_name
@@ -506,11 +504,57 @@ class FlowerService:
         reply += '\n土壤营养：' + str(user.farm.nutrition)
         
         reply += '\n温度计：' + str(user.farm.thermometer)
+        reply += '\n气象检测站：' + str(user.farm.weather_station)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
         reply += '\n浇水壶：' + str(user.farm.watering_pot)
+        return reply
+    
+    @classmethod
+    def view_user_farm(cls, qq: int, username: str) -> str:
+        """
+        查看用户农场
+        :param qq:
+        :param username:
+        :return:
+        """
+        user, city, soil, climate, weather, flower = get_farm_information(qq, username)
+        now_temperature = get_now_temperature(weather)
+        update_farm(user, city, soil, climate, weather, flower)
         
-        if flower.get_id() != '':
-            reply += '\n种植的花：' + flower.name
+        reply = user.username + '的农场：'
+        reply += '\n种植的花：'
+        if user.farm.flower_id != '':
+            reply += flower.name
+        else:
+            reply += '无'
+            return reply
+        reply += '\n花的状态：' + FlowerState.view_name(user.farm.flower_state)
+        
+        seed_time: int = flower.seed_time
+        grow_time: int = seed_time + flower.grow_time
+        mature_time: int = grow_time + flower.mature_time
+        overripe_time: int = mature_time + flower.overripe_time
+        withered_time: int = overripe_time + flower.withered_time
+        if user.farm.hour <= seed_time:
+            reply += '\n阶段：种子'
+        elif user.farm.hour <= grow_time:
+            reply += '\n阶段：幼苗'
+        elif user.farm.hour <= mature_time:
+            reply += '\n阶段：成熟'
+        elif user.farm.hour <= overripe_time:
+            reply += '\n阶段：过熟'
+        elif user.farm.hour <= withered_time:
+            reply += '\n阶段：枯萎'
+        
+        reply += '\n气温：' + str(user.farm.temperature)
+        if user.farm.temperature > now_temperature:
+            reply += '（↓）'
+        elif user.farm.temperature < now_temperature:
+            reply += '（↑）'
+        else:
+            reply += '（=）'
+        reply += '\n土壤湿度：' + str(user.farm.humidity)
+        reply += '\n土壤营养：' + str(user.farm.nutrition)
         
         return reply
     
@@ -685,10 +729,9 @@ class FlowerService:
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         item: DecorateItem = DecorateItem()
         
-        # 初始获取两种种子
+        # 初始获取初始种子
         seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
-        for i in range(2):
-            seed = random.choice(seed_list)
+        for seed in seed_list:
             item.item_name = seed
             item.number = 5
             AdminHandler.give_item(qq, qq, copy.deepcopy(item))
@@ -779,6 +822,7 @@ class FlowerService:
             item.number = 1
             remove_items(user.warehouse, [item])
             user.farm.flower_id = flower.get_id()
+            user.farm.flower_state = FlowerState.normal
             user.farm.last_check_time = datetime.now()
             user.farm.hour = 0
             user.farm.bad_hour = 0

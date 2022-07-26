@@ -615,7 +615,7 @@ class WareHouse(InnerClass):
 
 
 class FlowerState(Enum):
-    no_flower = 'no_flower'  # 不是花
+    not_flower = 'not_flower'  # 不是花
     perfect = 'perfect'  # 完美
     normal = 'normal'  # 正常
     withered = 'withered'  # 枯萎
@@ -635,7 +635,7 @@ class FlowerState(Enum):
     @classmethod
     def get_type(cls, flower_state: str):
         if not flower_state.startswith('FlowerState.'):
-            flower_state = 'FlowerQuality.' + flower_state
+            flower_state = 'FlowerState.' + flower_state
         if flower_state == str(cls.perfect):
             return cls.perfect
         elif flower_state == str(cls.normal):
@@ -650,17 +650,18 @@ class Farm(InnerClass):
     用户-花类（农场）
     """
     
-    def __init__(self, soil_id: str = '', flower_id: str = '', flower_state: FlowerState = FlowerState.no_flower,
+    def __init__(self, soil_id: str = '', flower_id: str = '', flower_state: FlowerState = FlowerState.not_flower,
                  hour: float = 0.0, perfect_hour: float = 0.0,
                  bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
                  last_check_time: datetime = datetime.now(),
-                 thermometer: DecorateItem = DecorateItem(), soil_monitoring_station: DecorateItem = DecorateItem(),
-                 watering_pot: DecorateItem = DecorateItem(),
+                 thermometer: DecorateItem = DecorateItem(), weather_station: DecorateItem = DecorateItem(),
+                 soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
                  s_capacity: int = 0, a_capacity: int = 0, b_capacity: int = 0, c_capacity: int = 0,
                  d_capacity: int = 0):
         super().__init__('Farm')
         self.soil_id = soil_id  # 土壤id
         self.flower_id = flower_id  # 花的id
+        self.flower_state = flower_state  # 花的状态
         self.hour = hour  # 植物生长的小时数
         self.perfect_hour = perfect_hour  # 累计的完美的小时数
         self.bad_hour = bad_hour  # 糟糕的小时数
@@ -670,6 +671,7 @@ class Farm(InnerClass):
         self.last_check_time = last_check_time  # 上一次检查时间
         
         self.thermometer = thermometer  # 农场的温度计
+        self.weather_station = weather_station  # 气象检测站
         self.soil_monitoring_station = soil_monitoring_station  # 农场的土壤检测站
         self.watering_pot = watering_pot  # 农场的浇水壶
         

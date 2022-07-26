@@ -114,7 +114,9 @@ def dict_to_inner_class(d: Dict) -> object or None:
     elif d['class_type'] == 'Conditions':
         return dict_to_class(d, Conditions())
     elif d['class_type'] == 'Farm':
-        return dict_to_class(d, Farm())
+        o = dict_to_class(d, Farm())
+        o.flower_state = FlowerState.get_type(o.flower_state)
+        return o
     elif d['class_type'] == 'DecorateItem':
         o = dict_to_class(d, DecorateItem())
         o.flower_quality = FlowerQuality.get_type(o.flower_quality)
