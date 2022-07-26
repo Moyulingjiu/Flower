@@ -233,6 +233,11 @@ def get_weather(city: City) -> Weather:
 
 
 def analysis_item(data: str) -> DecorateItem:
+    """
+    分析item
+    :param data: 字段
+    :return: item
+    """
     data_list: List[str] = data.split(' ')
     if len(data_list) == 0 or len(data_list) > 2:
         raise TypeException('')

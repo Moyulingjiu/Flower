@@ -1,6 +1,7 @@
 import random
 from datetime import datetime, timedelta
 
+import flower_dao
 from util import *
 
 
@@ -106,6 +107,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 raise TypeException('格式错误，格式“丢弃 【物品名字】 【数量】”')
         elif message == '清空花店仓库':
             reply = FlowerService.throw_all_items(qq, username)
+            result.reply_text.append(reply)
+            return result
+        elif message[:2] == '种植':
+            data = message[2:].strip()
+            reply = FlowerService.plant_flower(qq, username, data)
             result.reply_text.append(reply)
             return result
         
@@ -758,6 +764,31 @@ class FlowerService:
         :param flower_name:
         :return:
         """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        user: User = get_user(qq, username)
+        try:
+            if user.farm.flower_id != '':
+                return user.username + '，您的农场已经有花了'
+            flower: Flower = flower_dao.select_flower_by_name(flower_name)
+            if flower.name != flower_name:
+                return user.username + '，不存在这种花'
+            item: DecorateItem = DecorateItem()
+            item.item_name = flower_name + '种子'
+            item.number = 1
+            remove_items(user.warehouse, [item])
+            user.farm.flower_id = flower.get_id()
+            user.farm.last_check_time = datetime.now()
+            user.farm.hour = 0
+            user.farm.bad_hour = 0
+            user.farm.perfect_hour = 0
+            flower_dao.update_user_by_qq(user)
+            return user.username + '，种植' + flower_name + '成功！'
+        except ItemNotFoundException:
+            return user.username + '，没有' + flower_name + '种子'
+        except ItemNotEnoughException:
+            return user.username + '，没有足够的' + flower_name + '种子'
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
 
 if __name__ == '__main__':
