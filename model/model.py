@@ -223,21 +223,26 @@ class Conditions(InnerClass):
             perfect_condition = Condition()
         self.perfect_condition = perfect_condition  # 完美条件
     
-    def get_condition_level(self, humidity: int = 0, nutrition: int = 0) -> ConditionLevel:
+    def get_condition_level(self, temperature: float = 0.0, humidity: float = 0.0,
+                            nutrition: float = 0.0) -> ConditionLevel:
         """
         获取条件级别
+        :param temperature: 温度
         :param humidity: 湿度
         :param nutrition: 营养
         :return: 级别
         """
         if self.perfect_condition.min_humidity <= humidity <= self.perfect_condition.max_humidity and \
-                self.perfect_condition.min_nutrition <= nutrition <= self.perfect_condition.max_nutrition:
+                self.perfect_condition.min_nutrition <= nutrition <= self.perfect_condition.max_nutrition and \
+                self.perfect_condition.min_temperature <= temperature <= self.perfect_condition.max_temperature:
             return ConditionLevel.PERFECT
         elif self.suitable_condition.min_humidity <= humidity <= self.suitable_condition.max_humidity and \
-                self.suitable_condition.min_nutrition <= nutrition <= self.suitable_condition.max_nutrition:
+                self.suitable_condition.min_nutrition <= nutrition <= self.suitable_condition.max_nutrition and \
+                self.suitable_condition.min_temperature <= temperature <= self.suitable_condition.max_temperature:
             return ConditionLevel.SUITABLE
         elif self.normal_condition.min_humidity <= humidity <= self.normal_condition.max_humidity and \
-                self.normal_condition.min_nutrition <= nutrition <= self.normal_condition.max_nutrition:
+                self.normal_condition.min_nutrition <= nutrition <= self.normal_condition.max_nutrition and \
+                self.normal_condition.min_temperature <= temperature <= self.normal_condition.max_temperature:
             return ConditionLevel.NORMAL
         return ConditionLevel.BAD
 
@@ -292,7 +297,7 @@ class Flower(EntityClass):
                  mature_condition: Conditions = Conditions(),
                  water_absorption: int = 0, nutrition_absorption: int = 0,
                  seed_time: int = 0, grow_time: int = 0, mature_time: int = 0,
-                 overripe_time: int = 0, withered_time: int = 0, flower_yield: int = 1,
+                 overripe_time: int = 0, withered_time: int = 0, prefect_time: int = 0, flower_yield: int = 1,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -311,8 +316,8 @@ class Flower(EntityClass):
         self.mature_condition = mature_condition  # 成熟的条件
         
         # 水分、营养的吸收
-        self.water_absorption = water_absorption  # 水分吸收
-        self.nutrition_absorption = nutrition_absorption  # 营养吸收
+        self.water_absorption = water_absorption  # 水分吸收速率（每小时）
+        self.nutrition_absorption = nutrition_absorption  # 营养吸收（每小时）
         
         # 每个阶段的时间
         self.seed_time = seed_time  # 种子的时间
@@ -320,6 +325,7 @@ class Flower(EntityClass):
         self.mature_time = mature_time  # 成熟的时间
         self.overripe_time = overripe_time  # 过熟的时间
         self.withered_time = withered_time  # 枯萎的时间（这个是累计一定时间后将会枯萎）
+        self.prefect_time = prefect_time  # 完美的时间（这个累计一定时间后将会变为完美）
         
         # 产量
         self.flower_yield = flower_yield  # 花的产量
@@ -381,6 +387,8 @@ class ItemType(Enum):
     soil_monitoring_station = 'soil_monitoring_station'  # 土壤检测站（用于农场）
     watering_pot = 'watering_pot'  # 浇水壶（用于农场）
     weather_station = 'weather_station'  # 气象监控站（适用于农场）
+    mail_box = 'mail_box'  # 信箱（适用于农场）
+    greenhouse = 'greenhouse'  # 温室（适用于农场）
     
     @classmethod
     def view_name(cls, item_type) -> str:
@@ -402,6 +410,10 @@ class ItemType(Enum):
             return '浇水壶'
         elif item_type == cls.weather_station:
             return '气象监控站'
+        elif item_type == cls.mail_box:
+            return '信箱'
+        elif item_type == cls.greenhouse:
+            return '温室'
         return ''
     
     @classmethod
@@ -424,6 +436,10 @@ class ItemType(Enum):
             return cls.watering_pot
         elif item_type == str(cls.weather_station):
             return cls.weather_station
+        elif item_type == str(cls.mail_box):
+            return cls.mail_box
+        elif item_type == str(cls.greenhouse):
+            return cls.greenhouse
         return cls.unknown
 
 
@@ -656,6 +672,9 @@ class Farm(InnerClass):
                  last_check_time: datetime = datetime.now(),
                  thermometer: DecorateItem = DecorateItem(), weather_station: DecorateItem = DecorateItem(),
                  soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
+                 mail_box: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
+                 soil_humidity_min_change_hour: int = 0, soil_humidity_max_change_hour: int = 0,
+                 soil_nutrition_min_change_hour: int = 0, soil_nutrition_max_change_hour: int = 0,
                  s_capacity: int = 0, a_capacity: int = 0, b_capacity: int = 0, c_capacity: int = 0,
                  d_capacity: int = 0):
         super().__init__('Farm')
@@ -674,6 +693,14 @@ class Farm(InnerClass):
         self.weather_station = weather_station  # 气象检测站
         self.soil_monitoring_station = soil_monitoring_station  # 农场的土壤检测站
         self.watering_pot = watering_pot  # 农场的浇水壶
+        self.mail_box = mail_box  # 信箱
+        self.greenhouse = greenhouse  # 温室
+        
+        # 土壤改变的累计小时
+        self.soil_humidity_min_change_hour = soil_humidity_min_change_hour  # 营养不合格累计的小时数
+        self.soil_humidity_max_change_hour = soil_humidity_max_change_hour  # 营养不合格累计的小时数
+        self.soil_nutrition_min_change_hour = soil_nutrition_min_change_hour  # 湿度不合格累计的小时数
+        self.soil_nutrition_max_change_hour = soil_nutrition_max_change_hour  # 湿度不合格累计的小时数
         
         # 每个等级的花的容积
         self.s_capacity = s_capacity

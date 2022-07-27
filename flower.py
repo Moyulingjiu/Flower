@@ -484,9 +484,12 @@ class FlowerService:
         :param username: 用户名
         :return: 农场信息
         """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user, city, soil, climate, weather, flower = get_farm_information(qq, username)
         now_temperature = get_now_temperature(weather)
-        update_farm(user, city, soil, climate, weather, flower)
+        update_farm(user, city, soil, weather, flower)
+        flower_dao.update_user_by_qq(user)
+        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         
         reply = user.username + '的农场：'
         reply += '\n所在地：' + city.city_name
@@ -507,6 +510,8 @@ class FlowerService:
         reply += '\n气象检测站：' + str(user.farm.weather_station)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
         reply += '\n浇水壶：' + str(user.farm.watering_pot)
+        reply += '\n信箱：' + str(user.farm.mail_box)
+        reply += '\n温室：' + str(user.farm.greenhouse)
         return reply
     
     @classmethod
@@ -517,9 +522,12 @@ class FlowerService:
         :param username:
         :return:
         """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user, city, soil, climate, weather, flower = get_farm_information(qq, username)
         now_temperature = get_now_temperature(weather)
-        update_farm(user, city, soil, climate, weather, flower)
+        update_farm(user, city, soil, weather, flower)
+        flower_dao.update_user_by_qq(user)
+        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         
         reply = user.username + '的农场：'
         reply += '\n种植的花：'
@@ -534,7 +542,6 @@ class FlowerService:
         grow_time: int = seed_time + flower.grow_time
         mature_time: int = grow_time + flower.mature_time
         overripe_time: int = mature_time + flower.overripe_time
-        withered_time: int = overripe_time + flower.withered_time
         if user.farm.hour <= seed_time:
             reply += '\n阶段：种子'
         elif user.farm.hour <= grow_time:
@@ -543,7 +550,7 @@ class FlowerService:
             reply += '\n阶段：成熟'
         elif user.farm.hour <= overripe_time:
             reply += '\n阶段：过熟'
-        elif user.farm.hour <= withered_time:
+        else:
             reply += '\n阶段：枯萎'
         
         reply += '\n气温：' + str(user.farm.temperature)

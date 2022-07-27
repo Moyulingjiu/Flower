@@ -99,8 +99,11 @@ def class_to_dict(obj) -> Dict:
             ans[key] = class_to_dict(obj.__dict__[key])
         elif isinstance(obj.__dict__[key], list):
             ans[key] = []
-            for item in obj.__dict__[key]:
-                ans[key].append(class_to_dict(item))
+            if len(obj.__dict__[key]) > 0 and isinstance(obj.__dict__[key][0], InnerClass):
+                for item in obj.__dict__[key]:
+                    ans[key].append(class_to_dict(item))
+            else:
+                ans[key] = obj.__dict__[key]
         elif isinstance(obj.__dict__[key], dict):
             ans[key] = class_to_dict(obj.__dict__[key])
         else:
