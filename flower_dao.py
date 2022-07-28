@@ -20,6 +20,7 @@ mongo_client = pymongo.MongoClient('mongodb://root:123456@localhost:27017/')
 mongo_db = mongo_client['xiaoqi']
 
 mongo_system = mongo_db['system']  # 系统
+mongo_announcement = mongo_db['announcement']  # 公告
 mongo_region = mongo_db['region']  # 地区
 mongo_terrain = mongo_db['terrain']  # 地形
 mongo_climate = mongo_db['climate']  # 气候
@@ -38,6 +39,7 @@ redis_db = StrictRedis(connection_pool=redis_pool)
 
 redis_global_prefix = 'flower_'  # redis全局前缀
 redis_system_data_prefix = redis_global_prefix + 'system_data'  # 系统数据前缀（有且仅有一个）
+redis_announcement_prefix = redis_global_prefix + 'announcement'  # 公告数据前缀（有且仅有一个，为一个列表，表示当前有效的公告）
 redis_region_prefix = redis_global_prefix + 'region_'  # 地区redis前缀（地区id）
 redis_terrain_prefix = redis_global_prefix + 'terrain_'  # 地形redis前缀（地形id）
 redis_climate_prefix = redis_global_prefix + 'climate_'  # 气候redis前缀（气候id）
@@ -678,6 +680,39 @@ def insert_weather(weather: Weather) -> str:
     """
     result = mongo_weather.insert_one(class_to_dict(weather))
     redis_db.delete(redis_weather_prefix + weather.city_id + '_' + weather.create_time.strftime('%Y_%m_%d'))
+    return result.inserted_id
+
+
+def select_valid_announcement() -> List[Announcement]:
+    """
+    查询所有有效的公告
+    :return: 有效的公告列表
+    """
+    redis_ans = redis_db.get(redis_announcement_prefix)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        now: datetime = datetime.now()
+        result = mongo_announcement.find(
+            {"expire_time": {'$gte': now}, "is_delete": 0})
+
+        announcement_list: List[Announcement] = []
+        for announcement_result in result:
+            announcement: Announcement = Announcement()
+            dict_to_class(announcement_result, announcement)
+            announcement_list.append(announcement)
+        redis_db.set(redis_announcement_prefix, serialization(announcement_list), ex=global_value.week_second)
+        return announcement_list
+
+
+def insert_announcement(announcement: Announcement) -> str:
+    """
+    插入公告
+    :param announcement: 公告
+    :return: id
+    """
+    result = mongo_announcement.insert_one(class_to_dict(announcement))
+    redis_db.delete(redis_announcement_prefix)
     return result.inserted_id
 
 
