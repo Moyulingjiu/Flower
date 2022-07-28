@@ -439,8 +439,8 @@ class ContextHandler:
                     user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
                     user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
                     weather: Weather = get_weather(city)
-                    user.farm.temperature = (
-                                                    weather.max_temperature - weather.min_temperature) * 3 / 4 + weather.min_temperature
+                    user.farm.temperature = (weather.max_temperature - weather.min_temperature) * \
+                                            3 / 4 + weather.min_temperature
 
                     flower_dao.insert_user(user)
                     del_context_list.append(context)
