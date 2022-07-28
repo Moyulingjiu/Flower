@@ -1,8 +1,5 @@
 # coding=utf-8
-import random
-from datetime import datetime, timedelta
 
-import flower_dao
 from util import *
 
 
@@ -196,7 +193,40 @@ class AdminHandler:
                 return Result.init(reply_text=['成功给予' + item.item_name + '给' + str(update_number) + '人'])
             else:
                 return Result.init(reply_text=['未能给予任何人' + item.item_name])
-
+        elif message[:4] == '修改湿度':
+            data: str = message[4:].strip()
+            try:
+                humidity: float = float(data)
+                update_number: int = 0
+                if len(at_list) == 0:
+                    if cls.edit_humidity_nutrition(qq, qq, humidity=humidity):
+                        update_number += 1
+                else:
+                    for target_qq in at_list:
+                        if cls.edit_humidity_nutrition(target_qq, qq, humidity=humidity):
+                            update_number += 1
+                if update_number > 0:
+                    return Result.init(reply_text='成功修改' + str(update_number) + '人')
+                return Result.init(reply_text='未能修改任何人的湿度')
+            except ValueError:
+                raise TypeException('格式错误！，格式“@xxx 修改湿度 【湿度】”。湿度为任意小数。')
+        elif message[:4] == '修改营养':
+            data: str = message[4:].strip()
+            try:
+                nutrition: float = float(data)
+                update_number: int = 0
+                if len(at_list) == 0:
+                    if cls.edit_humidity_nutrition(qq, qq, nutrition=nutrition):
+                        update_number += 1
+                else:
+                    for target_qq in at_list:
+                        if cls.edit_humidity_nutrition(target_qq, qq, nutrition=nutrition):
+                            update_number += 1
+                if update_number > 0:
+                    return Result.init(reply_text='成功修改' + str(update_number) + '人')
+                return Result.init(reply_text='未能修改任何人的营养')
+            except ValueError:
+                raise TypeException('格式错误！，格式“@xxx 修改营养 【营养】”。营养为任意小数。')
         return Result.init()
 
     @classmethod
@@ -236,6 +266,24 @@ class AdminHandler:
         except ItemNegativeNumberException:
             return False
         except WareHouseSizeNotEnoughException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def edit_humidity_nutrition(cls, qq: int, operator_id: int, humidity: float = -1.0,
+                                nutrition: float = -1.0) -> bool:
+        try:
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, '')
+            if humidity >= 0.0:
+                user.farm.humidity = humidity
+            if nutrition >= 0.0:
+                user.farm.nutrition = nutrition
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
             return False
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
