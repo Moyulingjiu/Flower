@@ -131,7 +131,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
 
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
-            return AdminHandler.handle(message, qq, username, bot_qq, bot_name, at_list)
+            return AdminHandler.handle(message, qq, at_list)
     except UserNotRegisteredException:
         return Result.init(reply_text='您还未初始化花店账号，请输入“初始化花店”进行初始化')
     except UserBeLockedException:
@@ -153,7 +153,7 @@ class AdminHandler:
     """
 
     @classmethod
-    def handle(cls, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
+    def handle(cls, message: str, qq: int, at_list: List[int]) -> Result:
         if message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
@@ -227,6 +227,54 @@ class AdminHandler:
                 return Result.init(reply_text='未能修改任何人的营养')
             except ValueError:
                 raise TypeException('格式错误！，格式“@xxx 修改营养 【营养】”。营养为任意小数。')
+        elif message[:4] == '修改土壤':
+            data: str = message[4:].strip()
+            if len(data) == 0:
+                raise TypeException('格式错误！格式“@xxx 修改土壤 【土壤名】”')
+            soil: Soil = flower_dao.select_soil_by_name(data)
+            if soil.get_id() == '':
+                raise TypeException('土壤' + data + '不存在')
+            update_number: int = 0
+            if len(at_list) == 0:
+                if cls.edit_soil(qq, qq, soil_id=soil.get_id()):
+                    update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.edit_soil(target_qq, qq, soil_id=soil.get_id()):
+                        update_number += 1
+            if update_number > 0:
+                return Result.init(reply_text='成功修改' + str(update_number) + '人的土壤到' + data)
+            return Result.init(reply_text='未能修改任何人的土壤')
+        elif message[:4] == '修改城市':
+            data: str = message[4:].strip()
+            if len(data) == 0:
+                raise TypeException('格式错误！格式“@xxx 修改城市 【城市名】”')
+            city: City = flower_dao.select_city_by_name(data)
+            if city.get_id() == '':
+                raise TypeException('城市' + data + '不存在')
+            update_number: int = 0
+            if len(at_list) == 0:
+                if cls.edit_city(qq, qq, city_id=city.get_id()):
+                    update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.edit_city(target_qq, qq, city_id=city.get_id()):
+                        update_number += 1
+            if update_number > 0:
+                return Result.init(reply_text='成功修改' + str(update_number) + '人的城市到' + data)
+            return Result.init(reply_text='未能修改任何人的城市')
+        elif message == '移除农场的花':
+            update_number: int = 0
+            if len(at_list) == 0:
+                if cls.remove_farm_flower(qq, qq):
+                    update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.remove_farm_flower(target_qq, qq):
+                        update_number += 1
+            if update_number > 0:
+                return Result.init(reply_text='成功移除' + str(update_number) + '人农场的花')
+            return Result.init(reply_text='未能移除任何人农场的花')
         return Result.init()
 
     @classmethod
@@ -280,6 +328,48 @@ class AdminHandler:
                 user.farm.humidity = humidity
             if nutrition >= 0.0:
                 user.farm.nutrition = nutrition
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def edit_city(cls, qq: int, operator_id: int, city_id: str) -> bool:
+        try:
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, '')
+            user.city_id = city_id
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def edit_soil(cls, qq: int, operator_id: int, soil_id: str) -> bool:
+        try:
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, '')
+            user.farm.soil_id = soil_id
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def remove_farm_flower(cls, qq: int, operator_id: int) -> bool:
+        try:
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, '')
+            user.farm.flower_id = ''
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
