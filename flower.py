@@ -128,6 +128,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             except ValueError:
                 raise TypeException('格式错误，格式“浇水 【次数】”。次数可以省略，默认一次。')
+        elif message == '铲除花':
+            reply = FlowerService.remove_flower(qq, username)
+            result.reply_text.append(reply)
+            return result
 
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
@@ -479,6 +483,24 @@ class ContextHandler:
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，已为您清空花店仓库'
                 result.context_reply_text.append(reply)
+            # 铲除农场的花
+            elif isinstance(context, RemoveFlowerContext):
+                del_context_list.append(context)
+                user: User = get_user(qq, username)
+                if message != '确认':
+                    reply = user.username + '，已取消铲除花'
+                    result.context_reply_text.append(reply)
+                    continue
+                if user.gold < global_value.remove_farm_flower_cost_gold:
+                    reply = user.username + '，金币不足' + '%.2f' % (global_value.remove_farm_flower_cost_gold / 100) + '枚'
+                    result.context_reply_text.append(reply)
+                    continue
+                user.gold -= global_value.remove_farm_flower_cost_gold
+                user.farm.flower_id = ''
+                flower_dao.update_user_by_qq(user)
+                reply = user.username + '，成功花费' + '%.2f' % (global_value.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
+                result.context_reply_text.append(reply)
+
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
@@ -640,7 +662,7 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
-        reply = user.username + '的农场：'
+        reply = user.username + '的农场设备：'
         reply += '\n所在地：' + city.city_name
         reply += '\n气候：' + climate.name
         reply += '\n土壤：' + soil.name
@@ -657,8 +679,8 @@ class FlowerService:
     def view_user_farm(cls, qq: int, username: str) -> str:
         """
         查看用户农场
-        :param qq:
-        :param username:
+        :param qq: QQ
+        :param username: 用户名
         :return:
         """
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
@@ -691,6 +713,7 @@ class FlowerService:
         else:
             reply += '无'
 
+        reply += '\n天气：' + weather.weather_type
         reply += '\n气温：' + '%.2f' % user.farm.temperature
         if user.farm.temperature > now_temperature:
             reply += '（↓）'
@@ -1005,6 +1028,15 @@ class FlowerService:
         if humidity_change > 0.0:
             return '浇水失败！当前可能没有浇水壶。'
         return '浇水成功！湿度增加' + '%.2f' % humidity_change
+
+    @classmethod
+    def remove_flower(cls, qq: int, username: str):
+        user: User = get_user(qq, username)
+        if user.farm.flower_id == '':
+            return user.username + '，你的农场没有种花'
+        context: RemoveFlowerContext = RemoveFlowerContext()
+        flower_dao.insert_context(qq, context)
+        return user.username + '，请输入“确认”铲除农场的花，其余任何回复视为取消'
 
 
 if __name__ == '__main__':

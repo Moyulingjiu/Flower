@@ -15,3 +15,6 @@ year_second: int = day_second * 365
 
 # 土壤改变的小时数
 soil_change_hour = 8
+
+# 铲除花所需要花费的金币数
+remove_farm_flower_cost_gold = 500

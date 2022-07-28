@@ -16,5 +16,5 @@ __all__ = [
 
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person",
 
-    "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext"
+    "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext"
 ]
