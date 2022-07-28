@@ -27,7 +27,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 result.context_reply_image) != 0) and context_handler.block_transmission:
             return result
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-        
+
         # 数据查询部分
         if message[:4] == '查询城市' and message[4:].strip() != '':
             reply = FlowerService.query_city(message[4:].strip())
@@ -74,7 +74,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_user_farm(qq, username)
             result.reply_text.append(reply)
             return result
-        
+
         # 操作部分
         elif message == '初始化花店':
             reply = FlowerService.init_user(qq, username)
@@ -119,7 +119,19 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.plant_flower(qq, username, data)
             result.reply_text.append(reply)
             return result
-        
+        elif message[:2] == '浇水':
+            data = message[2:].strip()
+            try:
+                if len(data) > 0:
+                    multiple: int = int(data)
+                else:
+                    multiple: int = 1
+                reply = FlowerService.watering(qq, username, multiple)
+                result.reply_text.append(reply)
+                return result
+            except ValueError:
+                raise TypeException('格式错误，格式“浇水 【次数】”。次数可以省略，默认一次。')
+
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
             return AdminHandler.handle(message, qq, username, bot_qq, bot_name, at_list)
@@ -142,7 +154,7 @@ class AdminHandler:
     """
     管理员指令处理器
     """
-    
+
     @classmethod
     def handle(cls, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
         if message[:4] == '给予金币':
@@ -171,7 +183,7 @@ class AdminHandler:
                 item: DecorateItem = analysis_item(data)
             except TypeException:
                 raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
-            
+
             update_number: int = 0
             if len(at_list) == 0:
                 if cls.give_item(qq, qq, item):
@@ -184,9 +196,9 @@ class AdminHandler:
                 return Result.init(reply_text=['成功给予' + item.item_name + '给' + str(update_number) + '人'])
             else:
                 return Result.init(reply_text=['未能给予任何人' + item.item_name])
-        
+
         return Result.init()
-    
+
     @classmethod
     def give_gold(cls, qq: int, operator_id: int, gold: int) -> bool:
         """
@@ -207,7 +219,7 @@ class AdminHandler:
             return False
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-    
+
     @classmethod
     def give_item(cls, qq: int, operator_id: int, item: DecorateItem) -> bool:
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
@@ -233,10 +245,10 @@ class ContextHandler:
     """
     上下文处理器
     """
-    
+
     def __init__(self):
         self.block_transmission: bool = True  # 是否阻断消息继续传递，默认阻断
-    
+
     def handle(self, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
         """
         上下文处理
@@ -275,10 +287,10 @@ class ContextHandler:
                     user.username = username
                     user.create_id = str(bot_qq)
                     user.update(bot_qq)
-                    
+
                     user.city_id = city.get_id()
                     user.born_city_id = city.get_id()
-                    
+
                     # 农场的处理
                     user.farm.soil_id = city.soil_id
                     soil: Soil = flower_dao.select_soil_by_id(city.soil_id)
@@ -287,7 +299,7 @@ class ContextHandler:
                     weather: Weather = get_weather(city)
                     user.farm.temperature = (
                                                     weather.max_temperature - weather.min_temperature) * 3 / 4 + weather.min_temperature
-                    
+
                     flower_dao.insert_user(user)
                     del_context_list.append(context)
                     reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
@@ -379,7 +391,7 @@ class FlowerService:
                '地形：' + terrain.name + '\n' + \
                '气候：' + climate.name + '\n' + \
                '土壤：' + soil.name
-    
+
     @classmethod
     def query_soil(cls, name: str) -> str:
         """
@@ -406,7 +418,7 @@ class FlowerService:
         if len(soil.max_change_nutrition_soil_id) != 0:
             res += '\n最高营养变化土壤：' + get_soil_list(soil.max_change_nutrition_soil_id)
         return res
-    
+
     @classmethod
     def query_flower(cls, name: str) -> str:
         """
@@ -433,11 +445,11 @@ class FlowerService:
             res += '\n不适宜土壤：' + get_soil_list(flower.op_soil_id)
         elif len(flower.soil_id) == 0 and len(flower.op_soil_id) == 0:
             res += '\n适宜土壤：所有土壤'
-        
+
         res += '\n吸收水分：' + str(flower.water_absorption) + '/小时'
         res += '\n吸收营养：' + str(flower.nutrition_absorption) + '/小时'
         res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
-        
+
         res += '\n种子：'
         res += '\n\t周期：' + str(flower.seed_time) + '小时'
         res += show_conditions(flower.seed_condition)
@@ -448,9 +460,9 @@ class FlowerService:
         res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
         res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
         res += show_conditions(flower.mature_condition)
-        
+
         return res
-    
+
     @classmethod
     def view_user_data(cls, qq: int, username: str) -> str:
         """
@@ -475,7 +487,7 @@ class FlowerService:
         res += '\n金币：' + '%.2f' % (user.gold / 100)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         return res
-    
+
     @classmethod
     def view_user_farm_equipment(cls, qq: int, username: str) -> str:
         """
@@ -486,26 +498,15 @@ class FlowerService:
         """
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user, city, soil, climate, weather, flower = get_farm_information(qq, username)
-        now_temperature = get_now_temperature(weather)
         update_farm(user, city, soil, weather, flower)
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-        
+
         reply = user.username + '的农场：'
         reply += '\n所在地：' + city.city_name
         reply += '\n气候：' + climate.name
         reply += '\n土壤：' + soil.name
-        
-        reply += '\n气温：' + str(user.farm.temperature)
-        if user.farm.temperature > now_temperature:
-            reply += '（↓）'
-        elif user.farm.temperature < now_temperature:
-            reply += '（↑）'
-        else:
-            reply += '（=）'
-        reply += '\n土壤湿度：' + str(user.farm.humidity)
-        reply += '\n土壤营养：' + str(user.farm.nutrition)
-        
+
         reply += '\n温度计：' + str(user.farm.thermometer)
         reply += '\n气象检测站：' + str(user.farm.weather_station)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
@@ -513,7 +514,7 @@ class FlowerService:
         reply += '\n信箱：' + str(user.farm.mail_box)
         reply += '\n温室：' + str(user.farm.greenhouse)
         return reply
-    
+
     @classmethod
     def view_user_farm(cls, qq: int, username: str) -> str:
         """
@@ -528,43 +529,42 @@ class FlowerService:
         update_farm(user, city, soil, weather, flower)
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-        
+
         reply = user.username + '的农场：'
         reply += '\n种植的花：'
         if user.farm.flower_id != '':
             reply += flower.name
+            reply += '\n花的状态：' + FlowerState.view_name(user.farm.flower_state)
+
+            seed_time: int = flower.seed_time
+            grow_time: int = seed_time + flower.grow_time
+            mature_time: int = grow_time + flower.mature_time
+            overripe_time: int = mature_time + flower.overripe_time
+            if user.farm.hour <= seed_time:
+                reply += '\n阶段：种子'
+            elif user.farm.hour <= grow_time:
+                reply += '\n阶段：幼苗'
+            elif user.farm.hour <= mature_time:
+                reply += '\n阶段：成熟'
+            elif user.farm.hour <= overripe_time:
+                reply += '\n阶段：过熟'
+            else:
+                reply += '\n阶段：枯萎'
         else:
             reply += '无'
-            return reply
-        reply += '\n花的状态：' + FlowerState.view_name(user.farm.flower_state)
-        
-        seed_time: int = flower.seed_time
-        grow_time: int = seed_time + flower.grow_time
-        mature_time: int = grow_time + flower.mature_time
-        overripe_time: int = mature_time + flower.overripe_time
-        if user.farm.hour <= seed_time:
-            reply += '\n阶段：种子'
-        elif user.farm.hour <= grow_time:
-            reply += '\n阶段：幼苗'
-        elif user.farm.hour <= mature_time:
-            reply += '\n阶段：成熟'
-        elif user.farm.hour <= overripe_time:
-            reply += '\n阶段：过熟'
-        else:
-            reply += '\n阶段：枯萎'
-        
-        reply += '\n气温：' + str(user.farm.temperature)
+
+        reply += '\n气温：' + '%.2f' % user.farm.temperature
         if user.farm.temperature > now_temperature:
             reply += '（↓）'
         elif user.farm.temperature < now_temperature:
             reply += '（↑）'
         else:
             reply += '（=）'
-        reply += '\n土壤湿度：' + str(user.farm.humidity)
-        reply += '\n土壤营养：' + str(user.farm.nutrition)
-        
+        reply += '\n土壤湿度：' + '%.2f' % user.farm.humidity
+        reply += '\n土壤营养：' + '%.2f' % user.farm.nutrition
+
         return reply
-    
+
     @classmethod
     def init_user(cls, qq: int, username: str) -> str:
         """
@@ -580,7 +580,7 @@ class FlowerService:
             context = RegisterContext(qq, username)
             flower_dao.insert_context(qq, context)
             return username + '，请选择一座城市，只支持地级市。'
-    
+
     @classmethod
     def user_sign_in(cls, qq: int, username: str) -> str:
         """
@@ -616,7 +616,7 @@ class FlowerService:
         flower_dao.insert_sign_record(sign_record)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         return res
-    
+
     @classmethod
     def transfer_accounts(cls, qq: int, username: str, at_list: List[int], gold: int) -> str:
         """
@@ -652,7 +652,7 @@ class FlowerService:
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         reply += '\n转账有20%手续费'
         return reply
-    
+
     @classmethod
     def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30):
         """
@@ -686,7 +686,7 @@ class FlowerService:
             reply += '\n------'
             reply += '\n总计页码：' + str(total_page)
         return reply
-    
+
     @classmethod
     def view_item(cls, item_name: str) -> str:
         """
@@ -697,7 +697,7 @@ class FlowerService:
         item: Item = flower_dao.select_item_by_name(item_name)
         if item.name == item_name:
             return str(item)
-        
+
         ans = '没有找到物品：' + item_name
         item_list: List[Item] = flower_dao.select_item_like_name(item_name)
         if len(item_list) > 0:
@@ -718,7 +718,7 @@ class FlowerService:
                     break
                 length -= 1
         return ans
-    
+
     @classmethod
     def receive_beginner_gifts(cls, qq: int, username: str) -> str:
         """
@@ -735,23 +735,23 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         item: DecorateItem = DecorateItem()
-        
+
         # 初始获取初始种子
         seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
         for seed in seed_list:
             item.item_name = seed
             item.number = 5
             AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-        
+
         # 领取化肥
         item.item_name = '初级化肥'
         item.number = 5
         AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-        
+
         context: BeginnerGuideContext = BeginnerGuideContext()
         flower_dao.insert_context(qq, context)
         return '领取成功！接下来输入“花店签到”试试'
-    
+
     @classmethod
     def view_weather(cls, city_name: str) -> str:
         """
@@ -769,7 +769,7 @@ class FlowerService:
         reply += '\n最高气温：' + str(weather.max_temperature) + '℃'
         reply += '\n湿度：' + str(weather.humidity) + '%'
         return reply
-    
+
     @classmethod
     def throw_item(cls, qq: int, username: str, item: DecorateItem) -> str:
         """
@@ -791,7 +791,7 @@ class FlowerService:
             return user.username + '，物品不足'
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-    
+
     @classmethod
     def throw_all_items(cls, qq: int, username: str) -> str:
         """
@@ -806,7 +806,7 @@ class FlowerService:
         context: ThrowAllItemContext = ThrowAllItemContext()
         flower_dao.insert_context(qq, context)
         return user.username + '，请输入“确认”丢弃所有花店仓库的物品，其余任何回复视为取消'
-    
+
     @classmethod
     def plant_flower(cls, qq: int, username: str, flower_name: str) -> str:
         """
@@ -842,6 +842,31 @@ class FlowerService:
             return user.username + '，没有足够的' + flower_name + '种子'
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def watering(cls, qq: int, username: str, multiple: int) -> str:
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        user: User = get_user(qq, username)
+
+        humidity_change: float = 0.0
+        watering_pot: DecorateItem = user.farm.watering_pot
+        if watering_pot.level == 0 and watering_pot.item_id != '':
+            humidity_change = 5.0 * multiple
+            user.farm.humidity += humidity_change
+        elif watering_pot.level == 1:
+            humidity_change = 2.5 * multiple
+            user.farm.humidity += humidity_change
+        elif watering_pot.level == 2:
+            humidity_change = 1.0 * multiple
+            user.farm.humidity += humidity_change
+        elif watering_pot.level == 3:
+            humidity_change = 0.1 * multiple
+            user.farm.humidity += humidity_change
+        flower_dao.update_user_by_qq(user)
+        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+        if humidity_change > 0.0:
+            return '浇水失败！当前可能没有浇水壶。'
+        return '浇水成功！湿度增加' + '%.2f' % humidity_change
 
 
 if __name__ == '__main__':

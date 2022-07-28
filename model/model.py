@@ -537,7 +537,7 @@ class DecorateItem(InnerClass):
     
     def __init__(self, item_id: str = '', item_type: ItemType = ItemType.unknown, item_name: str = '', number: int = 0,
                  durability: int = 0, max_durability: int = 0, rot_second: int = 0,
-                 flower_quality: FlowerQuality = FlowerQuality.not_flower,
+                 flower_quality: FlowerQuality = FlowerQuality.not_flower, level: int = 0,
                  create: datetime = datetime.now(), update: datetime = datetime.now()):
         super().__init__('DecorateItem')
         self.item_id = item_id  # 物品id
@@ -549,6 +549,7 @@ class DecorateItem(InnerClass):
         self.max_durability = max_durability  # 最大耐久度
         self.rot_second = rot_second  # 腐烂的秒
         self.flower_quality = flower_quality  # 花的品质
+        self.level = level  # 级别（用于检测农场的气象站等）
         self.create = create  # 创建时间（用于一些物品失效检测）
         self.update = update  # 修改时间
     

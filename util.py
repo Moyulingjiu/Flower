@@ -151,6 +151,7 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             item.durability = item_obj.max_durability
             item.max_durability = item_obj.max_durability
             item.rot_second = item_obj.rot_second
+            item.level = item_obj.level
         for i in copy_items:
             if i.item_id == item.item_id:
                 if i.number + item.number <= item_obj.max_stack:
@@ -304,7 +305,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-    
+
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -314,7 +315,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-    
+
     # 改变土壤
     if user.farm.soil_humidity_min_change_hour > global_value.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
@@ -411,7 +412,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
         else:
             user.farm.perfect_hour = 0
             user.farm.hour += 1
-        
+
         if user.farm.bad_hour > flower.withered_time:
             user.farm.flower_state = FlowerState.withered
         elif user.farm.perfect_hour > flower.prefect_time > 0:
@@ -440,28 +441,28 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-    
+
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-    
+
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time < now:
-        
+
         update_farm_soil(user, soil)
         check_farm_soil_climate_condition(user, city, flower)
         if user.farm.flower_state == FlowerState.withered:
             break
         update_farm_condition(user, flower, real_time_weather, start_time)
         user.farm.hour += 1
-        
+
         check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
         if user.farm.flower_state == FlowerState.withered:
             break
-        
+
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
