@@ -48,6 +48,7 @@ redis_user_prefix = redis_global_prefix + 'user_'  # 用户redis前缀（用户q
 redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品id）
 redis_weather_prefix = redis_global_prefix + 'weather_'  # 天气redis前缀（城市id+日期）
 
+redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
 redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
 redis_item_like_prefix = redis_global_prefix + 'item_like_'  # 物品模糊匹配前缀
 redis_warehouse_item_like_prefix = redis_global_prefix + 'warehouse_item_like_'  # 仓库内的物品匹配前缀
@@ -413,6 +414,25 @@ def select_city_by_name(name: str) -> City:
         dict_to_class(result, city)
         redis_db.set(redis_city_prefix + name, serialization(city), ex=get_long_random_expire())
         return city
+
+
+def select_all_city() -> List[City]:
+    """
+    获取所有城市
+    :return: 所有城市
+    """
+    redis_ans = redis_db.get(redis_all_city_prefix)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_city.find({"is_delete": 0})
+        city_list: List[City] = []
+        for city_result in result:
+            city: City = City()
+            dict_to_class(city_result, city)
+            city_list.append(city)
+        redis_db.set(redis_all_city_prefix, serialization(city_list), ex=global_value.week_second)
+        return city_list
 
 
 def select_city_by_name_like(name: str) -> List[City]:
