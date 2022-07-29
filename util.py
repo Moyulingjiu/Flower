@@ -361,10 +361,10 @@ def check_farm_soil_climate_condition(user: User, city: City, flower: Flower) ->
         if user.farm.soil_id in flower.op_soil_id:
             user.farm.flower_state = FlowerState.withered
     if len(flower.climate_id) > 0:
-        if city.climate_id not in flower.climate_id:
+        if user.farm.climate_id not in flower.climate_id:
             user.farm.flower_state = FlowerState.withered
     if len(flower.op_climate_id) > 0:
-        if city.climate_id in flower.op_climate_id:
+        if user.farm.climate_id in flower.op_climate_id:
             user.farm.flower_state = FlowerState.withered
 
 
