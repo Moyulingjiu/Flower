@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 工具函数文件
 """
@@ -10,7 +11,7 @@ from typing import List, Tuple
 
 import flower_dao
 import global_value
-from exceptions import *
+from flower_exceptions import *
 from model import *
 import weather_getter
 
@@ -319,7 +320,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-
+    
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -329,7 +330,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-
+    
     # 改变土壤
     if user.farm.soil_humidity_min_change_hour > global_value.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
@@ -345,11 +346,10 @@ def update_farm_soil(user: User, soil: Soil) -> None:
             user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
 
 
-def check_farm_soil_climate_condition(user: User, city: City, flower: Flower) -> None:
+def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
     """
     检查花是否符合这个条件种植
     :param user: 用户
-    :param city: 城市
     :param flower: 花
     :return:
     """
@@ -378,8 +378,7 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     :return:
     """
     now_temperature = ((12.0 - abs(check_time.hour - 12)) / 12.0) * (
-            weather.max_temperature - weather.min_temperature) + \
-                      weather.min_temperature
+            weather.max_temperature - weather.min_temperature) + weather.min_temperature
     # todo: 特殊道具会影响数据变动
     if user.farm.temperature < now_temperature:
         user.farm.temperature -= 0.8
@@ -426,7 +425,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
         else:
             user.farm.perfect_hour = 0
             user.farm.hour += 1
-
+        
         if user.farm.bad_hour > flower.withered_time:
             user.farm.flower_state = FlowerState.withered
         elif user.farm.perfect_hour > flower.prefect_time > 0:
@@ -444,7 +443,6 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     :param city: 城市
     :param soil: 泥土
     :param weather: 天气
-    :param climate: 气候
     :param flower: 花
     :return: none
     """
@@ -455,28 +453,28 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-
+    
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-
+    
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time < now:
-
+        
         update_farm_soil(user, soil)
-        check_farm_soil_climate_condition(user, city, flower)
+        check_farm_soil_climate_condition(user, flower)
         if user.farm.flower_state == FlowerState.withered:
             break
         update_farm_condition(user, flower, real_time_weather, start_time)
         user.farm.hour += 1
-
+        
         check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
         if user.farm.flower_state == FlowerState.withered:
             break
-
+        
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)

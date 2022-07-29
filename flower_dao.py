@@ -11,7 +11,7 @@ import pymongo
 from bson import ObjectId
 from redis import ConnectionPool, StrictRedis
 
-from exceptions import *
+from flower_exceptions import *
 from model import *
 import global_value
 
