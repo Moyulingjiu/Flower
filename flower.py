@@ -97,6 +97,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
             result.reply_text.append(reply)
             return result
+        elif message[:2] == '使用':
+            pass
         elif message[:2] == '丢弃':
             data = message[2:]
             try:
@@ -565,6 +567,18 @@ class ContextHandler:
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，成功花费' + '%.2f' % (global_value.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
                 result.context_reply_text.append(reply)
+            # 选择的回调
+            elif isinstance(context, ChooseContex):
+                if context.auto_cancel:
+                    del_context_list.append(context)
+                elif message == context.cancel_command:
+                    del_context_list.append(context)
+                    continue
+                for command in context.choices:
+                    if message == command:
+                        reply = context.choices[command].callback(**context.choices[command].args)
+                        result.context_reply_text.append(reply)
+
 
         for context in del_context_list:
             flower_dao.remove_context(qq, context)

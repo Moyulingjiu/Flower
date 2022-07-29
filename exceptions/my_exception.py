@@ -83,3 +83,12 @@ class PageOutOfRangeException(MyException):
     
     def __init__(self, message):
         self.message = message
+
+
+class FunctionArgsException(MyException):
+    """
+    函数参数错误
+    """
+
+    def __init__(self, message):
+        self.message = message

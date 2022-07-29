@@ -153,7 +153,7 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             item.rot_second = item_obj.rot_second
             item.level = item_obj.level
         for i in copy_items:
-            if i.item_id == item.item_id:
+            if i == item:
                 if i.number + item.number <= item_obj.max_stack:
                     i.number += item.number
                     item.number = 0
@@ -189,7 +189,7 @@ def remove_items(warehouse: WareHouse, items: List[DecorateItem]):
         if item_obj is None or item_obj.name == '':
             raise ItemNotFoundException('物品' + item.item_name + '不存在')
         for i in copy_items[::-1]:
-            if i.item_name == item.item_name:
+            if i == item:
                 if i.number >= item.number:
                     i.number -= item.number
                     item.number = 0

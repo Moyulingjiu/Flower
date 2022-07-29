@@ -1,5 +1,7 @@
 # coding=utf-8
 import datetime
+from typing import Any, Dict
+from exceptions import FunctionArgsException
 
 
 class BaseContext:
@@ -52,3 +54,35 @@ class RemoveFlowerContext(BaseContext):
 
     def __init__(self):
         super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+
+
+class Choice:
+    """
+    抉择
+    """
+
+    def __init__(self, args: dict, callback):
+        self.__args = args
+        if not callable(callback):
+            raise FunctionArgsException('不是可以回调的类型')
+        self.__callback = callback
+
+    @property
+    def args(self):
+        return self.__args
+
+    @property
+    def callback(self):
+        return self.__callback
+
+
+class ChooseContex(BaseContext):
+    """
+    抉择的上下文
+    """
+
+    def __init__(self, choices: Dict[str, Choice], auto_cancel: bool = True, cancel_command: str = ''):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        self.choices = choices  # 第二个参数必须为回调函数！
+        self.auto_cancel = auto_cancel
+        self.cancel_command = cancel_command
