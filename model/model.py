@@ -319,6 +319,7 @@ class ItemType(Enum):
     weather_station = 'weather_station'  # 气象监控站（适用于农场）
     mail_box = 'mail_box'  # 信箱（适用于农场）
     greenhouse = 'greenhouse'  # 温室（适用于农场）
+    warehouse = 'warehouse'  # 仓库（适用于农场）
     
     @classmethod
     def view_name(cls, item_type) -> str:
@@ -344,6 +345,8 @@ class ItemType(Enum):
             return '信箱'
         elif item_type == cls.greenhouse:
             return '温室'
+        elif item_type == cls.warehouse:
+            return '仓库'
         return ''
     
     @classmethod
@@ -370,6 +373,8 @@ class ItemType(Enum):
             return cls.mail_box
         elif item_type == str(cls.greenhouse):
             return cls.greenhouse
+        elif item_type == str(cls.warehouse):
+            return cls.warehouse
         return cls.unknown
 
 
@@ -610,6 +615,7 @@ class Farm(InnerClass):
                  thermometer: DecorateItem = DecorateItem(), weather_station: DecorateItem = DecorateItem(),
                  soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
                  mail_box: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
+                 warehouse: DecorateItem = DecorateItem(),
                  soil_humidity_min_change_hour: int = 0, soil_humidity_max_change_hour: int = 0,
                  soil_nutrition_min_change_hour: int = 0, soil_nutrition_max_change_hour: int = 0):
         super().__init__('Farm')
@@ -631,6 +637,7 @@ class Farm(InnerClass):
         self.watering_pot = watering_pot  # 农场的浇水壶
         self.mail_box = mail_box  # 信箱
         self.greenhouse = greenhouse  # 温室
+        self.warehouse = warehouse  # 仓库
         
         # 土壤改变的累计小时
         self.soil_humidity_min_change_hour = soil_humidity_min_change_hour  # 营养不合格累计的小时数

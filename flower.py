@@ -1148,16 +1148,16 @@ class FlowerService:
         
         humidity_change: float = 0.0
         watering_pot: DecorateItem = user.farm.watering_pot
-        if watering_pot.level == 0 and watering_pot.item_id != '' and watering_pot.item_id is not None:
+        if watering_pot.level == 1:
             humidity_change = 5.0 * multiple
             user.farm.humidity += humidity_change
-        elif watering_pot.level == 1:
+        elif watering_pot.level == 2:
             humidity_change = 2.5 * multiple
             user.farm.humidity += humidity_change
-        elif watering_pot.level == 2:
+        elif watering_pot.level == 3:
             humidity_change = 1.0 * multiple
             user.farm.humidity += humidity_change
-        elif watering_pot.level == 3:
+        elif watering_pot.level == 4:
             humidity_change = 0.1 * multiple
             user.farm.humidity += humidity_change
         flower_dao.update_user_by_qq(user)
