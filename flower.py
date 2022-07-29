@@ -1,5 +1,4 @@
 # coding=utf-8
-
 from util import *
 
 
@@ -130,6 +129,20 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 raise TypeException('格式错误，格式“浇水 【次数】”。次数可以省略，默认一次。')
         elif message == '铲除花':
             reply = FlowerService.remove_flower(qq, username)
+            result.reply_text.append(reply)
+            return result
+        elif message[:6] == '设置花店昵称':
+            new_username = message[6:].strip()
+            if len(new_username) == 0 or '_' in new_username:
+                raise TypeException('格式错误！格式“设置花店昵称 【新的昵称】”')
+            system_data: SystemData = flower_dao.select_system_data()
+            if new_username in system_data.username_screen_words:
+                raise TypeException('名字中含有违禁词或敏感词汇')
+            reply = FlowerService.change_username(qq, username, new_username)
+            result.reply_text.append(reply)
+            return result
+        elif message == '清除花店昵称':
+            reply = FlowerService.clear_username(qq, username)
             result.reply_text.append(reply)
             return result
 
@@ -279,6 +292,38 @@ class AdminHandler:
             if update_number > 0:
                 return Result.init(reply_text='成功移除' + str(update_number) + '人农场的花')
             return Result.init(reply_text='未能移除任何人农场的花')
+        elif message[:10] == '添加花店用户名屏蔽词':
+            word: str = message[10:].strip()
+            if cls.append_username_screen_word(word):
+                return Result.init(reply_text='添加成功')
+            return Result.init(reply_text='添加失败，已有相同词汇或网络波动')
+        elif message[:10] == '删除花店用户名屏蔽词':
+            word: str = message[10:].strip()
+            if cls.remove_username_screen_word(word):
+                return Result.init(reply_text='删除成功')
+            return Result.init(reply_text='删除失败，没有该词汇或网络波动')
+        elif message[:10] == '查看花店用户名屏蔽词':
+            data: str = message[10:].strip()
+            try:
+                if len(data) > 0:
+                    page: int = int(data) - 1
+                else:
+                    page = 0
+                reply = ''
+                index = 0
+                page_size = 20
+                system_data: SystemData = flower_dao.select_system_data()
+                for word in system_data.username_screen_words:
+                    index += 1
+                    if page * page_size <= index - 1 < (page + 1) * page_size:
+                        reply += str(index) + '. ' + word + '\n'
+                total_page = index // page_size
+                if index % page_size > 0:
+                    total_page += 1
+                reply += '------\n当前页码：' + str(page + 1) + '，总计页码：' + str(total_page)
+                return Result.init(reply_text=reply)
+            except ValueError:
+                raise TypeException('格式错误！格式“查看花店用户名屏蔽词 【页码】”。页码可省略。')
         return Result.init()
 
     @classmethod
@@ -381,6 +426,26 @@ class AdminHandler:
             return False
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+    @classmethod
+    def append_username_screen_word(cls, screen_word: str) -> bool:
+        # 对于系统数据是没有加锁的（因为管理员操作缓慢，系统设计只有一个管理员）
+        system_data: SystemData = flower_dao.select_system_data()
+        if screen_word not in system_data.username_screen_words:
+            system_data.username_screen_words.append(screen_word)
+            flower_dao.update_system_data(system_data)
+            return True
+        return False
+
+    @classmethod
+    def remove_username_screen_word(cls, screen_word: str) -> bool:
+        # 对于系统数据是没有加锁的（因为管理员操作缓慢，系统设计只有一个管理员）
+        system_data: SystemData = flower_dao.select_system_data()
+        if screen_word in system_data.username_screen_words:
+            system_data.username_screen_words.remove(screen_word)
+            flower_dao.update_system_data(system_data)
+            return True
+        return False
 
 
 class ContextHandler:
@@ -635,6 +700,8 @@ class FlowerService:
         born_city: City = flower_dao.select_city_by_id(user.born_city_id)
         city: City = flower_dao.select_city_by_id(user.city_id)
         res = '用户名：' + user.username
+        if user.auto_get_name:
+            res += '（自动获取）'
         res += '\n等级：'
         level = 0
         system_data = flower_dao.select_system_data()
@@ -1030,13 +1097,39 @@ class FlowerService:
         return '浇水成功！湿度增加' + '%.2f' % humidity_change
 
     @classmethod
-    def remove_flower(cls, qq: int, username: str):
+    def remove_flower(cls, qq: int, username: str) -> str:
         user: User = get_user(qq, username)
         if user.farm.flower_id == '':
             return user.username + '，你的农场没有种花'
         context: RemoveFlowerContext = RemoveFlowerContext()
         flower_dao.insert_context(qq, context)
         return user.username + '，请输入“确认”铲除农场的花，其余任何回复视为取消'
+
+    @classmethod
+    def change_username(cls, qq: int, username: str, new_username: str) -> str:
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        # 把名字一起锁定了
+        flower_dao.lock(flower_dao.redis_username_lock_prefix + new_username)
+        user: User = get_user(qq, username)
+        old_user: User = flower_dao.select_user_by_username(new_username)
+        if old_user.get_id() != '':
+            flower_dao.unlock(flower_dao.redis_username_lock_prefix + new_username)
+            return '改名字已被别人使用！'
+        user.username = new_username
+        user.auto_get_name = False
+        flower_dao.update_user_by_qq(user)
+        flower_dao.unlock(flower_dao.redis_username_lock_prefix + new_username)
+        return '已成功更改你的游戏名'
+
+    @classmethod
+    def clear_username(cls, qq: int, username: str) -> str:
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        user: User = get_user(qq, username)
+        if user.auto_get_name:
+            return user.username + '，你本来就没有设定名字。'
+        user.auto_get_name = True
+        flower_dao.update_user_by_qq(user)
+        return username + '，已为你清除名字'
 
 
 if __name__ == '__main__':

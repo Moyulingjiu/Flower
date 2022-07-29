@@ -609,9 +609,7 @@ class Farm(InnerClass):
                  soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
                  mail_box: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
                  soil_humidity_min_change_hour: int = 0, soil_humidity_max_change_hour: int = 0,
-                 soil_nutrition_min_change_hour: int = 0, soil_nutrition_max_change_hour: int = 0,
-                 s_capacity: int = 0, a_capacity: int = 0, b_capacity: int = 0, c_capacity: int = 0,
-                 d_capacity: int = 0):
+                 soil_nutrition_min_change_hour: int = 0, soil_nutrition_max_change_hour: int = 0):
         super().__init__('Farm')
         self.soil_id = soil_id  # 土壤id
         self.flower_id = flower_id  # 花的id
@@ -636,13 +634,6 @@ class Farm(InnerClass):
         self.soil_humidity_max_change_hour = soil_humidity_max_change_hour  # 营养不合格累计的小时数
         self.soil_nutrition_min_change_hour = soil_nutrition_min_change_hour  # 湿度不合格累计的小时数
         self.soil_nutrition_max_change_hour = soil_nutrition_max_change_hour  # 湿度不合格累计的小时数
-
-        # 每个等级的花的容积
-        self.s_capacity = s_capacity
-        self.a_capacity = a_capacity
-        self.b_capacity = b_capacity
-        self.c_capacity = c_capacity
-        self.d_capacity = d_capacity
 
 
 class SignRecord(EntityClass):
@@ -693,12 +684,17 @@ class SystemData:
     系统数据类
     """
 
-    def __init__(self, exp_level: List[int] = None, is_delete: int = 0, _id: str or None = None):
+    def __init__(self, exp_level: List[int] = None, username_screen_words: List[str] = str, is_delete: int = 0,
+                 _id: str or None = None):
         self._id = _id
         self.is_delete = is_delete
+
         if exp_level is None:
             exp_level = []
         self.exp_level = exp_level  # 经验等级
+        if username_screen_words is None:
+            username_screen_words = []
+        self.username_screen_words = username_screen_words
 
     def get_id(self) -> str:
         return self._id

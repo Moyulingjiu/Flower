@@ -47,6 +47,7 @@ redis_soil_prefix = redis_global_prefix + 'soil_'  # 土壤redis前缀（土壤i
 redis_city_prefix = redis_global_prefix + 'city_'  # 城市redis前缀（城市id）
 redis_flower_prefix = redis_global_prefix + 'flower_'  # 花redis前缀（花id）
 redis_user_prefix = redis_global_prefix + 'user_'  # 用户redis前缀（用户qq）
+redis_username_prefix = redis_global_prefix + 'username_'  # 用户名redis前缀（用户qq）
 redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品id）
 redis_weather_prefix = redis_global_prefix + 'weather_'  # 天气redis前缀（城市id+日期）
 
@@ -56,7 +57,11 @@ redis_item_like_prefix = redis_global_prefix + 'item_like_'  # 物品模糊匹�
 redis_warehouse_item_like_prefix = redis_global_prefix + 'warehouse_item_like_'  # 仓库内的物品匹配前缀
 
 redis_user_lock_prefix = redis_global_prefix + 'user_lock_'  # 用户锁前缀
+redis_username_lock_prefix = redis_global_prefix + 'username_lock_'  # 用户名锁前缀
 redis_user_context_prefix = redis_global_prefix + 'user_context_'  # 用户上下文前缀
+
+redis_user_gold_rank = redis_global_prefix + 'user_gold_rank'  # 用户金币排行榜
+redis_user_exp_rank = redis_global_prefix + 'user_exp_rank'  # 用户经验排行榜
 
 ####################################################################################################
 # 全局常量
@@ -522,6 +527,23 @@ def select_user_by_qq(qq: int) -> User:
         return user
 
 
+def select_user_by_username(username: str) -> User:
+    """
+    根据用户名查询用户
+    :param username: 用户名
+    :return: 用户
+    """
+    redis_ans = redis_db.get(redis_username_prefix + str(username))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_user.find_one({"username": username, "is_delete": 0})
+        user: User = User()
+        dict_to_class(result, user)
+        redis_db.set(redis_username_prefix + str(username), serialization(user), ex=get_random_expire())
+        return user
+
+
 def update_user_by_qq(user: User) -> int:
     """
     根据qq更新用户
@@ -530,6 +552,7 @@ def update_user_by_qq(user: User) -> int:
     """
     result = mongo_user.update_one({"qq": user.qq, "is_delete": 0}, {"$set": class_to_dict(user)})
     redis_db.delete(redis_user_prefix + str(user.qq))
+    redis_db.delete(redis_username_prefix + str(user.username))
     return result.modified_count
 
 
@@ -541,6 +564,7 @@ def insert_user(user: User) -> str:
     """
     result = mongo_user.insert_one(class_to_dict(user))
     redis_db.delete(redis_user_prefix + str(user.qq))
+    redis_db.delete(redis_username_prefix + str(user.username))
     return result.inserted_id
 
 
@@ -636,6 +660,18 @@ def select_system_data() -> SystemData:
         dict_to_class(result, system_data)
         redis_db.set(redis_system_data_prefix, serialization(system_data), ex=get_long_random_expire())
         return system_data
+
+
+def update_system_data(system_data: SystemData) -> int:
+    """
+    修改系统数据
+    :param system_data: 系统数据
+    :return: id
+    """
+    result = mongo_system.update_one({"id": ObjectId(system_data.get_id()), "is_delete": 0},
+                                     {"$set": class_to_dict(system_data)})
+    redis_db.delete(redis_system_data_prefix)
+    return result.modified_count
 
 
 def insert_system_data(system_data: SystemData) -> str:
