@@ -294,7 +294,7 @@ def get_farm_information(qq: int, username: str) -> Tuple[User, City, Soil, Clim
     user: User = get_user(qq, username)
     city: City = flower_dao.select_city_by_id(user.city_id)
     soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
-    climate: Climate = flower_dao.select_climate_by_id(city.climate_id)
+    climate: Climate = flower_dao.select_climate_by_id(user.farm.climate_id)
     weather: Weather = get_weather(city)
     flower: Flower = Flower()
     if user.farm.flower_id != '':

@@ -3,7 +3,7 @@
 股市的模型
 """
 from enum import Enum
-from base_model import *
+from model.base_model import *
 
 
 class TradeType(Enum):

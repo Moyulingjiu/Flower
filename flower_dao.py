@@ -537,7 +537,7 @@ def select_user_by_username(username: str) -> User:
     if redis_ans is not None:
         return deserialize(redis_ans)
     else:
-        result = mongo_user.find_one({"username": username, "is_delete": 0})
+        result = mongo_user.find_one({"username": username, "auto_get_name": False, "is_delete": 0})
         user: User = User()
         dict_to_class(result, user)
         redis_db.set(redis_username_prefix + str(username), serialization(user), ex=get_random_expire())
@@ -668,7 +668,7 @@ def update_system_data(system_data: SystemData) -> int:
     :param system_data: 系统数据
     :return: id
     """
-    result = mongo_system.update_one({"id": ObjectId(system_data.get_id()), "is_delete": 0},
+    result = mongo_system.update_one({"_id": ObjectId(system_data.get_id()), "is_delete": 0},
                                      {"$set": class_to_dict(system_data)})
     redis_db.delete(redis_system_data_prefix)
     return result.modified_count
