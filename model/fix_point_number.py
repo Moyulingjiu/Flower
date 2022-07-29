@@ -1,4 +1,6 @@
 # coding=utf-8
+
+
 class FixPointNumber:
     """
     定点数
@@ -119,6 +121,21 @@ class FixPointNumber:
     def __int__(self):
         base: int = 10 ** self.place
         return self.number // base
+
+    def to_dict(self) -> dict[str, int]:
+        number_dict = {
+            'number': self.number,
+            'place': self.place
+        }
+        return number_dict
+
+    @classmethod
+    def dict_to_fix_number(cls, number_dict: dict[str, int]) -> 'FixPointNumber':
+        if not isinstance(number_dict, dict):
+            raise TypeError('只能从dict转为FixPointNumber')
+        if 'place' not in number_dict or 'number' not in number_dict:
+            raise TypeError('dict字段错误')
+        return FixPointNumber(number_dict['number'], number_dict['place'])
     
     def to_int(self) -> int:
         return self.__int__()

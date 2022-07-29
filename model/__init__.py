@@ -4,6 +4,7 @@ from model.context import *
 from model.fix_point_number import FixPointNumber
 from model.world_model import *
 from model.base_model import *
+from model.stock_market_model import *
 
 __all__ = [
     "InnerClass",
@@ -15,6 +16,8 @@ __all__ = [
     "Result", "SystemData", "Announcement",
 
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person",
+
+    "TradeRecords", "FlowerPrice",
 
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext"
 ]
