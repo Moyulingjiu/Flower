@@ -125,6 +125,20 @@ def show_conditions(conditions: Conditions) -> str:
     return res
 
 
+def find_items(warehouse: WareHouse, item_name: str) -> List[DecorateItem]:
+    """
+    查找可能是的物品
+    :param warehouse: 仓库
+    :param item_name: 物品名
+    :return: none
+    """
+    ans: List[DecorateItem] = []
+    for item in warehouse.items:
+        if item.item_name == item_name:
+            ans.append(copy.deepcopy(item))
+    return ans
+
+
 def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
     """
     往仓库添加物品
