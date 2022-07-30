@@ -43,7 +43,7 @@ class FlowerLog:
     log_name = 'flower'  # 日志名称
     log_dir = 'logs'  # 日志目录
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)-s [%(levelname)-9s] - @%(filename)-8s:%(lineno)s - %(message)s',
+        '%(asctime)s - %(name)-s [%(levelname)-9s] - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )  # 日志输出格式
     

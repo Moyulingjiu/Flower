@@ -626,7 +626,7 @@ class ContextHandler:
                 user.farm.flower_id = ''
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，成功花费' + '%.2f' % (
-                            global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
+                        global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
                 result.context_reply_text.append(reply)
             # 选择的回调
             elif isinstance(context, ChooseContex):
@@ -851,9 +851,10 @@ class FlowerService:
                 reply += '\n阶段：过熟'
             else:
                 reply += '\n阶段：枯萎'
+            total_hour: int = flower.seed_time + flower.grow_time + flower.mature_time + flower.overripe_time
+            reply += '\n成长度：' + '%.1f' % (user.farm.hour / total_hour)
         else:
             reply += '无'
-        
         reply += '\n天气：' + weather.weather_type
         reply += '\n气温：' + '%.2f' % user.farm.temperature
         if user.farm.temperature > now_temperature:
