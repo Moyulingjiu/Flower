@@ -10,7 +10,7 @@ from enum import Enum
 from typing import List, Tuple
 
 import flower_dao
-import global_value
+import global_config
 from flower_exceptions import *
 from model import *
 import weather_getter
@@ -332,16 +332,16 @@ def update_farm_soil(user: User, soil: Soil) -> None:
         user.farm.soil_nutrition_min_change_hour = 0
     
     # 改变土壤
-    if user.farm.soil_humidity_min_change_hour > global_value.soil_change_hour:
+    if user.farm.soil_humidity_min_change_hour > global_config.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.min_change_humidity_soil_id)
-    elif user.farm.soil_humidity_max_change_hour > global_value.soil_change_hour:
+    elif user.farm.soil_humidity_max_change_hour > global_config.soil_change_hour:
         if len(soil.max_change_humidity_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_humidity_soil_id)
-    if user.farm.soil_nutrition_min_change_hour > global_value.soil_change_hour:
+    if user.farm.soil_nutrition_min_change_hour > global_config.soil_change_hour:
         if len(soil.min_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.min_change_nutrition_soil_id)
-    elif user.farm.soil_nutrition_max_change_hour > global_value.soil_change_hour:
+    elif user.farm.soil_nutrition_max_change_hour > global_config.soil_change_hour:
         if len(soil.max_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
 

@@ -615,14 +615,14 @@ class ContextHandler:
                     reply = user.username + '，已取消铲除花'
                     result.context_reply_text.append(reply)
                     continue
-                if user.gold < global_value.remove_farm_flower_cost_gold:
-                    reply = user.username + '，金币不足' + '%.2f' % (global_value.remove_farm_flower_cost_gold / 100) + '枚'
+                if user.gold < global_config.remove_farm_flower_cost_gold:
+                    reply = user.username + '，金币不足' + '%.2f' % (global_config.remove_farm_flower_cost_gold / 100) + '枚'
                     result.context_reply_text.append(reply)
                     continue
-                user.gold -= global_value.remove_farm_flower_cost_gold
+                user.gold -= global_config.remove_farm_flower_cost_gold
                 user.farm.flower_id = ''
                 flower_dao.update_user_by_qq(user)
-                reply = user.username + '，成功花费' + '%.2f' % (global_value.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
+                reply = user.username + '，成功花费' + '%.2f' % (global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
                 result.context_reply_text.append(reply)
             # 选择的回调
             elif isinstance(context, ChooseContex):

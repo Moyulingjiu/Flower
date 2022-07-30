@@ -13,10 +13,10 @@ from redis import ConnectionPool, StrictRedis
 
 from flower_exceptions import *
 from model import *
-import global_value
+import global_config
 
 # MongoDB
-mongo_client = pymongo.MongoClient('mongodb://root:123456@localhost:27017/')
+mongo_client = pymongo.MongoClient(global_config.mongo_connection)
 mongo_db = mongo_client['xiaoqi']
 
 mongo_system = mongo_db['system']  # 系统
@@ -34,7 +34,8 @@ mongo_weather = mongo_db['weather']  # 天气
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
 
 # Redis
-redis_pool = ConnectionPool(host='localhost', port='6379', db=1, password='123456', decode_responses=True)
+redis_pool = ConnectionPool(host=global_config.redis_host, port=global_config.redis_port, db=global_config.redis_db,
+                            password=global_config.redis_password, decode_responses=True)
 redis_db = StrictRedis(connection_pool=redis_pool)
 
 redis_global_prefix = 'flower_'  # redis全局前缀
@@ -65,9 +66,9 @@ redis_user_exp_rank = redis_global_prefix + 'user_exp_rank'  # 用户经验排�
 
 ####################################################################################################
 # 全局常量
-expire_time_seconds: int = global_value.minute_second  # 很容易短期改变的值
-long_expire_time_seconds: int = global_value.half_day_second  # 长期才会改变的值
-context_expire_time_seconds: int = global_value.week_second  # 上下文的过期时间
+expire_time_seconds: int = global_config.minute_second  # 很容易短期改变的值
+long_expire_time_seconds: int = global_config.half_day_second  # 长期才会改变的值
+context_expire_time_seconds: int = global_config.week_second  # 上下文的过期时间
 
 lock_wait_time = 5000  # 锁等待时间（尝试五秒）
 lock_try_interval = 500  # 锁等待时间（每五百毫秒尝试一次）
@@ -438,7 +439,7 @@ def select_all_city() -> List[City]:
             city: City = City()
             dict_to_class(city_result, city)
             city_list.append(city)
-        redis_db.set(redis_all_city_prefix, serialization(city_list), ex=global_value.week_second)
+        redis_db.set(redis_all_city_prefix, serialization(city_list), ex=global_config.week_second)
         return city_list
 
 
@@ -731,13 +732,13 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-
+        
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
             dict_to_class(announcement_result, announcement)
             announcement_list.append(announcement)
-        redis_db.set(redis_announcement_prefix, serialization(announcement_list), ex=global_value.week_second)
+        redis_db.set(redis_announcement_prefix, serialization(announcement_list), ex=global_config.week_second)
         return announcement_list
 
 

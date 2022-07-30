@@ -3,6 +3,15 @@
 这里存储一些全局的常量
 """
 
+# MongoDB服务器地址
+mongo_connection: str = 'mongodb://root:123456@localhost:27017/'
+
+# Redis服务器地址
+redis_host = 'localhost'
+redis_port = '6379'
+redis_db = 1
+redis_password = '123456'
+
 # 时间
 minute_second: int = 60
 ten_minute_second: int = 10 * 60
