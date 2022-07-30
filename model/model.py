@@ -100,6 +100,12 @@ class City(EntityClass):
         self.terrain_id = terrain_id  # 地形
         self.climate_id = climate_id  # 气候
         self.soil_id = soil_id  # 土壤
+    
+    def __str__(self):
+        return self.city_name
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class Condition(InnerClass):

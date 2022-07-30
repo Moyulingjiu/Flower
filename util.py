@@ -5,12 +5,14 @@
 
 import copy
 import random
+import time
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Tuple
 
 import flower_dao
 import global_config
+from global_config import logger
 from flower_exceptions import *
 from model import *
 import weather_getter
@@ -247,7 +249,8 @@ def get_weather(city: City) -> Weather:
     weather: Weather = flower_dao.select_weather_by_city_id(city.get_id())
     if weather.city_id != city.get_id():
         weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id())
-        flower_dao.insert_weather(weather)
+        if weather.city_id == city.get_id():
+            flower_dao.insert_weather(weather)
     return weather
 
 
@@ -480,3 +483,27 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
             if real_time_weather.city_id != city.get_id():
                 real_time_weather = weather
+
+
+def get_all_weather() -> None:
+    """
+    获取所有城市的天气
+    :return: none
+    """
+    logger.info('开始获取所有城市的天气')
+    city_list: List[City] = flower_dao.select_all_city()
+    index = 0
+    fail_number = 0
+    total = len(city_list)
+    for city in city_list:
+        index += 1
+        if city.father_id == '':
+            continue
+        weather: Weather = get_weather(city)
+        if weather.city_id != city.get_id():
+            fail_number += 1
+            logger.error('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取失败')
+        else:
+            logger.info('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取成功')
+        time.sleep(0.5)
+    logger.info('天气获取结果，总计城市：%d，有效城市：%d，获取失败：%d' % (total, index, fail_number))

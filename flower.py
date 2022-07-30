@@ -566,8 +566,8 @@ class ContextHandler:
                     user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
                     user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
                     weather: Weather = get_weather(city)
-                    user.farm.temperature = (weather.max_temperature - weather.min_temperature) * \
-                                            3 / 4 + weather.min_temperature
+                    user.farm.temperature = (weather.max_temperature - weather.min_temperature) \
+                                            * 3 / 4 + weather.min_temperature
                     
                     flower_dao.insert_user(user)
                     del_context_list.append(context)
@@ -625,7 +625,8 @@ class ContextHandler:
                 user.gold -= global_config.remove_farm_flower_cost_gold
                 user.farm.flower_id = ''
                 flower_dao.update_user_by_qq(user)
-                reply = user.username + '，成功花费' + '%.2f' % (global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
+                reply = user.username + '，成功花费' + '%.2f' % (
+                            global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
                 result.context_reply_text.append(reply)
             # 选择的回调
             elif isinstance(context, ChooseContex):
