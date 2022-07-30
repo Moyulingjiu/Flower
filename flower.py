@@ -941,7 +941,7 @@ class FlowerService:
                 reply += '\n阶段：过熟'
             else:
                 reply += '\n阶段：枯萎'
-            total_hour: int = flower.seed_time + flower.grow_time + flower.mature_time
+            total_hour: int = flower.seed_time + flower.grow_time
             reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / total_hour)
         else:
             reply += '无'
