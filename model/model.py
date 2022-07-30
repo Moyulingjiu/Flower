@@ -392,7 +392,6 @@ class FlowerQuality(Enum):
     not_flower = 'not_flower'
     perfect = 'perfect'
     normal = 'normal'
-    bad = 'bad'
     
     @classmethod
     def view_name(cls, flower_quality) -> str:
@@ -402,8 +401,6 @@ class FlowerQuality(Enum):
             return '完美'
         elif flower_quality == cls.normal:
             return '一般'
-        elif flower_quality == cls.bad:
-            return '差'
         return ''
     
     @classmethod
@@ -414,8 +411,6 @@ class FlowerQuality(Enum):
             return cls.perfect
         elif flower_quality == str(cls.normal):
             return cls.normal
-        elif flower_quality == str(cls.bad):
-            return cls.bad
         return cls.not_flower
 
 
@@ -507,7 +502,7 @@ class DecorateItem(InnerClass):
         if self.number > 1:
             ans += 'x' + str(self.number)
         if self.max_durability > 0:
-            ans += '（耐久' + '%.2f' % (self.durability / self.max_durability) + '）'
+            ans += '（耐久' + '%.1f%%' % (self.durability * 100 / self.max_durability) + '）'
         if self.rot_second > 0:
             critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
             ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
@@ -554,12 +549,13 @@ class WareHouse(InnerClass):
     仓库类
     """
     
-    def __init__(self, items: List[DecorateItem] = None, max_size: int = 30):
+    def __init__(self, items: List[DecorateItem] = None, max_size: int = 30, description: str = ''):
         super().__init__('WareHouse')
         if items is None:
             items = []
         self.items = items
         self.max_size = max_size  # 仓库容量
+        self.description = description  # 描述
     
     def check_item(self) -> bool:
         """
@@ -573,6 +569,7 @@ class WareHouse(InnerClass):
                 remove_item.append(item)
                 result = True
         for item in remove_item:
+            self.description += '物品失效：' + str(item) + '\n'
             self.items.remove(item)
         return result
 

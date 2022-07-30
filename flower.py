@@ -1,4 +1,5 @@
 # coding=utf-8
+import flower_dao
 from util import *
 
 
@@ -49,8 +50,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     page = int(data)
                 except ValueError:
                     raise TypeException('格式错误，格式“花店仓库【页码】”')
-            reply = FlowerService.view_warehouse(qq, username, page)
+            reply, description = FlowerService.view_warehouse(qq, username, page)
             result.reply_text.append(reply)
+            if description != '':
+                result.reply_text.append(description)
             return result
         elif message[:4] == '花店物品':
             data = message[4:].strip()
@@ -202,8 +205,7 @@ class AdminHandler:
             try:
                 item: DecorateItem = analysis_item(data)
             except TypeException:
-                raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】”')
-            
+                raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【耐久度】/【花的品质】）”。如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略')
             update_number: int = 0
             if len(at_list) == 0:
                 if cls.give_item(qq, qq, item):
@@ -1047,7 +1049,7 @@ class FlowerService:
         return reply
     
     @classmethod
-    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30):
+    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30) -> Tuple[str, str]:
         """
         查看仓库
         无需加锁，只读！
@@ -1078,7 +1080,14 @@ class FlowerService:
                 index += 1
             reply += '\n------'
             reply += '\n总计页码：' + str(total_page)
-        return reply
+        description = ''
+        if user.warehouse.description != '':
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            description = user.warehouse.description[:-1]
+            user.warehouse.description = ''
+            flower_dao.update_user_by_qq(user)
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+        return reply, description
     
     @classmethod
     def view_item(cls, item_name: str) -> str:

@@ -153,7 +153,7 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
     for item in items:
         # 物体是否是新创建的
         create_item: bool = False
-        if item.item_id != '':
+        if item.item_id != '' and item.item_id is not None:
             item_obj: Item = flower_dao.select_item_by_id(item.item_id)
         else:
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
@@ -165,10 +165,12 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
         if create_item:
             item.item_id = item_obj.get_id()
             item.item_type = item_obj.item_type
-            item.durability = item_obj.max_durability
+            # 对于有耐久度的物品需要修改耐久度
             item.max_durability = item_obj.max_durability
             item.rot_second = item_obj.rot_second
             item.level = item_obj.level
+            if item_obj.item_type == ItemType.flower and item.flower_quality == FlowerQuality.not_flower:
+                item.flower_quality = FlowerQuality.normal
         for i in copy_items:
             if i == item:
                 if i.number + item.number <= item_obj.max_stack:
@@ -261,7 +263,7 @@ def analysis_item(data: str) -> DecorateItem:
     :return: item
     """
     data_list: List[str] = data.split(' ')
-    if len(data_list) == 0 or len(data_list) > 2:
+    if len(data_list) < 2 or len(data_list) > 3:
         raise TypeException('')
     item_name = data_list[0]
     if len(data_list) == 1:
@@ -274,6 +276,20 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
+    
+    item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+    if item_obj.item_type == ItemType.flower:
+        item.flower_quality = FlowerQuality.normal
+        if len(data_list) == 3:
+            if data_list[2] == '完美':
+                item.flower_quality = FlowerQuality.perfect
+    elif item_obj.max_durability != 0:
+        item.durability = item_obj.max_durability
+        if len(data_list) == 3:
+            try:
+                item.durability = int(data_list[2])
+            except ValueError:
+                raise TypeException('')
     return item
 
 
