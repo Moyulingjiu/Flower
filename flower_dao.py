@@ -5,7 +5,7 @@ import pickle
 import random
 import time
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import pymongo
 from bson import ObjectId
@@ -776,10 +776,10 @@ def remove_context(qq: int, context):
     :param context: 上下文
     :return: none
     """
-    redis_db.lrem(redis_user_context_prefix + str(qq), 0, serialization(context))
+    redis_db.lrem(redis_user_context_prefix + str(qq), 0, context)
 
 
-def get_context(qq: int) -> List:
+def get_context(qq: int) -> Tuple[List, List]:
     """
     查询某个人的上下文
     :param qq: QQ号
@@ -787,4 +787,4 @@ def get_context(qq: int) -> List:
     """
     context_list = redis_db.lrange(redis_user_context_prefix + str(qq), 0, -1)
     ans = [deserialize(context) for context in context_list]
-    return ans
+    return context_list, ans

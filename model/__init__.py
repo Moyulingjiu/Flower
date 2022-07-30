@@ -20,5 +20,5 @@ __all__ = [
     "TradeRecords", "FlowerPrice",
 
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
-    "ChooseContex"
+    "ChooseContext", "Choice"
 ]

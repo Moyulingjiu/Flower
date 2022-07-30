@@ -527,19 +527,36 @@ class DecorateItem(InnerClass):
         self.create = create  # 创建时间（用于一些物品失效检测）
         self.update = update  # 修改时间
     
-    def __str__(self):
+    def show_without_number(self):
         if self.item_id == '' and self.item_name == '' and self.item_id is not None and self.item_name is not None:
+            return '无'
+        if self.number <= 0:
             return '无'
         ans = self.item_name
         if self.flower_quality != FlowerQuality.not_flower:
             ans += '—' + FlowerQuality.view_name(self.flower_quality)
-        if self.number > 1:
-            ans += 'x' + str(self.number)
         if self.max_durability > 0:
             ans += '（耐久' + '%.1f%%' % (self.durability * 100 / self.max_durability) + '）'
         if self.rot_second > 0:
             critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
             ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
+        return ans
+    
+    def __str__(self):
+        if self.item_id == '' and self.item_name == '' and self.item_id is not None and self.item_name is not None:
+            return '无'
+        if self.number <= 0:
+            return '无'
+        ans = self.item_name
+        if self.flower_quality != FlowerQuality.not_flower:
+            ans += '—' + FlowerQuality.view_name(self.flower_quality)
+        if self.max_durability > 0:
+            ans += '（耐久' + '%.1f%%' % (self.durability * 100 / self.max_durability) + '）'
+        if self.rot_second > 0:
+            critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
+            ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
+        if self.number > 1:
+            ans += 'x' + str(self.number)
         return ans
     
     def __repr__(self):
@@ -638,7 +655,9 @@ class WareHouse(InnerClass):
                 remove_item.append(item)
                 result = True
         for item in remove_item:
-            self.description += '物品失效：' + str(item) + '\n'
+            # 如果是用完的就没必要提醒
+            if item.number > 0:
+                self.description += '物品失效：' + str(item) + '\n'
             self.items.remove(item)
         return result
 

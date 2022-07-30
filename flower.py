@@ -1,5 +1,7 @@
 # coding=utf-8
-import flower_dao
+
+import copy
+from typing import Dict
 from util import *
 
 
@@ -105,7 +107,38 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         elif message[:2] == '丢弃':
             data = message[2:]
             try:
+                flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+                user: User = get_user(qq, username)
                 item: DecorateItem = analysis_item(data)
+                if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
+                        item.max_durability > 0 and item.durability == 0):
+                    item_list: List[DecorateItem] = find_items(user.warehouse, item.item_name)
+                    choices: Dict[str, Choice] = {}
+                    if len(item_list) > 1:
+                        similar_items_name: List[DecorateItem] = []
+                        reply = '你的仓库有多件相似物品，可能为以下物品：'
+                        index: int = 0
+                        for warehouse_item in item_list:
+                            if warehouse_item not in similar_items_name:
+                                index += 1
+                                reply += '\n%d.' % index + warehouse_item.show_without_number()
+                                item.flower_quality = warehouse_item.flower_quality
+                                item.durability = warehouse_item.durability
+                                args = {
+                                    'qq': qq,
+                                    'username': username,
+                                    'item': copy.deepcopy(item)
+                                }
+                                choices[str(index)] = Choice(args=args, callback=FlowerService.throw_item)
+                                similar_items_name.append(warehouse_item)
+                        reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
+                        if len(similar_items_name) > 1:
+                            flower_dao.insert_context(qq, ChooseContext(choices=choices))
+                            result.reply_text.append(reply)
+                            return result
+                    # 如果只有一件物品，那么丢弃的应该是这件物品
+                    item.durability = item_list[0].durability
+                    item.flower_quality = item_list[0].flower_quality
                 reply = FlowerService.throw_item(qq, username, item)
                 result.reply_text.append(reply)
                 return result
@@ -158,7 +191,6 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             flower_dao.update_user_by_qq(user)
             reply = '整理完成'
             result.reply_text.append(reply)
-            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
             return result
         
         # 管理员操作
@@ -633,18 +665,25 @@ class ContextHandler:
         :return: 结果
         """
         self.block_transmission = True
-        context_list: List = flower_dao.get_context(qq)
-        del_context_list: List = [context for context in context_list if context.is_expired()]
+        origin_list, context_list = flower_dao.get_context(qq)
+        del_context_list: List = []
+        index: int = -1
+        for context in context_list:
+            index += 1
+            if context.is_expired():
+                del_context_list.append(origin_list[index])
         result: Result = Result.init()
         if len(context_list) == 0:
             return result
+        index: int = -1
         for context in context_list:
+            index += 1
             if context in del_context_list:
                 continue
             # 账号注册
             if isinstance(context, RegisterContext):
                 if message == '取消':
-                    del_context_list.append(context)
+                    del_context_list.append(origin_list[index])
                     reply = '已为您取消注册'
                     result.context_reply_text.append(reply)
                     continue
@@ -674,36 +713,40 @@ class ContextHandler:
                                             * 3 / 4 + weather.min_temperature
                     
                     flower_dao.insert_user(user)
-                    del_context_list.append(context)
+                    del_context_list.append(origin_list[index])
                     reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
                     result.context_reply_text.append(reply)
             # 新手指引
             elif isinstance(context, BeginnerGuideContext):
                 if message == '关闭新手指引':
-                    del_context_list.append(context)
+                    del_context_list.append(origin_list[index])
                     reply = '已为您关闭新手指引'
                     result.context_reply_text.append(reply)
                 if context.step == 0:
                     if message == '花店签到':
                         self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
+                        flower_dao.insert_context(qq, context)
                         reply = '很好你已经完成了签到！每日签到可以获取金币。接下来试试“花店数据”。\n您可以输入“关闭新手指引”来取消指引。'
                         result.context_reply_text.append(reply)
                 elif context.step == 1:
                     if message == '花店数据':
                         self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
+                        flower_dao.insert_context(qq, context)
                         reply = '在这里你可以看见一些玩家的基本数据，接下来试试“花店仓库”。\n您可以输入“关闭新手指引”来取消指引。'
                         result.context_reply_text.append(reply)
                 elif context.step == 2:
                     if message == '花店仓库':
                         self.block_transmission = False
-                        del_context_list.append(context)
+                        del_context_list.append(origin_list[index])
                         reply = '在这里你可以看见你的新手物资。新手指引结束了（这句话后面再改）。'
                         result.context_reply_text.append(reply)
             # 丢弃所有物品
             elif isinstance(context, ThrowAllItemContext):
-                del_context_list.append(context)
+                del_context_list.append(origin_list[index])
                 # context 会自动lock无需手动加锁
                 user: User = get_user(qq, username)
                 if message != '确认':
@@ -716,7 +759,7 @@ class ContextHandler:
                 result.context_reply_text.append(reply)
             # 铲除农场的花
             elif isinstance(context, RemoveFlowerContext):
-                del_context_list.append(context)
+                del_context_list.append(origin_list[index])
                 user: User = get_user(qq, username)
                 if message != '确认':
                     reply = user.username + '，已取消铲除花'
@@ -733,19 +776,27 @@ class ContextHandler:
                         global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
                 result.context_reply_text.append(reply)
             # 选择的回调
-            elif isinstance(context, ChooseContex):
+            elif isinstance(context, ChooseContext):
+                # print(flower_dao.serialization(context))
                 if context.auto_cancel:
-                    del_context_list.append(context)
+                    flower_dao.remove_context(qq, origin_list[index])
                 elif message == context.cancel_command:
-                    del_context_list.append(context)
+                    del_context_list.append(origin_list[index])
                     continue
+                get_answer: bool = False
                 for command in context.choices:
                     if message == command:
                         reply = context.choices[command].callback(**context.choices[command].args)
                         result.context_reply_text.append(reply)
-        
+                        get_answer = True
+                if not get_answer:
+                    if context.auto_cancel:
+                        reply = '已取消'
+                    else:
+                        reply = '没有该选择，你可以输入“%s”来取消' % context.cancel_command
+                    result.context_reply_text.append(reply)
         for context in del_context_list:
-            flower_dao.remove_context(qq, context)
+            flower_dao.remove_context(qq, origin_list[index])
         return result
 
 
@@ -1193,7 +1244,6 @@ class FlowerService:
         :param item: 物品
         :return: 结果
         """
-        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user: User = get_user(qq, username)
         try:
             remove_items(user.warehouse, [item])
@@ -1203,8 +1253,6 @@ class FlowerService:
             return user.username + '，没有该物品'
         except ItemNotEnoughException:
             return user.username + '，物品不足'
-        finally:
-            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
     
     @classmethod
     def throw_all_items(cls, qq: int, username: str) -> str:

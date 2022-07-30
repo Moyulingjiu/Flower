@@ -160,6 +160,7 @@ def analysis_item(data: str) -> DecorateItem:
     item.number = item_number
     
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+    item.item_type = item_obj.item_type
     if item_obj.item_type == ItemType.flower:
         item.flower_quality = FlowerQuality.normal
         if len(data_list) == 3:
@@ -167,6 +168,7 @@ def analysis_item(data: str) -> DecorateItem:
                 item.flower_quality = FlowerQuality.perfect
     elif item_obj.max_durability != 0:
         item.durability = item_obj.max_durability
+        item.max_durability = item_obj.max_durability
         if len(data_list) == 3:
             try:
                 item.durability = int(data_list[2])
@@ -276,7 +278,7 @@ def remove_items(warehouse: WareHouse, items: List[DecorateItem]):
                     i.number = 0
         if item.number > 0:
             raise ItemNotEnoughException('物品' + item.item_name + '不足')
-    warehouse.items = copy_items
+    warehouse.items = [item for item in copy_items if item.number > 0]
 
 
 class UserRight(Enum):
