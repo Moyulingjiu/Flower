@@ -400,7 +400,7 @@ class FlowerQuality(Enum):
         elif flower_quality == cls.perfect:
             return '完美'
         elif flower_quality == cls.normal:
-            return '一般'
+            return '正常'
         return ''
     
     @classmethod
@@ -498,7 +498,7 @@ class DecorateItem(InnerClass):
             return '无'
         ans = self.item_name
         if self.flower_quality != FlowerQuality.not_flower:
-            ans += '-' + FlowerQuality.view_name(self.flower_quality)
+            ans += '—' + FlowerQuality.view_name(self.flower_quality)
         if self.number > 1:
             ans += 'x' + str(self.number)
         if self.max_durability > 0:
@@ -523,7 +523,7 @@ class DecorateItem(InnerClass):
             return False
         if self.rot_second != 0 and self.create != other.create:
             return False
-        if self.flower_quality != FlowerQuality.not_flower and self.flower_quality != other.flower_quality:
+        if self.flower_quality != other.flower_quality:
             return False
         return True
     

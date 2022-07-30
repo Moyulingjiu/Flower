@@ -263,9 +263,19 @@ def analysis_item(data: str) -> DecorateItem:
     :return: item
     """
     data_list: List[str] = data.split(' ')
-    if len(data_list) < 2 or len(data_list) > 3:
+    if len(data_list) < 1 or len(data_list) > 3:
         raise TypeException('')
     item_name = data_list[0]
+    if '—' in item_name:
+        name_list = item_name.split('—')
+        if len(name_list) == 2:
+            item_name = name_list[0]
+            data_list.append(name_list[1])
+    if '-' in item_name:
+        name_list = item_name.split('-')
+        if len(name_list) == 2:
+            item_name = name_list[0]
+            data_list.append(name_list[1])
     if len(data_list) == 1:
         item_number = 1
     else:
@@ -290,6 +300,8 @@ def analysis_item(data: str) -> DecorateItem:
                 item.durability = int(data_list[2])
             except ValueError:
                 raise TypeException('')
+    elif len(data_list) == 3:
+        raise TypeException('')
     return item
 
 
