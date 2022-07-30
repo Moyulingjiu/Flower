@@ -350,6 +350,54 @@ class AdminHandler:
                 return reply
             except ValueError:
                 raise TypeException('格式错误！格式“查看花店用户名屏蔽词 【页码】”。页码可省略。')
+        elif message[:4] == '农场加速':
+            data = message[4:]
+            try:
+                hour = int(data)
+                update_number: int = 0
+                if len(at_list) == 0:
+                    if cls.accelerate_farm(qq, qq, hour):
+                        update_number += 1
+                else:
+                    for target_qq in at_list:
+                        if cls.accelerate_farm(target_qq, qq, hour):
+                            update_number += 1
+                if update_number > 0:
+                    return '成功加速' + str(update_number) + '人的农场'
+                return '未能加速任何人的农场'
+            except ValueError:
+                raise TypeException('格式错误！格式“农场加速 【小时】”。')
+        elif message[:4] == '农场完美加速':
+            data = message[4:]
+            try:
+                hour = int(data)
+                update_number: int = 0
+                if len(at_list) == 0:
+                    if cls.perfect_accelerate_farm(qq, qq, hour):
+                        update_number += 1
+                else:
+                    for target_qq in at_list:
+                        if cls.perfect_accelerate_farm(target_qq, qq, hour):
+                            update_number += 1
+                if update_number > 0:
+                    return '成功完美加速' + str(update_number) + '人的农场'
+                return '未能完美加速任何人的农场'
+            except ValueError:
+                raise TypeException('格式错误！格式“农场完美加速 【小时】”。')
+        elif message == '查看花店农场':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 查看花店农场”，必须并且只能艾特一人')
+            try:
+                return FlowerService.view_user_farm(at_list[0], '')
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message == '查看花店农场设备':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 查看花店农场设备”，必须并且只能艾特一人')
+            try:
+                return FlowerService.view_user_farm_equipment(at_list[0], '')
+            except UserNotRegisteredException:
+                return '对方未注册'
         return ''
     
     @classmethod
@@ -507,6 +555,48 @@ class AdminHandler:
             flower_dao.update_system_data(system_data)
             return True
         return False
+    
+    @classmethod
+    def accelerate_farm(cls, qq: int, operator_id: int, hour: int) -> bool:
+        """
+        加速农场
+        :param qq: qq
+        :param operator_id: 操作员id
+        :param hour: 小时数
+        :return: 结果
+        """
+        try:
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, '')
+            user.farm.last_check_time -= timedelta(hours=hour)
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+    
+    @classmethod
+    def perfect_accelerate_farm(cls, qq: int, operator_id: int, hour: int) -> bool:
+        """
+        完美加速农场（直接增加不会计算水分营养）
+        :param qq: qq
+        :param operator_id: 操作员id
+        :param hour: 小时数
+        :return: 结果
+        """
+        try:
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, '')
+            user.farm.hour += hour
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
 
 class ContextHandler:
@@ -851,8 +941,8 @@ class FlowerService:
                 reply += '\n阶段：过熟'
             else:
                 reply += '\n阶段：枯萎'
-            total_hour: int = flower.seed_time + flower.grow_time + flower.mature_time + flower.overripe_time
-            reply += '\n成长度：' + '%.1f' % (user.farm.hour / total_hour)
+            total_hour: int = flower.seed_time + flower.grow_time + flower.mature_time
+            reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / total_hour)
         else:
             reply += '无'
         reply += '\n天气：' + weather.weather_type

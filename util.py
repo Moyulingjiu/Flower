@@ -384,9 +384,9 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
             weather.max_temperature - weather.min_temperature) + weather.min_temperature
     # todo: 特殊道具会影响数据变动
     if user.farm.temperature < now_temperature:
-        user.farm.temperature -= 0.8
-    elif user.farm.temperature > now_temperature:
         user.farm.temperature += 0.8
+    elif user.farm.temperature > now_temperature:
+        user.farm.temperature -= 0.8
     user.farm.humidity -= flower.water_absorption
     user.farm.nutrition -= flower.nutrition_absorption
 
@@ -466,7 +466,6 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time < now:
-        
         update_farm_soil(user, soil)
         check_farm_soil_climate_condition(user, flower)
         if user.farm.flower_state == FlowerState.withered:
