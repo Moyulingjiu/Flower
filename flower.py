@@ -151,6 +151,15 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.clear_username(qq, username)
             result.reply_text.append(reply)
             return result
+        elif message == '整理仓库':
+            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+            user: User = get_user(qq, username)
+            sort_items(user.warehouse)
+            flower_dao.update_user_by_qq(user)
+            reply = '整理完成'
+            result.reply_text.append(reply)
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+            return result
         
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
@@ -168,6 +177,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         return Result.init(reply_text=e.message)
     except PageOutOfRangeException as e:
         return Result.init(reply_text=e.message)
+    except TypeError as e:
+        logger.error(e)
+        return Result.init()
     finally:
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
     return Result.init()

@@ -382,6 +382,32 @@ class ItemType(Enum):
         elif item_type == str(cls.warehouse):
             return cls.warehouse
         return cls.unknown
+    
+    @classmethod
+    def get_number(cls, item_type) -> int:
+        if item_type == cls.seed:
+            return 1
+        elif item_type == cls.flower:
+            return 2
+        elif item_type == cls.fertilizer:
+            return 3
+        elif item_type == cls.props:
+            return 4
+        elif item_type == cls.thermometer:
+            return 5
+        elif item_type == cls.soil_monitoring_station:
+            return 6
+        elif item_type == cls.watering_pot:
+            return 7
+        elif item_type == cls.weather_station:
+            return 8
+        elif item_type == cls.mail_box:
+            return 9
+        elif item_type == cls.greenhouse:
+            return 10
+        elif item_type == cls.warehouse:
+            return 11
+        return 0
 
 
 class FlowerQuality(Enum):
@@ -412,6 +438,14 @@ class FlowerQuality(Enum):
         elif flower_quality == str(cls.normal):
             return cls.normal
         return cls.not_flower
+    
+    @classmethod
+    def get_number(cls, flower_quality) -> int:
+        if flower_quality == cls.perfect:
+            return 1
+        elif flower_quality == cls.normal:
+            return 2
+        return 0
 
 
 class Item(EntityClass):
@@ -526,6 +560,41 @@ class DecorateItem(InnerClass):
         if self.flower_quality != other.flower_quality:
             return False
         return True
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __gt__(self, other):
+        if not isinstance(other, DecorateItem):
+            raise TypeError('不可以比较')
+        if self.item_name == other.item_name:
+            if self.max_durability > 0:
+                return self.durability > other.durability
+            if self.flower_quality != FlowerQuality.not_flower:
+                return FlowerQuality.get_number(self.flower_quality) > FlowerQuality.get_number(other.flower_quality)
+            return self.number < other.number
+        if self.item_type != other.item_type:
+            return ItemType.get_number(self.item_type) > ItemType.get_number(other.item_type)
+        return self.item_name > other.item_name
+    
+    def __ge__(self, other):
+        return self.__eq__(other) or self.__gt__(other)
+    
+    def __lt__(self, other):
+        if not isinstance(other, DecorateItem):
+            raise TypeError('不可以比较')
+        if self.item_name == other.item_name:
+            if self.max_durability > 0:
+                return self.durability < other.durability
+            if self.flower_quality != FlowerQuality.not_flower:
+                return FlowerQuality.get_number(self.flower_quality) < FlowerQuality.get_number(other.flower_quality)
+            return self.number > other.number
+        if self.item_type != other.item_type:
+            return ItemType.get_number(self.item_type) < ItemType.get_number(other.item_type)
+        return self.item_name < other.item_name
+    
+    def __le__(self, other):
+        return self.__eq__(other) or self.__lt__(other)
     
     def is_valid(self) -> bool:
         # 没有东西

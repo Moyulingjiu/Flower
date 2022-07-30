@@ -128,6 +128,55 @@ def show_conditions(conditions: Conditions) -> str:
     return res
 
 
+def analysis_item(data: str) -> DecorateItem:
+    """
+    分析item
+    :param data: 字段
+    :return: item
+    """
+    data_list: List[str] = data.split(' ')
+    if len(data_list) < 1 or len(data_list) > 3:
+        raise TypeException('')
+    item_name = data_list[0]
+    if '—' in item_name:
+        name_list = item_name.split('—')
+        if len(name_list) == 2:
+            item_name = name_list[0]
+            data_list.append(name_list[1])
+    if '-' in item_name:
+        name_list = item_name.split('-')
+        if len(name_list) == 2:
+            item_name = name_list[0]
+            data_list.append(name_list[1])
+    if len(data_list) == 1:
+        item_number = 1
+    else:
+        try:
+            item_number = int(data_list[1])
+        except ValueError:
+            raise TypeException('')
+    item: DecorateItem = DecorateItem()
+    item.item_name = item_name
+    item.number = item_number
+    
+    item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+    if item_obj.item_type == ItemType.flower:
+        item.flower_quality = FlowerQuality.normal
+        if len(data_list) == 3:
+            if data_list[2] == '完美':
+                item.flower_quality = FlowerQuality.perfect
+    elif item_obj.max_durability != 0:
+        item.durability = item_obj.max_durability
+        if len(data_list) == 3:
+            try:
+                item.durability = int(data_list[2])
+            except ValueError:
+                raise TypeException('')
+    elif len(data_list) == 3:
+        raise TypeException('')
+    return item
+
+
 def find_items(warehouse: WareHouse, item_name: str) -> List[DecorateItem]:
     """
     查找可能是的物品
@@ -140,6 +189,15 @@ def find_items(warehouse: WareHouse, item_name: str) -> List[DecorateItem]:
         if item.item_name == item_name:
             ans.append(copy.deepcopy(item))
     return ans
+
+
+def sort_items(warehouse: WareHouse):
+    """
+    整理仓库
+    :param warehouse: 仓库
+    :return: none
+    """
+    warehouse.items.sort()
 
 
 def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
@@ -254,55 +312,6 @@ def get_weather(city: City) -> Weather:
         if weather.city_id == city.get_id():
             flower_dao.insert_weather(weather)
     return weather
-
-
-def analysis_item(data: str) -> DecorateItem:
-    """
-    分析item
-    :param data: 字段
-    :return: item
-    """
-    data_list: List[str] = data.split(' ')
-    if len(data_list) < 1 or len(data_list) > 3:
-        raise TypeException('')
-    item_name = data_list[0]
-    if '—' in item_name:
-        name_list = item_name.split('—')
-        if len(name_list) == 2:
-            item_name = name_list[0]
-            data_list.append(name_list[1])
-    if '-' in item_name:
-        name_list = item_name.split('-')
-        if len(name_list) == 2:
-            item_name = name_list[0]
-            data_list.append(name_list[1])
-    if len(data_list) == 1:
-        item_number = 1
-    else:
-        try:
-            item_number = int(data_list[1])
-        except ValueError:
-            raise TypeException('')
-    item: DecorateItem = DecorateItem()
-    item.item_name = item_name
-    item.number = item_number
-    
-    item_obj: Item = flower_dao.select_item_by_name(item.item_name)
-    if item_obj.item_type == ItemType.flower:
-        item.flower_quality = FlowerQuality.normal
-        if len(data_list) == 3:
-            if data_list[2] == '完美':
-                item.flower_quality = FlowerQuality.perfect
-    elif item_obj.max_durability != 0:
-        item.durability = item_obj.max_durability
-        if len(data_list) == 3:
-            try:
-                item.durability = int(data_list[2])
-            except ValueError:
-                raise TypeException('')
-    elif len(data_list) == 3:
-        raise TypeException('')
-    return item
 
 
 def get_now_temperature(weather: Weather) -> float:
