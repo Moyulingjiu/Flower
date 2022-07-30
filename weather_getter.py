@@ -11,6 +11,7 @@ import time
 import socket  # 用做异常处理
 from urllib.parse import quote
 from model import Weather
+from global_config import logger
 
 
 def get_html(url, data=None):
@@ -70,9 +71,9 @@ def get_city_weather(city_name: str, city_id: str) -> Weather:
         weather.humidity = int(humidity[0].text.replace('湿度: ', '').replace('%', ''))
         weather.weather_type = weather_type[0].text
         return weather
-    except ValueError:
-        print('天气爬取：ValueError')
+    except ValueError as e:
+        logger.error(e)
         return Weather()
-    except IndexError:
-        print('天气爬取：IndexError')
+    except IndexError as e:
+        logger.error(e)
         return Weather()
