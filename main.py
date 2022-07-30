@@ -16,7 +16,7 @@ import util
 from model import *
 
 REDIS_DB = {
-    "db": global_config.redis_db,
+    "db": global_config.redis_background_db,
     "host": global_config.redis_host,
     "port": global_config.redis_port,
     "password": global_config.redis_password

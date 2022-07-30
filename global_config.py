@@ -13,6 +13,7 @@ mongo_connection: str = 'mongodb://root:123456@localhost:27017/'
 # Redis服务器地址
 redis_host = 'localhost'
 redis_port = '6379'
+redis_background_db = 2
 redis_db = 1
 redis_password = '123456'
 
