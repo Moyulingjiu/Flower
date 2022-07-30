@@ -151,7 +151,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         
         # 管理员操作
         if get_user_right(qq) == UserRight.ADMIN:
-            return AdminHandler.handle(message, qq, at_list)
+            reply: str = AdminHandler.handle(message, qq, at_list)
+            if reply != '':
+                result.reply_text.append(reply)
+                return result
     except UserNotRegisteredException:
         return Result.init(reply_text='您还未初始化花店账号，请输入“初始化花店”进行初始化')
     except UserBeLockedException:
@@ -173,7 +176,7 @@ class AdminHandler:
     """
     
     @classmethod
-    def handle(cls, message: str, qq: int, at_list: List[int]) -> Result:
+    def handle(cls, message: str, qq: int, at_list: List[int]) -> str:
         if message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
@@ -191,9 +194,9 @@ class AdminHandler:
                     if cls.give_gold(target_qq, qq, gold):
                         update_number += 1
             if update_number > 0:
-                return Result.init(reply_text=['成功给予金币给' + str(update_number) + '人'])
+                return '成功给予金币给' + str(update_number) + '人'
             else:
-                return Result.init(reply_text=['未能给予任何人金币'])
+                return '未能给予任何人金币'
         elif message[:4] == '给予物品':
             data: str = message[4:].strip()
             try:
@@ -210,9 +213,9 @@ class AdminHandler:
                     if cls.give_item(target_qq, qq, item):
                         update_number += 1
             if update_number > 0:
-                return Result.init(reply_text=['成功给予' + item.item_name + '给' + str(update_number) + '人'])
+                return '成功给予' + item.item_name + '给' + str(update_number) + '人'
             else:
-                return Result.init(reply_text=['未能给予任何人' + item.item_name])
+                return '未能给予任何人' + item.item_name
         elif message[:4] == '修改湿度':
             data: str = message[4:].strip()
             try:
@@ -226,8 +229,8 @@ class AdminHandler:
                         if cls.edit_humidity_nutrition(target_qq, qq, humidity=humidity):
                             update_number += 1
                 if update_number > 0:
-                    return Result.init(reply_text='成功修改' + str(update_number) + '人')
-                return Result.init(reply_text='未能修改任何人的湿度')
+                    return '成功修改' + str(update_number) + '人'
+                return '未能修改任何人的湿度'
             except ValueError:
                 raise TypeException('格式错误！，格式“@xxx 修改湿度 【湿度】”。湿度为任意小数。')
         elif message[:4] == '修改营养':
@@ -243,8 +246,8 @@ class AdminHandler:
                         if cls.edit_humidity_nutrition(target_qq, qq, nutrition=nutrition):
                             update_number += 1
                 if update_number > 0:
-                    return Result.init(reply_text='成功修改' + str(update_number) + '人')
-                return Result.init(reply_text='未能修改任何人的营养')
+                    return '成功修改' + str(update_number) + '人'
+                return '未能修改任何人的营养'
             except ValueError:
                 raise TypeException('格式错误！，格式“@xxx 修改营养 【营养】”。营养为任意小数。')
         elif message[:4] == '修改土壤':
@@ -263,8 +266,8 @@ class AdminHandler:
                     if cls.edit_soil(target_qq, qq, soil_id=soil.get_id()):
                         update_number += 1
             if update_number > 0:
-                return Result.init(reply_text='成功修改' + str(update_number) + '人的土壤到' + data)
-            return Result.init(reply_text='未能修改任何人的土壤')
+                return '成功修改' + str(update_number) + '人的土壤到' + data
+            return '未能修改任何人的土壤'
         elif message[:4] == '修改城市':
             data: str = message[4:].strip()
             if len(data) == 0:
@@ -281,8 +284,8 @@ class AdminHandler:
                     if cls.edit_city(target_qq, qq, city_id=city.get_id()):
                         update_number += 1
             if update_number > 0:
-                return Result.init(reply_text='成功修改' + str(update_number) + '人的城市到' + data)
-            return Result.init(reply_text='未能修改任何人的城市')
+                return '成功修改' + str(update_number) + '人的城市到' + data
+            return '未能修改任何人的城市'
         elif message[:4] == '修改气候':
             data: str = message[4:].strip()
             if len(data) == 0:
@@ -299,8 +302,8 @@ class AdminHandler:
                     if cls.edit_climate(target_qq, qq, climate_id=climate.get_id()):
                         update_number += 1
             if update_number > 0:
-                return Result.init(reply_text='成功修改' + str(update_number) + '人的农场气候到' + data)
-            return Result.init(reply_text='未能修改任何人的农场气候')
+                return '成功修改' + str(update_number) + '人的农场气候到' + data
+            return '未能修改任何人的农场气候'
         elif message == '移除农场的花':
             update_number: int = 0
             if len(at_list) == 0:
@@ -311,18 +314,18 @@ class AdminHandler:
                     if cls.remove_farm_flower(target_qq, qq):
                         update_number += 1
             if update_number > 0:
-                return Result.init(reply_text='成功移除' + str(update_number) + '人农场的花')
-            return Result.init(reply_text='未能移除任何人农场的花')
+                return '成功移除' + str(update_number) + '人农场的花'
+            return '未能移除任何人农场的花'
         elif message[:10] == '添加花店用户名屏蔽词':
             word: str = message[10:].strip()
             if cls.append_username_screen_word(word):
-                return Result.init(reply_text='添加成功')
-            return Result.init(reply_text='添加失败，已有相同词汇或网络波动')
+                return '添加成功'
+            return '添加失败，已有相同词汇或网络波动'
         elif message[:10] == '删除花店用户名屏蔽词':
             word: str = message[10:].strip()
             if cls.remove_username_screen_word(word):
-                return Result.init(reply_text='删除成功')
-            return Result.init(reply_text='删除失败，没有该词汇或网络波动')
+                return '删除成功'
+            return '删除失败，没有该词汇或网络波动'
         elif message[:10] == '查看花店用户名屏蔽词':
             data: str = message[10:].strip()
             try:
@@ -343,11 +346,11 @@ class AdminHandler:
                     total_page += 1
                 reply += '------\n当前页码：' + str(page + 1) + '，总计页码：' + str(total_page)
                 if page >= total_page:
-                    return Result.init(reply_text='页码超限，总计页码：' + str(total_page))
-                return Result.init(reply_text=reply)
+                    return '页码超限，总计页码：' + str(total_page)
+                return reply
             except ValueError:
                 raise TypeException('格式错误！格式“查看花店用户名屏蔽词 【页码】”。页码可省略。')
-        return Result.init()
+        return ''
     
     @classmethod
     def give_gold(cls, qq: int, operator_id: int, gold: int) -> bool:
