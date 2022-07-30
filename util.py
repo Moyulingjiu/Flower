@@ -235,7 +235,7 @@ def get_user_right(qq: int):
     """
     # todo: 根据qq获取用户权限（连接远程服务器）
     # 如果qq号是0表示系统查询，肯定是管理员
-    if qq == 0 or qq == 1597867839:
+    if qq == 0:
         return UserRight.ADMIN
     return UserRight.ADMIN
 
