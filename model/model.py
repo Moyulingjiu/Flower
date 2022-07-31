@@ -537,7 +537,8 @@ class DecorateItem(InnerClass):
     
     def show_without_number(self):
         ans: str = self.__str__()
-        ans = ans[:ans.rindex('x')]
+        if 'x' in ans:
+            ans = ans[:ans.rindex('x')]
         return ans
     
     def __str__(self):

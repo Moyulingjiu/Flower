@@ -111,7 +111,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 user: User = get_user(qq, username)
                 item: DecorateItem = analysis_item(data)
                 if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                        item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
+                        item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or item.item_type == ItemType.accelerate:
                     item_list: List[DecorateItem] = find_items(user.warehouse, item.item_name)
                     choices: Dict[str, Choice] = {}
                     if len(item_list) > 1:
@@ -139,6 +139,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     # 如果只有一件物品，那么丢弃的应该是这件物品
                     item.durability = item_list[0].durability
                     item.flower_quality = item_list[0].flower_quality
+                    item.hour = item_list[0].hour
                 flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
                 reply = FlowerService.use_item(qq, username, item)
                 result.reply_text.append(reply)
