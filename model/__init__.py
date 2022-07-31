@@ -14,11 +14,11 @@ __all__ = [
     "User", "SignRecord", "Weather", "FlowerState",
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
     "Result", "SystemData", "Announcement",
-
+    
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person",
-
+    
     "TradeRecords", "FlowerPrice",
-
+    
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
-    "ChooseContext", "Choice"
+    "ChooseContext", "Choice", "RandomTravelContext", "TravelContext"
 ]

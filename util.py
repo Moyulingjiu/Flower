@@ -30,6 +30,8 @@ def get_user(qq: int, username: str) -> User:
         raise UserNotRegisteredException('用户' + str(qq) + '未注册')
     if user.auto_get_name and username != '':
         user.username = username
+    # 计算仓库
+    calculation_warehouse(user)
     # 清理背包中过期的物品
     if user.warehouse.check_item():
         flower_dao.update_user_by_qq(user)
@@ -148,6 +150,8 @@ def analysis_item(data: str) -> DecorateItem:
         if len(name_list) == 2:
             item_name = name_list[0]
             data_list.append(name_list[1])
+    if '（' in item_name:
+        item_name = item_name[:item_name.rindex('（')]
     if len(data_list) == 1:
         item_number = 1
     else:
@@ -166,6 +170,13 @@ def analysis_item(data: str) -> DecorateItem:
         if len(data_list) == 3:
             if data_list[2] == '完美':
                 item.flower_quality = FlowerQuality.perfect
+    elif item_obj.item_type == ItemType.accelerate:
+        item.hour = 1
+        if len(data_list) == 3:
+            try:
+                item.hour = int(data_list[2])
+            except ValueError:
+                pass
     elif item_obj.max_durability != 0:
         item.durability = item_obj.max_durability
         item.max_durability = item_obj.max_durability
@@ -226,8 +237,13 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             item.item_id = item_obj.get_id()
             item.item_type = item_obj.item_type
             # 对于有耐久度的物品需要修改耐久度
-            item.max_durability = item_obj.max_durability
-            item.rot_second = item_obj.rot_second
+            item.item_type = item_obj.item_type
+            item.max_stack = item_obj.max_stack  # 最大叠加数量
+            item.max_durability = item_obj.max_durability  # 最大耐久度
+            item.rot_second = item_obj.rot_second  # 腐烂的秒数
+            item.humidity = item_obj.humidity  # 湿度
+            item.nutrition = item_obj.nutrition  # 营养
+            item.temperature = item_obj.temperature  # 温度
             item.level = item_obj.level
             if item_obj.item_type == ItemType.flower and item.flower_quality == FlowerQuality.not_flower:
                 item.flower_quality = FlowerQuality.normal
@@ -545,3 +561,37 @@ def get_all_weather() -> None:
             logger.info('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取成功')
         time.sleep(0.5)
     logger.info('天气获取结果，总计城市：%d，有效城市：%d，获取失败：%d' % (total, index, fail_number))
+
+
+def calculation_warehouse(user: User):
+    """
+    计算仓库容积
+    :param user: 用户
+    :return: none
+    """
+    if user.farm.warehouse.level == 1:
+        user.warehouse.max_size = 30
+    elif user.farm.warehouse.level == 2:
+        user.warehouse.max_size = 50
+    elif user.farm.warehouse.level == 3:
+        user.warehouse.max_size = 80
+    elif user.farm.warehouse.level == 4:
+        user.warehouse.max_size = 120
+    user.warehouse.max_size = 20
+
+
+def init_user_farm(user: User, city: City) -> None:
+    """
+    初始化用户农场
+    :param user: 用户
+    :param city: 城市
+    :return: none
+    """
+    user.farm.soil_id = city.soil_id
+    user.farm.climate_id = city.climate_id
+    soil: Soil = flower_dao.select_soil_by_id(city.soil_id)
+    user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
+    user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
+    weather: Weather = get_weather(city)
+    user.farm.temperature = (weather.max_temperature - weather.min_temperature) \
+                            * 3 / 4 + weather.min_temperature

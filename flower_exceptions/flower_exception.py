@@ -92,3 +92,12 @@ class FunctionArgsException(MyException):
 
     def __init__(self, message):
         self.message = message
+
+
+class UseFailException(MyException):
+    """
+    使用错误
+    """
+
+    def __init__(self, message):
+        self.message = message

@@ -2,6 +2,8 @@
 
 import copy
 from typing import Dict
+
+import flower_dao
 from util import *
 
 
@@ -103,7 +105,46 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             result.reply_text.append(reply)
             return result
         elif message[:2] == '使用':
-            pass
+            data = message[2:]
+            try:
+                flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+                user: User = get_user(qq, username)
+                item: DecorateItem = analysis_item(data)
+                if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
+                        item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
+                    item_list: List[DecorateItem] = find_items(user.warehouse, item.item_name)
+                    choices: Dict[str, Choice] = {}
+                    if len(item_list) > 1:
+                        similar_items_name: List[DecorateItem] = []
+                        reply = '你的仓库有多件相似物品，可能为以下物品：'
+                        index: int = 0
+                        for warehouse_item in item_list:
+                            if warehouse_item not in similar_items_name:
+                                index += 1
+                                reply += '\n%d.' % index + warehouse_item.show_without_number()
+                                item.flower_quality = warehouse_item.flower_quality
+                                item.durability = warehouse_item.durability
+                                args = {
+                                    'qq': qq,
+                                    'username': username,
+                                    'item': copy.deepcopy(item)
+                                }
+                                choices[str(index)] = Choice(args=args, callback=FlowerService.use_item)
+                                similar_items_name.append(warehouse_item)
+                        reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
+                        if len(similar_items_name) > 1:
+                            flower_dao.insert_context(qq, ChooseContext(choices=choices))
+                            result.reply_text.append(reply)
+                            return result
+                    # 如果只有一件物品，那么丢弃的应该是这件物品
+                    item.durability = item_list[0].durability
+                    item.flower_quality = item_list[0].flower_quality
+                flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+                reply = FlowerService.use_item(qq, username, item)
+                result.reply_text.append(reply)
+                return result
+            except TypeException:
+                raise TypeException('格式错误，格式“使用 【物品名字】 【数量】”')
         elif message[:2] == '丢弃':
             data = message[2:]
             try:
@@ -111,7 +152,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 user: User = get_user(qq, username)
                 item: DecorateItem = analysis_item(data)
                 if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                        item.max_durability > 0 and item.durability == 0):
+                        item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
                     item_list: List[DecorateItem] = find_items(user.warehouse, item.item_name)
                     choices: Dict[str, Choice] = {}
                     if len(item_list) > 1:
@@ -139,6 +180,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     # 如果只有一件物品，那么丢弃的应该是这件物品
                     item.durability = item_list[0].durability
                     item.flower_quality = item_list[0].flower_quality
+                flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
                 reply = FlowerService.throw_item(qq, username, item)
                 result.reply_text.append(reply)
                 return result
@@ -248,6 +290,8 @@ class AdminHandler:
             data: str = message[4:].strip()
             try:
                 item: DecorateItem = analysis_item(data)
+                if item.number < 1:
+                    raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【耐久度】/【花的品质】）”。数量需要大于0')
             except TypeException:
                 raise TypeException('格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【耐久度】/【花的品质】）”。如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略')
             update_number: int = 0
@@ -702,15 +746,8 @@ class ContextHandler:
                     user.city_id = city.get_id()
                     user.born_city_id = city.get_id()
                     
-                    # 农场的处理
-                    user.farm.soil_id = city.soil_id
-                    user.farm.climate_id = city.climate_id
-                    soil: Soil = flower_dao.select_soil_by_id(city.soil_id)
-                    user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
-                    user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
-                    weather: Weather = get_weather(city)
-                    user.farm.temperature = (weather.max_temperature - weather.min_temperature) \
-                                            * 3 / 4 + weather.min_temperature
+                    # 农场的处
+                    init_user_farm(user, city)
                     
                     flower_dao.insert_user(user)
                     del_context_list.append(origin_list[index])
@@ -777,7 +814,6 @@ class ContextHandler:
                 result.context_reply_text.append(reply)
             # 选择的回调
             elif isinstance(context, ChooseContext):
-                # print(flower_dao.serialization(context))
                 if context.auto_cancel:
                     flower_dao.remove_context(qq, origin_list[index])
                 elif message == context.cancel_command:
@@ -786,7 +822,9 @@ class ContextHandler:
                 get_answer: bool = False
                 for command in context.choices:
                     if message == command:
+                        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
                         reply = context.choices[command].callback(**context.choices[command].args)
+                        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
                         result.context_reply_text.append(reply)
                         get_answer = True
                 if not get_answer:
@@ -795,6 +833,51 @@ class ContextHandler:
                     else:
                         reply = '没有该选择，你可以输入“%s”来取消' % context.cancel_command
                     result.context_reply_text.append(reply)
+            # 随机旅行
+            elif isinstance(context, RandomTravelContext):
+                flower_dao.remove_context(qq, origin_list[index])
+                user: User = get_user(qq, username)
+                if message != '确认':
+                    item: DecorateItem = DecorateItem()
+                    item.item_name = '随机旅行卡'
+                    item.number = 1
+                    item.item_type = ItemType.props
+                    insert_items(user.warehouse, [item])
+                    flower_dao.update_user_by_qq(user)
+                    reply = '已为你取消旅行'
+                    result.context_reply_text.append(reply)
+                city_list: List[City] = [city for city in flower_dao.select_all_city() if city.father_id != '']
+                city: City = random.choice(city_list)
+                user.city_id = city.get_id()
+                user.farm = Farm()
+                init_user_farm(user, city)
+                flower_dao.update_user_by_qq(user)
+                reply = username + '，旅行到了%s，来这里开始新的冒险吧~' % city.city_name
+                result.context_reply_text.append(reply)
+            # 定向旅行
+            elif isinstance(context, RandomTravelContext):
+                flower_dao.remove_context(qq, origin_list[index])
+                user: User = get_user(qq, username)
+                if message == '取消':
+                    item: DecorateItem = DecorateItem()
+                    item.item_name = '定向旅行卡'
+                    item.number = 1
+                    item.item_type = ItemType.props
+                    insert_items(user.warehouse, [item])
+                    flower_dao.update_user_by_qq(user)
+                    reply = '已为你取消旅行'
+                    result.context_reply_text.append(reply)
+                city: City = flower_dao.select_city_by_name(message)
+                if city is None or city.city_name != message:
+                    reply = FlowerService.query_city(message) + '\n请选择一座城市，输入“取消”来取消本次旅行。'
+                    result.context_reply_text.append(reply)
+                    continue
+                user.city_id = city.get_id()
+                user.farm = Farm()
+                init_user_farm(user, city)
+                flower_dao.update_user_by_qq(user)
+                reply = username + '，旅行到了%s，来这里开始新的冒险吧~' % city.city_name
+                result.context_reply_text.append(reply)
         for context in del_context_list:
             flower_dao.remove_context(qq, origin_list[index])
         return result
@@ -1200,18 +1283,36 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         item: DecorateItem = DecorateItem()
+        item_list: List[DecorateItem] = []
         
         # 初始获取初始种子
         seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
         for seed in seed_list:
             item.item_name = seed
             item.number = 5
-            AdminHandler.give_item(qq, qq, copy.deepcopy(item))
-        
+            item_list.append(copy.deepcopy(item))
         # 领取化肥
         item.item_name = '初级化肥'
         item.number = 5
-        AdminHandler.give_item(qq, qq, copy.deepcopy(item))
+        item_list.append(copy.deepcopy(item))
+        # 新手道具
+        item.item_name = '新手水壶'
+        item.number = 1
+        item_list.append(copy.deepcopy(item))
+        item.item_name = '随机旅行卡'
+        item.number = 1
+        item_list.append(copy.deepcopy(item))
+        item.item_name = '加速卡'
+        item.number = 1
+        item.hour = 10
+        item_list.append(copy.deepcopy(item))
+        item.item_name = '完美加速卡'
+        item.number = 1
+        item.hour = 36
+        item_list.append(copy.deepcopy(item))
+        
+        insert_items(user.warehouse, item_list)
+        flower_dao.update_user_by_qq(user)
         
         context: BeginnerGuideContext = BeginnerGuideContext()
         flower_dao.insert_context(qq, context)
@@ -1244,6 +1345,7 @@ class FlowerService:
         :param item: 物品
         :return: 结果
         """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         user: User = get_user(qq, username)
         try:
             remove_items(user.warehouse, [item])
@@ -1253,6 +1355,8 @@ class FlowerService:
             return user.username + '，没有该物品'
         except ItemNotEnoughException:
             return user.username + '，物品不足'
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
     
     @classmethod
     def throw_all_items(cls, qq: int, username: str) -> str:
@@ -1377,6 +1481,170 @@ class FlowerService:
         user.auto_get_name = True
         flower_dao.update_user_by_qq(user)
         return username + '，已为你清除名字'
+    
+    @classmethod
+    def use_item(cls, qq: int, username: str, item: DecorateItem) -> str:
+        """
+        使用物品
+        :param qq: qq
+        :param username: 自动获取的用户名
+        :param item: 物品
+        :return: 结果
+        """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        user: User = get_user(qq, username)
+        try:
+            if item.number == 0:
+                return '数量不能为0'
+            item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+            item.item_type = item_obj.item_type
+            item.max_stack = item_obj.max_stack  # 最大叠加数量
+            item.max_durability = item_obj.max_durability  # 最大耐久度
+            item.rot_second = item_obj.rot_second  # 腐烂的秒数
+            item.humidity = item_obj.humidity  # 湿度
+            item.nutrition = item_obj.nutrition  # 营养
+            item.temperature = item_obj.temperature  # 温度
+            item.level = item_obj.level
+            if item_obj.item_type == ItemType.flower and item.flower_quality == FlowerQuality.not_flower:
+                item.flower_quality = FlowerQuality.normal
+            remove_items(user.warehouse, [copy.deepcopy(item)])
+            # 花
+            if item.item_type == ItemType.flower:
+                raise UseFailException(user.username + '，花不可以使用')
+            # 种子
+            elif item.item_type == ItemType.seed:
+                raise UseFailException(user.username + '，种子请使用命令“种植 【花名】”')
+            # 加速卡
+            elif item.item_type == ItemType.accelerate:
+                if item.item_name == '加速卡':
+                    hour: int = item.hour * item.number
+                    user.farm.last_check_time -= timedelta(hours=hour)
+                    return user.username + '，成功加速农场%d小时' % hour
+                elif item.item_name == '完美加速卡':
+                    hour: int = item.hour * item.number
+                    user.farm.hour += hour
+                    return user.username + '，成功完美加速农场%d小时' % hour
+            # 化肥
+            elif item.item_type == ItemType.fertilizer:
+                nutrition: float = item.nutrition * item.number
+                user.farm.nutrition += nutrition
+                return user.username + '，成功增加营养%.2f' % nutrition
+            # 温度计
+            elif item.item_type == ItemType.thermometer:
+                if item.number == 1:
+                    if user.farm.thermometer.item_name != '':
+                        insert_items(user.warehouse, [user.farm.thermometer])
+                    user.farm.thermometer = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 土壤检测站
+            elif item.item_type == ItemType.soil_monitoring_station:
+                if item.number == 1:
+                    if user.farm.soil_monitoring_station.item_name != '':
+                        insert_items(user.warehouse, [user.farm.soil_monitoring_station])
+                    user.farm.soil_monitoring_station = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 浇水壶
+            elif item.item_type == ItemType.watering_pot:
+                if item.number == 1:
+                    if user.farm.watering_pot.item_name != '':
+                        insert_items(user.warehouse, [user.farm.watering_pot])
+                    user.farm.watering_pot = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 气象监控站
+            elif item.item_type == ItemType.weather_station:
+                if item.number == 1:
+                    if user.farm.weather_station.item_name != '':
+                        insert_items(user.warehouse, [user.farm.weather_station])
+                    user.farm.weather_station = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 信箱
+            elif item.item_type == ItemType.mail_box:
+                if item.number == 1:
+                    if user.farm.mail_box.item_name != '':
+                        insert_items(user.warehouse, [user.farm.mail_box])
+                    user.farm.mail_box = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 温室
+            elif item.item_type == ItemType.greenhouse:
+                if item.number == 1:
+                    if user.farm.greenhouse.item_name != '':
+                        insert_items(user.warehouse, [user.farm.greenhouse])
+                    user.farm.greenhouse = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 仓库
+            elif item.item_type == ItemType.warehouse:
+                if item.number == 1:
+                    if user.farm.warehouse.item_name != '':
+                        insert_items(user.warehouse, [user.farm.warehouse])
+                    user.farm.warehouse = item
+                    return user.username + '，成功使用%s' % str(item)
+                else:
+                    raise UseFailException(user.username + '，该类型物品只能使用一个')
+            # 特殊道具
+            elif item.item_type == ItemType.props:
+                if item.item_name == '随机旅行卡':
+                    context: RandomTravelContext = RandomTravelContext()
+                    flower_dao.insert_context(qq, context)
+                    return user.username + '，请输入“确认”来随机旅行，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
+                elif item.item_name == '定向旅行卡':
+                    context: TravelContext = TravelContext()
+                    flower_dao.insert_context(qq, context)
+                    return user.username + '，请输入一个城市名前往，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
+                if item.item_name == '小金币卡':
+                    gold = random.randint(50 * item.number, 501 * item.number)
+                    user.gold += gold
+                    return user.username + '，获得%.2f金币' % int(user.gold / 100)
+                elif item.item_name == '大金币卡':
+                    gold = random.randint(50 * item.number, 1000001 * item.number)
+                    user.gold += gold
+                    return user.username + '，获得%.2f金币' % int(user.gold / 100)
+                elif item.item_name == '铲除卡':
+                    if user.farm.flower_id == '':
+                        raise UseFailException(user.username + '，你的农场没有花')
+                    user.farm.flower_id = ''
+                    return user.username + '，获得%.2f金币' % int(user.gold / 100)
+                elif item.item_name == '升温卡':
+                    temperature = item.temperature * item.number
+                    user.farm.temperature += temperature
+                    return user.username + '，温度+%.2f℃' % temperature
+                elif item.item_name == '降温卡':
+                    temperature = item.temperature * item.number
+                    user.farm.temperature += temperature
+                    return user.username + '，温度%.2f℃' % temperature
+                elif item.item_name == '小施肥卡' or item.item_name == '大施肥卡':
+                    nutrition: float = item.nutrition * item.number
+                    user.farm.nutrition += nutrition
+                    return user.username + '，营养+%.2f' % nutrition
+                elif item.item_name == '小浇水卡' or item.item_name == '大浇水卡':
+                    humidity: float = item.humidity * item.number
+                    user.farm.humidity += humidity
+                    return user.username + '，湿度+%.2f' % humidity
+            raise UseFailException(user.username + '，该物品不可以使用')
+        except ItemNotFoundException:
+            return user.username + '，没有该物品'
+        except ItemNotEnoughException:
+            return user.username + '，物品不足'
+        except UseFailException as e:
+            insert_items(user.warehouse, [copy.deepcopy(item)])
+            return e.message
+        except WareHouseSizeNotEnoughException as e:
+            insert_items(user.warehouse, [copy.deepcopy(item)])
+            return user.username + '，' + e.message
+        finally:
+            flower_dao.update_user_by_qq(user)
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
 
 if __name__ == '__main__':

@@ -318,6 +318,7 @@ class ItemType(Enum):
     seed = 'seed'  # 种子
     flower = 'flower'  # 花
     fertilizer = 'fertilizer'  # 化肥
+    accelerate = 'accelerate'  # 加速卡
     props = 'props'  # 特殊道具
     thermometer = 'thermometer'  # 温度计（用于农场）
     soil_monitoring_station = 'soil_monitoring_station'  # 土壤检测站（用于农场）
@@ -337,6 +338,8 @@ class ItemType(Enum):
             return '花'
         elif item_type == cls.fertilizer:
             return '化肥'
+        elif item_type == cls.accelerate:
+            return '加速卡'
         elif item_type == cls.props:
             return '特殊道具'
         elif item_type == cls.thermometer:
@@ -365,6 +368,8 @@ class ItemType(Enum):
             return cls.flower
         elif item_type == str(cls.fertilizer):
             return cls.fertilizer
+        elif item_type == str(cls.accelerate):
+            return cls.accelerate
         elif item_type == str(cls.props):
             return cls.props
         elif item_type == str(cls.thermometer):
@@ -391,22 +396,24 @@ class ItemType(Enum):
             return 2
         elif item_type == cls.fertilizer:
             return 3
-        elif item_type == cls.props:
+        elif item_type == cls.accelerate:
             return 4
-        elif item_type == cls.thermometer:
+        elif item_type == cls.props:
             return 5
-        elif item_type == cls.soil_monitoring_station:
+        elif item_type == cls.thermometer:
             return 6
-        elif item_type == cls.watering_pot:
+        elif item_type == cls.soil_monitoring_station:
             return 7
-        elif item_type == cls.weather_station:
+        elif item_type == cls.watering_pot:
             return 8
-        elif item_type == cls.mail_box:
+        elif item_type == cls.weather_station:
             return 9
-        elif item_type == cls.greenhouse:
+        elif item_type == cls.mail_box:
             return 10
-        elif item_type == cls.warehouse:
+        elif item_type == cls.greenhouse:
             return 11
+        elif item_type == cls.warehouse:
+            return 12
         return 0
 
 
@@ -507,7 +514,7 @@ class DecorateItem(InnerClass):
     
     def __init__(self, item_id: str = '', item_type: ItemType = ItemType.unknown, item_name: str = '', number: int = 0,
                  durability: int = 0, max_durability: int = 0, rot_second: int = 0,
-                 flower_quality: FlowerQuality = FlowerQuality.not_flower,
+                 flower_quality: FlowerQuality = FlowerQuality.not_flower, hour: int = 0,
                  humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0, level: int = 0,
                  create: datetime = datetime.now(), update: datetime = datetime.now()):
         super().__init__('DecorateItem')
@@ -523,23 +530,14 @@ class DecorateItem(InnerClass):
         self.humidity = humidity  # 湿度
         self.nutrition = nutrition  # 营养
         self.temperature = temperature  # 温度
+        self.hour = hour  # 加速的时间
         self.level = level  # 级别（用于检测农场的气象站等）
         self.create = create  # 创建时间（用于一些物品失效检测）
         self.update = update  # 修改时间
     
     def show_without_number(self):
-        if self.item_id == '' and self.item_name == '' and self.item_id is not None and self.item_name is not None:
-            return '无'
-        if self.number <= 0:
-            return '无'
-        ans = self.item_name
-        if self.flower_quality != FlowerQuality.not_flower:
-            ans += '—' + FlowerQuality.view_name(self.flower_quality)
-        if self.max_durability > 0:
-            ans += '（耐久' + '%.1f%%' % (self.durability * 100 / self.max_durability) + '）'
-        if self.rot_second > 0:
-            critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
-            ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
+        ans: str = self.__str__()
+        ans = ans[:ans.rindex('x')]
         return ans
     
     def __str__(self):
@@ -555,6 +553,8 @@ class DecorateItem(InnerClass):
         if self.rot_second > 0:
             critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
             ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'
+        if self.hour > 0:
+            ans += '（%d小时）' % self.hour
         if self.number > 1:
             ans += 'x' + str(self.number)
         return ans
@@ -576,6 +576,8 @@ class DecorateItem(InnerClass):
             return False
         if self.flower_quality != other.flower_quality:
             return False
+        if self.hour != other.hour:
+            return False
         return True
     
     def __ne__(self, other):
@@ -589,6 +591,8 @@ class DecorateItem(InnerClass):
                 return self.durability > other.durability
             if self.flower_quality != FlowerQuality.not_flower:
                 return FlowerQuality.get_number(self.flower_quality) > FlowerQuality.get_number(other.flower_quality)
+            if self.hour > 0 or other.hour > 0:
+                return self.hour < other.hour
             return self.number < other.number
         if self.item_type != other.item_type:
             return ItemType.get_number(self.item_type) > ItemType.get_number(other.item_type)
@@ -605,6 +609,8 @@ class DecorateItem(InnerClass):
                 return self.durability < other.durability
             if self.flower_quality != FlowerQuality.not_flower:
                 return FlowerQuality.get_number(self.flower_quality) < FlowerQuality.get_number(other.flower_quality)
+            if self.hour > 0 or other.hour > 0:
+                return self.hour > other.hour
             return self.number > other.number
         if self.item_type != other.item_type:
             return ItemType.get_number(self.item_type) < ItemType.get_number(other.item_type)
@@ -659,6 +665,7 @@ class WareHouse(InnerClass):
             if item.number > 0:
                 self.description += '物品失效：' + str(item) + '\n'
             self.items.remove(item)
+        
         return result
 
 
