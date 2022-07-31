@@ -528,6 +528,22 @@ def select_user_by_qq(qq: int) -> User:
         return user
 
 
+def select_all_user(page: int = 0, page_size: int = 20) -> List[User]:
+    """
+    查找全部user
+    :param page: 页码（从0开始）
+    :param page_size: 页码大小
+    :return: 用户的列表
+    """
+    result = mongo_user.find({"is_delete": 0}).limit(page_size).skip(page * page_size)
+    user_list: List[User] = []
+    for result_user in result:
+        user: User = User()
+        dict_to_class(result_user, user)
+        user_list.append(user)
+    return user_list
+
+
 def select_user_by_username(username: str) -> User:
     """
     根据用户名查询用户
