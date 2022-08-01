@@ -764,7 +764,7 @@ class User(EntityClass):
     
     def __init__(self, qq: int = 0, username: str = '', auto_get_name: bool = True, gold: int = 0, exp: int = 0,
                  last_sign_date: datetime = datetime.today() - timedelta(days=1), sign_count: int = 0,
-                 sign_continuous: int = 0, beginner_pack: bool = False,
+                 sign_continuous: int = 0, draw_card_number: int = 5, beginner_pack: bool = False,
                  warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), born_city_id: str = '', city_id: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
@@ -778,6 +778,7 @@ class User(EntityClass):
         self.last_sign_date = last_sign_date  # 上次签到日期
         self.sign_count = sign_count  # 签到次数
         self.sign_continuous = sign_continuous  # 连续签到次数
+        self.draw_card_number = draw_card_number  # 抽卡次数，每日签到刷新
         
         self.beginner_pack = beginner_pack  # 是否领取了初始礼包
         

@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import os
 from datetime import datetime
+from typing import List
 
 # MongoDB服务器地址
 mongo_connection: str = 'mongodb://root:123456@localhost:27017/'
@@ -30,11 +31,19 @@ week_second: int = day_second * 7
 month_second: int = day_second * 30
 year_second: int = day_second * 365
 
-# 土壤改变的小时数
+# 土壤改变的小时数（超过此小时，土壤将会转变）
 soil_change_hour = 8
 
 # 铲除花所需要花费的金币数
-remove_farm_flower_cost_gold = 500
+remove_farm_flower_cost_gold: int = 500
+
+# 浇水每百分之一湿度的金币
+watering_cost_gold: int = 100
+
+# 每日抽卡上限
+draw_card_max_number: int = 5
+draw_card_probability_unit: int = 10000  # 概率单位为万分之一
+draw_card_probability: List[int] = [5000, 2000, 1000, 100, 10]
 
 
 class FlowerLog:

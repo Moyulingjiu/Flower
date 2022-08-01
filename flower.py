@@ -1145,6 +1145,9 @@ class FlowerService:
         user.last_sign_date = today
         gold = random.randint(100, 500)
         user.gold += gold
+        # 只对于不足次数的补足，有可能有活动之类的额外增加了每日的抽卡次数
+        if user.draw_card_number < global_config.draw_card_max_number:
+            user.draw_card_number = global_config.draw_card_max_number
         user.update(user.qq)
         res = user.username + '，签到成功！'
         res += '\n获得金币：' + '%.2f' % (gold / 100)
@@ -1645,6 +1648,40 @@ class FlowerService:
             return user.username + '，' + e.message
         finally:
             flower_dao.update_user_by_qq(user)
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+
+class DrawCard:
+    """
+    抽卡类
+    """
+    
+    @classmethod
+    def draw_card(cls, qq: int, username: str, bot_qq: int) -> str:
+        """
+        抽卡
+        :param qq: qq名
+        :param username: 用户名
+        :param bot_qq: 机器人qq
+        :return:
+        """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        try:
+            user: User = get_user(qq, username)
+            if user.draw_card_number <= 0:
+                return ''
+            rand: int = random.randint(0, global_config.draw_card_probability_unit)
+            # 对于当天次数大于5次的，多余的部分按照第1个物品的概率去抽取，剩余的按照0、1、2、3、4依次类推
+            draw_probability_index: int = global_config.draw_card_max_number - user.draw_card_number
+            if draw_probability_index < 0:
+                draw_probability_index = 0
+            if rand < global_config.draw_card_probability[draw_probability_index]:
+                # todo: 抽到物品（这部分需要在物品表完善之后完成）
+                return '抽到物品'
+            return ''
+        except UserNotRegisteredException:
+            return ''
+        finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
 
 

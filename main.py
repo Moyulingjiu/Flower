@@ -83,13 +83,20 @@ def calibration():
 
 
 @app.post("/draw")
-def draw_card():
+async def draw_card(message: Message):
     """
     抽卡
     :return: 抽卡结果
     """
-    # todo: 抽卡（第一个道具是50%，第二个道具20%，第三个道具10%，第四个道具1%，第五个道具0.1%，之后不能抽到道具）
-    return ''
+    # 全局加锁不进行响应
+    if global_config.global_lock:
+        return Response(code=0, message="success", data=Result.init())
+    reply: str = flower.DrawCard.draw_card(message.qq, message.username, message.bot_qq)
+    if reply == '':
+        return Result.init()
+    logger.info(
+        '玩家<%s>(%d)@机器人<%s>(%d)：抽卡，%s' % (message.username, message.qq, message.bot_name, message.bot_qq, reply))
+    return Result.init(reply_text=reply)
 
 
 @app.post("/flower")
@@ -99,11 +106,15 @@ async def add_flower(message: Message):
     :param message: 消息
     :return: 结果
     """
+    # 全局加锁不进行响应
+    if global_config.global_lock:
+        return Response(code=0, message="success", data=Result.init())
+    # 进行花店的操作逻辑
     result: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,
                                    message.at_list)
     if len(result.reply_text) > 0 or len(result.context_reply_text) > 0 or len(result.reply_image) or len(
             result.context_reply_image) > 0:
-        logger.info('来自玩家<%s>(%d)[%s，%s]@机器人<%s>(%d)：%s' % (
+        logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
             message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,
             str(result)))
     return Response(code=0, message="success", data=result)
