@@ -2,5 +2,7 @@ temp
 .idea
 venv
 logs
+__pycache__
 
-*.class
+*.pyc
+*.pyo
