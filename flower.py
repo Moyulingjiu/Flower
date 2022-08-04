@@ -534,7 +534,7 @@ class AdminHandler:
         elif message == '更新所有城市天气':
             @async_function
             def get_all_weather():
-                logger.info('管理员%s<%d>开始更新所有城市天气' % username)
+                logger.info('管理员%s<%d>开始更新所有城市天气' % (username, qq))
                 util.get_all_weather()
             
             if global_config.get_all_weather:
