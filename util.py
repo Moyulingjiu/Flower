@@ -236,7 +236,7 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
         if create_item:
             item.item_id = item_obj.get_id()
             item.item_type = item_obj.item_type
-            # 对于有耐久度的物品需要修改耐久度
+            # 将不变的属性从item复制过来
             item.item_type = item_obj.item_type
             item.max_stack = item_obj.max_stack  # 最大叠加数量
             item.max_durability = item_obj.max_durability  # 最大耐久度
