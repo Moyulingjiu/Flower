@@ -1,18 +1,17 @@
 # coding=utf-8
 import copy
 import random
-import threading
 from datetime import timedelta, datetime
 from typing import Dict, List, Tuple
 
+import flower_dao
 import global_config
 import util
 import weather_getter
-from util import UserRight, async_function
-import flower_dao
-from model import *
 from flower_exceptions import *
 from global_config import logger
+from model import *
+from util import UserRight, async_function
 
 
 def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
@@ -1747,10 +1746,13 @@ class FlowerService:
                 if user.farm.flower_state == FlowerState.perfect and user.farm.hour <= mature_time:
                     item.flower_quality = FlowerQuality.perfect
                 try:
+                    number = item.number
                     util.insert_items(user.warehouse, [item])
                     user.farm.flower_id = ''
                     flower_dao.update_user_by_qq(user)
-                    return user.username + '，收获成功，获得%sx%d' % (flower.name, item.number)
+                    return user.username + '，收获成功，获得%s-%sx%d' % (flower.name,
+                                                                 FlowerQuality.view_name(item.flower_quality),
+                                                                 number)
                 except WareHouseSizeNotEnoughException:
                     return user.username + '，收获失败，仓库空间不足。'
             else:
