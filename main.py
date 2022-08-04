@@ -1,5 +1,6 @@
 # coding=utf-8
 import datetime
+import sys
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.redis import RedisJobStore
@@ -120,5 +121,14 @@ async def add_flower(message: Message):
     return Response(code=0, message="success", data=result)
 
 
+def main(argv):
+    if len(argv) == 1:
+        global_config.load_config(argv[0])
+    else:
+        global_config.load_config()
+    global_config.check_config()
+    uvicorn.run(app, host=global_config.host, port=global_config.port)
+
+
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    main(sys.argv[1:])
