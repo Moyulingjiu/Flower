@@ -520,6 +520,10 @@ class AdminHandler:
             global_config.get_all_weather = True
             get_all_weather()
             return '预计需要3~5分钟获取爬取所有城市天气。该命令用于没有24小时运行时的手动更新，正常运行下请勿使用该命令！！！以免造成资源浪费'
+        elif message == '更新所有城市天气的状态':
+            if global_config.get_all_weather:
+                return '线程仍然在进行“爬取所有城市天气”的活动'
+            return '当前没有进行“爬取所有城市天气”'
         return ''
     
     @classmethod
