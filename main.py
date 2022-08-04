@@ -1,33 +1,31 @@
 # coding=utf-8
 import datetime
-import sys
+from typing import List
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.redis import RedisJobStore
+import uvicorn
 from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List
-import uvicorn
 
+import global_config  # global_config必须放到第一位来，进行配置的初始化
 import flower
-import global_config
-from global_config import logger
 import util
+from global_config import logger
 from model import *
 
-REDIS_DB = {
+redis_db = {
     "db": global_config.redis_background_db,
     "host": global_config.redis_host,
     "port": global_config.redis_port,
     "password": global_config.redis_password
 }
-
 task_config = {
     # 配置存储器
     "jobstores": {
         # 使用Redis进行存储
-        'default': RedisJobStore(**REDIS_DB)
+        'default': RedisJobStore(**redis_db)
     },
     # 配置执行器
     "executors": {
@@ -92,7 +90,7 @@ async def draw_card(message: Message):
     # 全局加锁不进行响应
     if global_config.global_lock:
         return Response(code=0, message="success", data=Result.init())
-    reply: str = flower.DrawCard.draw_card(message.qq, message.username, message.bot_qq)
+    reply: str = flower.DrawCard.draw_card(message.qq, message.username)
     if reply == '':
         return Result.init()
     logger.info(
@@ -121,14 +119,5 @@ async def add_flower(message: Message):
     return Response(code=0, message="success", data=result)
 
 
-def main(argv):
-    if len(argv) == 1:
-        global_config.load_config(argv[0])
-    else:
-        global_config.load_config()
-    global_config.check_config()
-    uvicorn.run(app, host=global_config.host, port=global_config.port)
-
-
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    uvicorn.run(app, host=global_config.host, port=global_config.port)

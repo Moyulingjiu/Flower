@@ -6,6 +6,7 @@
 import logging
 import logging.handlers
 import os
+import sys
 from datetime import datetime
 from typing import List
 import yaml
@@ -63,7 +64,7 @@ class FlowerLog:
         '%(asctime)s - %(name)-s [%(levelname)-9s] - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )  # 日志输出格式
-
+    
     def __init__(self):
         # 创建logs文件夹
         cur_path = os.path.dirname(os.path.realpath(__file__))
@@ -71,12 +72,12 @@ class FlowerLog:
         # 如果不存在这个logs文件夹，就自动创建一个
         if not os.path.exists(log_path):
             os.mkdir(log_path)
-
+        
         logging.basicConfig()
         self.logger = logging.getLogger(self.log_name)
         self.logger.setLevel(logging.INFO)
         self.logger.propagate = False
-
+    
     def __console(self, level, message):
         # 文件的命名
         log_name = os.path.join(FlowerLog.log_dir, '%s.log' % datetime.now().strftime('%Y-%m-%d'))
@@ -85,13 +86,13 @@ class FlowerLog:
         fh.setLevel(logging.INFO)
         fh.setFormatter(self.formatter)
         self.logger.addHandler(fh)
-
+        
         # 创建一个StreamHandler,用于输出到控制台
         ch = logging.StreamHandler()
         ch.setLevel(logging.ERROR)
         ch.setFormatter(self.formatter)
         self.logger.addHandler(ch)
-
+        
         if level == 'info':
             self.logger.info(message)
         elif level == 'debug':
@@ -104,16 +105,16 @@ class FlowerLog:
         self.logger.removeHandler(fh)
         # 关闭打开的文件
         fh.close()
-
+    
     def debug(self, message):
         self.__console('debug', message)
-
+    
     def info(self, message):
         self.__console('info', message)
-
+    
     def warning(self, message):
         self.__console('warning', message)
-
+    
     def error(self, message):
         self.__console('error', message)
 
@@ -129,14 +130,14 @@ def load_config(config_path: str = 'config.yaml'):
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
     global soil_change_hour, remove_farm_flower_cost_gold, watering_cost_gold, draw_card_max_number
     global draw_card_probability_unit, draw_card_probability
-
+    
     with open(config_path, 'r', encoding='utf8') as f:
         config_yaml = yaml.safe_load(f.read())
         if 'host' in config_yaml:
             host = config_yaml['host']
         if 'port' in config_yaml:
             port = config_yaml['port']
-
+        
         if 'mongo_connection' in config_yaml:
             mongo_connection = config_yaml['mongo_connection']
         if 'redis_host' in config_yaml:
@@ -149,14 +150,14 @@ def load_config(config_path: str = 'config.yaml'):
             redis_db = config_yaml['redis_db']
         if 'redis_password' in config_yaml:
             redis_password = config_yaml['redis_password']
-
+        
         if 'soil_change_hour' in config_yaml:
             soil_change_hour = config_yaml['soil_change_hour']
         if 'remove_farm_flower_cost_gold' in config_yaml:
             remove_farm_flower_cost_gold = config_yaml['remove_farm_flower_cost_gold']
         if 'watering_cost_gold' in config_yaml:
             watering_cost_gold = config_yaml['watering_cost_gold']
-
+        
         if 'draw_card_max_number' in config_yaml:
             draw_card_max_number = config_yaml['draw_card_max_number']
         if 'draw_card_probability_unit' in config_yaml:
@@ -172,12 +173,12 @@ def check_config():
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
     global soil_change_hour, remove_farm_flower_cost_gold, watering_cost_gold, draw_card_max_number
     global draw_card_probability_unit, draw_card_probability
-
+    
     if not isinstance(host, str):
         raise ConfigException('host 配置错误')
     if not isinstance(port, int) or port < 0 or port > 65535:
         raise ConfigException('port 配置错误')
-
+    
     if not isinstance(mongo_connection, str):
         raise ConfigException('mongo_connection 配置错误')
     if not isinstance(redis_host, str):
@@ -190,14 +191,14 @@ def check_config():
         raise ConfigException('redis_background_db 配置错误')
     if not isinstance(redis_password, str):
         raise ConfigException('redis_password 配置错误')
-
+    
     if not isinstance(soil_change_hour, int):
         raise ConfigException('soil_change_hour 配置错误')
     if not isinstance(remove_farm_flower_cost_gold, int):
         raise ConfigException('remove_farm_flower_cost_gold 配置错误')
     if not isinstance(watering_cost_gold, int):
         raise ConfigException('watering_cost_gold 配置错误')
-
+    
     if not isinstance(draw_card_max_number, int):
         raise ConfigException('draw_card_max_number 配置错误')
     if not isinstance(draw_card_probability_unit, int):
@@ -206,3 +207,11 @@ def check_config():
         raise ConfigException('draw_card_probability_unit 配置错误')
     if len(draw_card_probability) == 0 or not isinstance(draw_card_probability[0], int):
         raise ConfigException('draw_card_probability_unit 配置错误')
+
+
+argv = sys.argv[1:]
+if len(argv) == 1:
+    load_config(argv[0])
+else:
+    load_config()
+check_config()
