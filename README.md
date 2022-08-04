@@ -12,6 +12,49 @@
 
 推荐的Python版本为`3.10`，最低兼容为`3.7`。
 
+## 启动
+
+首先安装`Python3`。然后运行`build-dev`，如果是Linux系统运行sh文件，windows系统运行cmd文件。
+
+等待环境安装完成后，就可以直接运行了。
+
+最直接的运行方式就是
+
+```bash
+# for windows
+python main.py
+# for linux
+python3 main.py
+```
+
+其次可以通过`uvicorn`运行
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8080
+```
+
+host可以指定运行的ip。127.0.0.1为只允许本机访问。port指定了端口。readload指定了如果代码发生改变，会自动重新加载运行。
+
+出现：
+
+```
+INFO:     Started server process [18876]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+```
+
+即启动成功。访问`http://127.0.0.1:8000/docs`即可看见api文档
+
+> 不建议在生产环境外漏api细节，要么关闭docs，要么配置白名单访问
+> - `app = FastAPI(docs_url=None)`关掉文档
+> - 配置白名单
+> ```python
+> app.add_middleware(
+>    TrustedHostMiddleware, allowed_hosts=["example.com","*.example.com"] 
+> )
+> ```
+
 ## 版权申明
 
 仅能用于研究学习，不可挪作它用。
