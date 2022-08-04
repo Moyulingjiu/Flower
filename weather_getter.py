@@ -43,6 +43,9 @@ def get_html(url, data=None):
 
 def get_city_weather(city_name: str, city_id: str) -> Weather:
     try:
+        # 对于日照市需要特殊处理
+        if city_name == '日照':
+            city_name += '市'
         city = city_name + '天气'
         url = "https://cn.bing.com/search?q=" + quote(city) + '&PC=U316&FORM=CHROMN'
         
