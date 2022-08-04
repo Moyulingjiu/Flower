@@ -1109,7 +1109,7 @@ class FlowerService:
         reply += '\n气象检测站：' + str(user.farm.weather_station)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
         reply += '\n浇水壶：' + str(user.farm.watering_pot)
-        reply += '\n信箱：' + str(user.farm.mail_box)
+        reply += '\n信箱：' + str(user.farm.mailbox)
         reply += '\n温室：' + str(user.farm.greenhouse)
         return reply
     
@@ -1630,11 +1630,11 @@ class FlowerService:
                 else:
                     raise UseFailException(user.username + '，该类型物品只能使用一个')
             # 信箱
-            elif item.item_type == ItemType.mail_box:
+            elif item.item_type == ItemType.mailbox:
                 if item.number == 1:
-                    if user.farm.mail_box.item_name != '':
-                        util.insert_items(user.warehouse, [user.farm.mail_box])
-                    user.farm.mail_box = item
+                    if user.farm.mailbox.item_name != '':
+                        util.insert_items(user.warehouse, [user.farm.mailbox])
+                    user.farm.mailbox = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
                     raise UseFailException(user.username + '，该类型物品只能使用一个')

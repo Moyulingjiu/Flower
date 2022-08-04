@@ -324,7 +324,7 @@ class ItemType(Enum):
     soil_monitoring_station = 'soil_monitoring_station'  # 土壤检测站（用于农场）
     watering_pot = 'watering_pot'  # 浇水壶（用于农场）
     weather_station = 'weather_station'  # 气象监控站（适用于农场）
-    mail_box = 'mail_box'  # 信箱（适用于农场）
+    mailbox = 'mailbox'  # 信箱（适用于农场）
     greenhouse = 'greenhouse'  # 温室（适用于农场）
     warehouse = 'warehouse'  # 仓库（适用于农场）
     
@@ -350,7 +350,7 @@ class ItemType(Enum):
             return '浇水壶'
         elif item_type == cls.weather_station:
             return '气象监控站'
-        elif item_type == cls.mail_box:
+        elif item_type == cls.mailbox:
             return '信箱'
         elif item_type == cls.greenhouse:
             return '温室'
@@ -380,8 +380,8 @@ class ItemType(Enum):
             return cls.watering_pot
         elif item_type == str(cls.weather_station):
             return cls.weather_station
-        elif item_type == str(cls.mail_box):
-            return cls.mail_box
+        elif item_type == str(cls.mailbox):
+            return cls.mailbox
         elif item_type == str(cls.greenhouse):
             return cls.greenhouse
         elif item_type == str(cls.warehouse):
@@ -408,7 +408,7 @@ class ItemType(Enum):
             return 8
         elif item_type == cls.weather_station:
             return 9
-        elif item_type == cls.mail_box:
+        elif item_type == cls.mailbox:
             return 10
         elif item_type == cls.greenhouse:
             return 11
@@ -713,7 +713,7 @@ class Farm(InnerClass):
                  last_check_time: datetime = datetime.now(),
                  thermometer: DecorateItem = DecorateItem(), weather_station: DecorateItem = DecorateItem(),
                  soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
-                 mail_box: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
+                 mailbox: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
                  warehouse: DecorateItem = DecorateItem(),
                  soil_humidity_min_change_hour: int = 0, soil_humidity_max_change_hour: int = 0,
                  soil_nutrition_min_change_hour: int = 0, soil_nutrition_max_change_hour: int = 0):
@@ -734,7 +734,7 @@ class Farm(InnerClass):
         self.weather_station = weather_station  # 气象检测站
         self.soil_monitoring_station = soil_monitoring_station  # 农场的土壤检测站
         self.watering_pot = watering_pot  # 农场的浇水壶
-        self.mail_box = mail_box  # 信箱
+        self.mailbox = mailbox  # 信箱
         self.greenhouse = greenhouse  # 温室
         self.warehouse = warehouse  # 仓库
         
@@ -757,6 +757,39 @@ class SignRecord(EntityClass):
         self.qq = qq
 
 
+class Mail(EntityClass):
+    """
+    邮件类
+    """
+    
+    def __init__(self, role_id: str = '', from_qq: int = 0, target_qq: int = 0, text: str = '',
+                 appendix: List[DecorateItem] = None, place_id: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        self.role_id = role_id  # npc的id
+        self.from_qq = from_qq  # 谁寄出来的（用户和npc只能有一个）
+        self.target_qq = target_qq  # 谁收到这封
+        self.text = text  # 正文
+        if not isinstance(appendix, list):
+            appendix = []
+        self.appendix = appendix  # 附件
+        self.place_id = place_id  # 地点id
+
+
+class MailBox(InnerClass):
+    """
+    邮箱类
+    """
+    
+    def __init__(self, mail_list: List[Mail] = None, max_size: int = 0):
+        super().__init__('MailBox')
+        if not isinstance(mail_list, list):
+            mail_list = []
+        self.mail_list = mail_list
+        self.max_size = max_size
+
+
 class User(EntityClass):
     """
     用户类
@@ -765,7 +798,8 @@ class User(EntityClass):
     def __init__(self, qq: int = 0, username: str = '', auto_get_name: bool = True, gold: int = 0, exp: int = 0,
                  last_sign_date: datetime = datetime.today() - timedelta(days=1), sign_count: int = 0,
                  sign_continuous: int = 0, draw_card_number: int = 5, beginner_pack: bool = False,
-                 warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), born_city_id: str = '', city_id: str = '',
+                 warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), mailbox: MailBox = MailBox(),
+                 born_city_id: str = '', city_id: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -784,6 +818,7 @@ class User(EntityClass):
         
         self.warehouse = warehouse  # 仓库
         self.farm = farm  # 农场
+        self.mailbox = mailbox  # 信箱
         
         self.born_city_id = born_city_id  # 出生城市id
         self.city_id = city_id  # 当前城市id

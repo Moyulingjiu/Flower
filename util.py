@@ -45,6 +45,8 @@ def get_user(qq: int, username: str) -> User:
         raise UserNotRegisteredException('用户' + str(qq) + '未注册')
     if user.auto_get_name and username != '':
         user.username = username
+    # 计算信箱
+    calculation_mailbox(user)
     # 计算仓库
     calculation_warehouse(user)
     # 清理背包中过期的物品
@@ -578,6 +580,23 @@ def get_all_weather() -> None:
     logger.info('天气获取结果，总计城市：%d，有效城市：%d，获取失败：%d' % (total, index, fail_number))
     # 解除获取获取天气的锁
     global_config.get_all_weather = False
+
+
+def calculation_mailbox(user: User):
+    """
+    计算信箱的容积
+    :param user: 用户
+    :return: none
+    """
+    if user.farm.mailbox.level == 1:
+        user.mailbox.max_size = 5
+    elif user.farm.mailbox.level == 2:
+        user.mailbox.max_size = 10
+    elif user.farm.mailbox.level == 3:
+        user.mailbox.max_size = 20
+    elif user.farm.mailbox.level == 4:
+        user.mailbox.max_size = 30
+    user.mailbox.max_size = 30
 
 
 def calculation_warehouse(user: User):

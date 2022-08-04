@@ -135,6 +135,8 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return o
     elif d['class_type'] == 'WareHouse':
         return dict_to_class(d, WareHouse())
+    elif d['class_type'] == 'Mail':
+        return dict_to_class(d, Mail())
     return None
 
 
