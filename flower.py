@@ -50,11 +50,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.query_flower(message[3:].strip())
             result.reply_text.append(reply)
             return result
-        elif message == '花店数据':
+        elif message == '花店数据' and len(at_list) == 0:
             reply = FlowerService.view_user_data(qq, username)
             result.reply_text.append(reply)
             return result
-        elif message[:4] == '花店仓库':
+        elif message[:4] == '花店仓库' and len(at_list) == 0:
             data = message[4:].strip()
             page = 0
             if data != '':
@@ -77,11 +77,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             reply = FlowerService.view_weather(data)
             result.reply_text.append(reply)
             return result
-        elif message == '花店农场设备':
+        elif message == '花店农场设备' and len(at_list) == 0:
             reply = FlowerService.view_user_farm_equipment(qq, username)
             result.reply_text.append(reply)
             return result
-        elif message == '花店农场':
+        elif message == '花店农场' and len(at_list) == 0:
             reply = FlowerService.view_user_farm(qq, username)
             result.reply_text.append(reply)
             return result
@@ -133,6 +133,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 reply += '\n%d.' % index + warehouse_item.show_without_number()
                                 item.flower_quality = warehouse_item.flower_quality
                                 item.durability = warehouse_item.durability
+                                item.hour = warehouse_item.hour
                                 args = {
                                     'qq': qq,
                                     'username': username,
@@ -495,14 +496,36 @@ class AdminHandler:
                 return '未能完美加速任何人的农场'
             except ValueError:
                 raise TypeException('格式错误！格式“农场完美加速 【小时】”。')
-        elif message == '查看花店农场':
+        elif message == '花店数据':
+            if len(at_list) != 1:
+                raise TypeException('格式错误！格式“@xxx 花店数据”')
+            try:
+                return FlowerService.view_user_data(at_list[0], '')
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message[:4] == '花店仓库':
+            if len(at_list) != 1:
+                raise TypeException('格式错误！格式“@xxx 花店仓库 【页码】”，页码为1可以省略')
+            try:
+                data: str = message[6:].strip()
+                if len(data) == 0:
+                    page: int = 0
+                else:
+                    page: int = int(data)
+                reply, _ = FlowerService.view_warehouse(at_list[0], '', page, remove_description=False)
+                return reply
+            except ValueError:
+                raise TypeException('格式错误！格式“@xxx 花店仓库 【页码】”，页码为1可以省略')
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message == '花店农场':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 查看花店农场”，必须并且只能艾特一人')
             try:
                 return FlowerService.view_user_farm(at_list[0], '')
             except UserNotRegisteredException:
                 return '对方未注册'
-        elif message == '查看花店农场设备':
+        elif message == '花店农场设备':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 查看花店农场设备”，必须并且只能艾特一人')
             try:
@@ -1235,7 +1258,8 @@ class FlowerService:
         return reply
     
     @classmethod
-    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30) -> Tuple[str, str]:
+    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30, remove_description: bool = True) -> \
+            Tuple[str, str]:
         """
         查看仓库
         无需加锁，只读！
@@ -1243,6 +1267,7 @@ class FlowerService:
         :param username: 用户名
         :param page: 页码
         :param page_size: 页面大小
+        :param remove_description: 是否移除描述
         :return: 结果
         """
         user: User = util.get_user(qq, username)
@@ -1267,7 +1292,7 @@ class FlowerService:
             reply += '\n------'
             reply += '\n总计页码：' + str(total_page)
         description = ''
-        if user.warehouse.description != '':
+        if user.warehouse.description != '' and remove_description:
             flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
             description = user.warehouse.description[:-1]
             user.warehouse.description = ''
