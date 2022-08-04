@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 import global_config  # global_config必须放到第一位来，进行配置的初始化
+# 导入花店需要的辅助类
 import flower
 import util
 from global_config import logger

@@ -1712,6 +1712,12 @@ class FlowerService:
     
     @classmethod
     def reward_flower(cls, qq: int, username: str) -> str:
+        """
+        收获
+        :param qq: qq
+        :param username: 用户名
+        :return: 收获
+        """
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
         try:
             user, city, soil, _, weather, flower = util.get_farm_information(qq, username)
