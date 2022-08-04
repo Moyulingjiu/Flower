@@ -567,9 +567,9 @@ def get_all_weather() -> None:
     fail_number = 0
     total = len(city_list)
     for city in city_list:
-        index += 1
         if city.father_id == '':
             continue
+        index += 1
         weather: Weather = get_weather(city)
         if weather.city_id != city.get_id():
             fail_number += 1
