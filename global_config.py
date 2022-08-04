@@ -27,7 +27,8 @@ redis_db = 1
 redis_password = ''
 
 # 全局锁
-global_lock = False
+global_lock: bool = False
+get_all_weather: bool = False
 
 # 时间
 minute_second: int = 60

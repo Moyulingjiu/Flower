@@ -1,13 +1,14 @@
 # coding=utf-8
 import copy
 import random
+import threading
 from datetime import timedelta, datetime
 from typing import Dict, List, Tuple
 
 import global_config
 import util
 import weather_getter
-from util import UserRight
+from util import UserRight, async_function
 import flower_dao
 from model import *
 from flower_exceptions import *
@@ -250,7 +251,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         
         # 管理员操作
         if util.get_user_right(qq) == UserRight.ADMIN:
-            reply: str = AdminHandler.handle(message, qq, at_list)
+            reply: str = AdminHandler.handle(message, qq, username, at_list)
             if reply != '':
                 result.reply_text.append(reply)
                 return result
@@ -283,7 +284,7 @@ class AdminHandler:
     """
     
     @classmethod
-    def handle(cls, message: str, qq: int, at_list: List[int]) -> str:
+    def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
         if message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
@@ -508,6 +509,17 @@ class AdminHandler:
                 return FlowerService.view_user_farm_equipment(at_list[0], '')
             except UserNotRegisteredException:
                 return '对方未注册'
+        elif message == '更新所有城市天气':
+            @async_function
+            def get_all_weather():
+                logger.info('管理员%s<%d>开始更新所有城市天气' % username)
+                util.get_all_weather()
+            
+            if global_config.get_all_weather:
+                return '请勿重复发起获取请求，已经有更新请求正在运行，该行为会花费较长时间。'
+            global_config.get_all_weather = True
+            get_all_weather()
+            return '预计需要3~5分钟获取爬取所有城市天气。该命令用于没有24小时运行时的手动更新，正常运行下请勿使用该命令！！！以免造成资源浪费'
         return ''
     
     @classmethod

@@ -8,6 +8,7 @@ import random
 import time
 from datetime import datetime, timedelta
 from enum import Enum
+from threading import Thread
 from typing import List, Tuple
 
 import flower_dao
@@ -16,6 +17,14 @@ from global_config import logger
 from flower_exceptions import *
 from model import *
 import weather_getter
+
+
+def async_function(f):
+    def wrapper(*args, **kwargs):
+        thr = Thread(target=f, args=args, kwargs=kwargs)
+        thr.start()
+    
+    return wrapper
 
 
 def get_user(qq: int, username: str) -> User:
@@ -561,6 +570,8 @@ def get_all_weather() -> None:
             logger.info('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取成功')
         time.sleep(0.5)
     logger.info('天气获取结果，总计城市：%d，有效城市：%d，获取失败：%d' % (total, index, fail_number))
+    # 解除获取获取天气的锁
+    global_config.get_all_weather = False
 
 
 def calculation_warehouse(user: User):
