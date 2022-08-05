@@ -747,7 +747,10 @@ def select_valid_announcement() -> List[Announcement]:
     """
     redis_ans = redis_db.get(redis_announcement_prefix)
     if redis_ans is not None:
-        return deserialize(redis_ans)
+        announcement_list: List[Announcement] = deserialize(redis_ans)
+        announcement_list = [announcement for announcement in announcement_list if not announcement.is_expire()]
+        redis_db.set(redis_announcement_prefix, serialization(announcement_list), ex=global_config.week_second)
+        return announcement_list
     else:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
