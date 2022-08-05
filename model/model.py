@@ -3,7 +3,7 @@ from model.base_model import *
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import List
+from typing import List, Set
 
 
 class Region(EntityClass):
@@ -815,15 +815,18 @@ class Announcement:
     公告
     """
     
-    def __init__(self, text: str = '', release_time: datetime = datetime.now(), expire_time: datetime = datetime.now(),
+    def __init__(self, qq: int = -0, username: str = '', text: str = '', release_time: datetime = datetime.now(),
+                 expire_time: datetime = datetime.now(),
                  is_delete: int = 0, _id: str or None = None):
         self._id = _id
         self.is_delete = is_delete
-        
+
+        self.qq = qq  # 发布人
+        self.username = username  # 发布人名
         self.text = text  # 公告正文
         self.release_time = release_time  # 发布时间
         self.expire_time = expire_time  # 过期时间
-        self.read_list: List[int] = []  # 阅读的人的QQ号
+        self.read_list: Set[int] = set()  # 阅读的人的QQ号
     
     def get_id(self) -> str:
         return self._id

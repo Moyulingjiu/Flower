@@ -546,6 +546,10 @@ class AdminHandler:
             if global_config.get_all_weather:
                 return '线程仍然在进行“爬取所有城市天气”的活动'
             return '当前没有进行“爬取所有城市天气”'
+        elif message == '发送公告':
+            announcement_context: AnnouncementContext = AnnouncementContext()
+            flower_dao.insert_context(qq, announcement_context)
+            return '请问公告的正文是什么，只可以包含文字信息！'
         return ''
 
     @classmethod
@@ -905,6 +909,7 @@ class ContextHandler:
                     flower_dao.update_user_by_qq(user)
                     reply = '已为你取消旅行'
                     result.context_reply_text.append(reply)
+                    continue
                 city_list: List[City] = [city for city in flower_dao.select_all_city() if city.father_id != '']
                 city: City = random.choice(city_list)
                 user.city_id = city.get_id()
@@ -926,6 +931,7 @@ class ContextHandler:
                     flower_dao.update_user_by_qq(user)
                     reply = '已为你取消旅行'
                     result.context_reply_text.append(reply)
+                    continue
                 city: City = flower_dao.select_city_by_name(message)
                 if city is None or city.city_name != message:
                     reply = FlowerService.query_city(message) + '\n请选择一座城市，输入“取消”来取消本次旅行。'
@@ -937,6 +943,64 @@ class ContextHandler:
                 flower_dao.update_user_by_qq(user)
                 reply = username + '，旅行到了%s，来这里开始新的冒险吧~' % city.city_name
                 result.context_reply_text.append(reply)
+            # 发送公告
+            elif isinstance(context, AnnouncementContext):
+                if message == '取消':
+                    del_context_list.append(origin_list[index])
+                    reply = '已为您取消发送公告'
+                    result.context_reply_text.append(reply)
+                    continue
+                if context.step == 0:
+                    if len(message) == 0:
+                        reply = '公告的内容不可以为空哦~你可以输入“取消”来取消发送'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.text = message
+                    flower_dao.insert_context(qq, context)
+                    reply = '请问公告的有效期是多久呢？格式“x天y小时z分钟s秒”不要的单位可以省略'
+                    result.context_reply_text.append(reply)
+                elif context.step == 1:
+                    second: int = util.analysis_time(message)
+                    if second < 1:
+                        reply = '格式错误！格式“x天y小时z分钟s秒”不要的单位可以省略。你可以输入“取消”来取消发送'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.valid_second = second
+                    flower_dao.insert_context(qq, context)
+                elif context.step == 2:
+                    if len(message.strip()) == 0:
+                        reply = '发送名义不能为空~你可以输入“取消”来取消发送'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.username = message.strip()
+                    flower_dao.insert_context(qq, context)
+
+                    reply = '最后检查\n------\n' + context.text + '\n------\n截止日期（预估，以确定时间为准）：'
+                    reply += (datetime.now() + timedelta(seconds=context.valid_second)).strftime('%Y-%m-%d %H:%M:%S')
+                    reply += '\n发件人名义：' + context.username
+                    reply += '\n输入“确认”发送公告，输入“取消”取消发送'
+                    result.context_reply_text.append(reply)
+                elif context.step == 3:
+                    if message != '确认':
+                        reply = '请“确认”或者“取消”'
+                        result.context_reply_text.append(reply)
+                        continue
+                    announcement: Announcement = Announcement()
+                    announcement.text = context.text
+                    announcement.release_time = datetime.now()
+                    announcement.expire_time = datetime.now() + timedelta(seconds=context.valid_second)
+                    announcement.qq = qq
+                    announcement.username = context.username
+                    flower_dao.insert_announcement(announcement)
+                    del_context_list.append(origin_list[index])
+                    reply = '公告已推送'
+                    result.context_reply_text.append(reply)
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
@@ -1494,7 +1558,8 @@ class FlowerService:
             user.farm.humidity += humidity_change
         cost_gold: int = int(humidity_change * global_config.watering_cost_gold)
         if user.gold < cost_gold:
-            return user.username + '，浇水失败！金币不足！\n每浇水1%%，需要金币%.2f' % (global_config.watering_cost_gold / 100)
+            return user.username + '，浇水失败！金币不足！\n每浇水1%%，需要金币%.2f' % (
+                    global_config.watering_cost_gold / 100)
         user.gold -= cost_gold
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))

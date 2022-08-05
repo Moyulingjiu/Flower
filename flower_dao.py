@@ -748,7 +748,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-        
+
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
@@ -756,6 +756,17 @@ def select_valid_announcement() -> List[Announcement]:
             announcement_list.append(announcement)
         redis_db.set(redis_announcement_prefix, serialization(announcement_list), ex=global_config.week_second)
         return announcement_list
+
+
+def update_announcement(announcement: Announcement) -> int:
+    """
+    更新公告
+    :param announcement: 公告
+    :return: id
+    """
+    result = mongo_soil.update_one({"_id": ObjectId(announcement.get_id())}, {"$set": class_to_dict(announcement)})
+    redis_db.delete(redis_announcement_prefix)
+    return result.modified_count
 
 
 def insert_announcement(announcement: Announcement) -> str:
