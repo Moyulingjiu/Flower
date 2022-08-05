@@ -25,11 +25,11 @@ def async_function(f):
     :param f: 函数
     :return: 包装之后的函数
     """
-
+    
     def wrapper(*args, **kwargs):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
-
+    
     return wrapper
 
 
@@ -179,7 +179,7 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
-
+    
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
     item.item_type = item_obj.item_type
     if item_obj.item_type == ItemType.flower:
@@ -395,7 +395,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-
+    
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -405,7 +405,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-
+    
     # 改变土壤
     if user.farm.soil_humidity_min_change_hour > global_config.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
@@ -500,7 +500,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
         else:
             user.farm.perfect_hour = 0
             user.farm.hour += 1
-
+        
         if user.farm.bad_hour > flower.withered_time:
             user.farm.flower_state = FlowerState.withered
         elif user.farm.perfect_hour > flower.prefect_time > 0:
@@ -528,12 +528,12 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-
+    
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-
+    
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
@@ -544,11 +544,11 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
             break
         update_farm_condition(user, flower, real_time_weather, start_time)
         user.farm.hour += 1
-
+        
         check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
         if user.farm.flower_state == FlowerState.withered:
             break
-
+        
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
@@ -589,14 +589,14 @@ def calculation_mailbox(user: User):
     :return: none
     """
     if user.farm.mailbox.level == 1:
-        user.mailbox.max_size = 5
+        user.mailbox.max_size = 3
     elif user.farm.mailbox.level == 2:
-        user.mailbox.max_size = 10
+        user.mailbox.max_size = 5
     elif user.farm.mailbox.level == 3:
-        user.mailbox.max_size = 20
+        user.mailbox.max_size = 7
     elif user.farm.mailbox.level == 4:
-        user.mailbox.max_size = 30
-    user.mailbox.max_size = 30
+        user.mailbox.max_size = 10
+    user.mailbox.max_size = 0
 
 
 def calculation_warehouse(user: User):
@@ -614,6 +614,99 @@ def calculation_warehouse(user: User):
     elif user.farm.warehouse.level == 4:
         user.warehouse.max_size = 120
     user.warehouse.max_size = 20
+
+
+def show_temperature(user: User) -> str:
+    """
+    显示温度
+    :param user: 用户
+    :return: 结果
+    """
+    temperature: float = user.farm.temperature
+    if user.farm.thermometer.max_durability == 0 or user.farm.thermometer.durability > 0:
+        if user.farm.thermometer.level == 4:
+            return '%.2f' % temperature
+        elif user.farm.thermometer.level == 3:
+            return '%d' % int(temperature)
+        elif user.farm.thermometer.level == 2:
+            return '%d' % ((int(temperature) // 5) * 5)
+        elif user.farm.thermometer.level == 1:
+            if temperature > 35:
+                return '炎热'
+            if temperature > 25:
+                return '热'
+            if temperature < 15:
+                return '冷'
+            if temperature < 5:
+                return '寒冷'
+            return '适宜'
+    if temperature > 30:
+        return '热'
+    if temperature < 10:
+        return '冷'
+    return '不冷不热'
+
+
+def show_humidity(user: User) -> str:
+    """
+    显示土壤湿度
+    :param user: 用户
+    :return: 结果
+    """
+    humidity: float = user.farm.humidity
+    if user.farm.soil_monitoring_station.max_durability == 0 or user.farm.soil_monitoring_station.durability > 0:
+        if user.farm.soil_monitoring_station.level == 4:
+            return '%.2f' % humidity
+        elif user.farm.soil_monitoring_station.level == 3:
+            return '%d' % int(humidity)
+        elif user.farm.soil_monitoring_station.level == 2:
+            return '%d' % ((int(humidity) // 5) * 5)
+        elif user.farm.soil_monitoring_station.level == 1:
+            if humidity > 80:
+                return '极其湿润'
+            if humidity > 60:
+                return '湿润'
+            if humidity < 40:
+                return '干燥'
+            if humidity < 20:
+                return '极其干燥'
+            return '适宜'
+    if humidity > 66:
+        return '湿润'
+    if humidity < 33:
+        return '干燥'
+    return '适宜'
+
+
+def show_nutrition(user: User) -> str:
+    """
+    显示土壤湿度
+    :param user: 用户
+    :return: 结果
+    """
+    nutrition: float = user.farm.nutrition
+    if user.farm.soil_monitoring_station.max_durability == 0 or user.farm.soil_monitoring_station.durability > 0:
+        if user.farm.soil_monitoring_station.level == 4:
+            return '%.2f' % nutrition
+        elif user.farm.soil_monitoring_station.level == 3:
+            return '%d' % int(nutrition)
+        elif user.farm.soil_monitoring_station.level == 2:
+            return '%d' % ((int(nutrition) // 5) * 5)
+        elif user.farm.soil_monitoring_station.level == 1:
+            if nutrition > 40:
+                return '营养极其丰富'
+            if nutrition > 30:
+                return '营养丰富'
+            if nutrition < 20:
+                return '营养匮乏'
+            if nutrition < 10:
+                return '营养极其匮乏'
+            return '适宜'
+    if nutrition > 32:
+        return '营养丰富'
+    if nutrition < 17:
+        return '营养匮乏'
+    return '适宜'
 
 
 def init_user_farm(user: User, city: City) -> None:
