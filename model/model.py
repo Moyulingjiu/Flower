@@ -3,7 +3,7 @@ from model.base_model import *
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import List
+from typing import List, Set
 
 
 class Region(EntityClass):
@@ -234,6 +234,7 @@ class Flower(EntityClass):
                  water_absorption: int = 0, nutrition_absorption: int = 0,
                  seed_time: int = 0, grow_time: int = 0, mature_time: int = 0,
                  overripe_time: int = 0, withered_time: int = 0, prefect_time: int = 0, flower_yield: int = 1,
+                 gold: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -263,8 +264,8 @@ class Flower(EntityClass):
         self.withered_time = withered_time  # 枯萎的时间（这个是累计一定时间后将会枯萎）
         self.prefect_time = prefect_time  # 完美的时间（这个累计一定时间后将会变为完美）
         
-        # 产量
         self.flower_yield = flower_yield  # 花的产量
+        self.gold = gold  # 基准价格
     
     def valid_climate(self, climate_id: str) -> bool:
         """
@@ -850,15 +851,18 @@ class Announcement:
     公告
     """
     
-    def __init__(self, text: str = '', release_time: datetime = datetime.now(), expire_time: datetime = datetime.now(),
+    def __init__(self, qq: int = -0, username: str = '', text: str = '', release_time: datetime = datetime.now(),
+                 expire_time: datetime = datetime.now(),
                  is_delete: int = 0, _id: str or None = None):
         self._id = _id
         self.is_delete = is_delete
-        
+
+        self.qq = qq  # 发布人
+        self.username = username  # 发布人名
         self.text = text  # 公告正文
         self.release_time = release_time  # 发布时间
         self.expire_time = expire_time  # 过期时间
-        self.read_list: List[int] = []  # 阅读的人的QQ号
+        self.read_list: Set[int] = set()  # 阅读的人的QQ号
     
     def get_id(self) -> str:
         return self._id

@@ -12,6 +12,7 @@ from pydantic import BaseModel
 import global_config  # global_config必须放到第一位来，进行配置的初始化
 # 导入花店需要的辅助类
 import flower
+import flower_dao
 import util
 from global_config import logger
 from model import *
@@ -114,6 +115,19 @@ async def add_flower(message: Message):
                                    message.at_list)
     if len(result.reply_text) > 0 or len(result.context_reply_text) > 0 or len(result.reply_image) or len(
             result.context_reply_image) > 0:
+        # 对此不必要加锁，公告只是通知而已，通知几次无所谓（线程冲突的后果也不过多通知一次）
+        announcement_list: List[Announcement] = flower_dao.select_valid_announcement()
+        for announcement in announcement_list:
+            if message.qq not in announcement.read_list:
+                announcement.read_list.add(message.qq)
+                flower_dao.update_announcement(announcement)
+                reply = '公告（由%s编辑）\n------\n%s\n------\n发布日期：%s' % (
+                    announcement.username,
+                    announcement.text,
+                    announcement.expire_time.strftime('%Y-%m-%d %H:%M:%S')
+                )
+                result.reply_text.append(reply)
+
         logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
             message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,
             str(result)))

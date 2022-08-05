@@ -58,9 +58,9 @@ class WareHouseSizeNotEnoughException(MyException):
         self.message = message
 
 
-class UserBeLockedException(MyException):
+class ResBeLockedException(MyException):
     """
-    用户被锁定
+    资源被锁定
     """
 
     def __init__(self, message):
