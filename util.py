@@ -462,11 +462,27 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     """
     now_temperature = ((12.0 - abs(check_time.hour - 12)) / 12.0) * (
             weather.max_temperature - weather.min_temperature) + weather.min_temperature
-    # todo: 特殊道具会影响数据变动
-    if user.farm.temperature < now_temperature:
-        user.farm.temperature += 0.8
-    elif user.farm.temperature > now_temperature:
-        user.farm.temperature -= 0.8
+    # 因为天气而改变的温度与湿度
+    if user.farm.greenhouse.durability > 0 or user.farm.greenhouse.max_durability == 0:
+        if user.farm.greenhouse.level == 4:
+            user.farm.temperature += 0.05 * (now_temperature - user.farm.temperature)
+            user.farm.humidity -= 0.1 * (1 - weather.humidity / 100)
+        elif user.farm.greenhouse.level == 3:
+            user.farm.temperature += 0.1 * (now_temperature - user.farm.temperature)
+            user.farm.humidity -= 0.2 * (1 - weather.humidity / 100)
+        elif user.farm.greenhouse.level == 2:
+            user.farm.temperature += 0.2 * (now_temperature - user.farm.temperature)
+            user.farm.humidity -= 0.5 * (1 - weather.humidity / 100)
+        elif user.farm.greenhouse.level == 1:
+            user.farm.temperature += 0.5 * (now_temperature - user.farm.temperature)
+            user.farm.humidity -= 0.8 * (1 - weather.humidity / 100)
+        else:
+            user.farm.temperature += 0.8 * (now_temperature - user.farm.temperature)
+            user.farm.humidity -= 1.0 * (1 - weather.humidity / 100)
+    else:
+        user.farm.temperature += 0.8 * (now_temperature - user.farm.temperature)
+        user.farm.humidity -= 1.0 * (1 - weather.humidity / 100)
+    # 花吸收的水分与营养
     user.farm.humidity -= flower.water_absorption
     user.farm.nutrition -= flower.nutrition_absorption
 

@@ -1161,8 +1161,7 @@ class FlowerService:
         :return: 农场信息
         """
         flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
-        user, city, soil, climate, weather, flower = util.get_farm_information(qq, username)
-        util.update_farm(user, city, soil, weather, flower)
+        user, city, soil, climate, _, _ = util.get_farm_information(qq, username)
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         
@@ -1323,8 +1322,8 @@ class FlowerService:
         return reply
     
     @classmethod
-    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30, remove_description: bool = True) -> \
-            Tuple[str, str]:
+    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30,
+                       remove_description: bool = True) -> Tuple[str, str]:
         """
         查看仓库
         无需加锁，只读！
