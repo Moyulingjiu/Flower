@@ -265,7 +265,7 @@ class Flower(EntityClass):
         self.prefect_time = prefect_time  # 完美的时间（这个累计一定时间后将会变为完美）
         
         self.flower_yield = flower_yield  # 花的产量
-        self.gold = gold  # 基准产量
+        self.gold = gold  # 基准价格
     
     def valid_climate(self, climate_id: str) -> bool:
         """
