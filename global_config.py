@@ -46,8 +46,8 @@ soil_change_hour = 8
 # 铲除花所需要花费的金币数
 remove_farm_flower_cost_gold: int = 500
 
-# 浇水每百分之一湿度的金币
-watering_cost_gold: int = 100
+# 每次浇水所花费的金币
+watering_cost_gold: int = 50
 
 # 每日抽卡上限
 draw_card_max_number: int = 5

@@ -99,6 +99,8 @@ def class_to_dict(obj) -> Dict:
     :return: 字典
     """
     ans = {}
+    if isinstance(obj, dict):
+        return obj
     for key in obj.__dict__:
         if key[0] == '_':
             continue
@@ -135,8 +137,8 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return o
     elif d['class_type'] == 'WareHouse':
         return dict_to_class(d, WareHouse())
-    elif d['class_type'] == 'Mail':
-        return dict_to_class(d, Mail())
+    elif d['class_type'] == 'MailBox':
+        return dict_to_class(d, MailBox())
     return None
 
 
@@ -750,7 +752,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-
+        
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
@@ -766,7 +768,8 @@ def update_announcement(announcement: Announcement) -> int:
     :param announcement: 公告
     :return: id
     """
-    result = mongo_soil.update_one({"_id": ObjectId(announcement.get_id())}, {"$set": class_to_dict(announcement)})
+    result = mongo_announcement.update_one({"_id": ObjectId(announcement.get_id()), "is_delete": 0},
+                                   {"$set": class_to_dict(announcement)})
     redis_db.delete(redis_announcement_prefix)
     return result.modified_count
 

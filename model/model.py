@@ -3,7 +3,7 @@ from model.base_model import *
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import List, Set
+from typing import List, Dict
 
 
 class Region(EntityClass):
@@ -862,7 +862,7 @@ class Announcement:
         self.text = text  # 公告正文
         self.release_time = release_time  # 发布时间
         self.expire_time = expire_time  # 过期时间
-        self.read_list: Set[int] = set()  # 阅读的人的QQ号
+        self.read_list: Dict[str, int] = {}  # 阅读的人的QQ号
     
     def get_id(self) -> str:
         return self._id

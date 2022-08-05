@@ -971,6 +971,8 @@ class ContextHandler:
                     context.step += 1
                     context.valid_second = second
                     flower_dao.insert_context(qq, context)
+                    reply = '请问发送的名义是谁？'
+                    result.context_reply_text.append(reply)
                 elif context.step == 2:
                     if len(message.strip()) == 0:
                         reply = '发送名义不能为空~你可以输入“取消”来取消发送'
