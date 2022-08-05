@@ -772,7 +772,7 @@ def update_announcement(announcement: Announcement) -> int:
     :return: id
     """
     result = mongo_announcement.update_one({"_id": ObjectId(announcement.get_id()), "is_delete": 0},
-                                   {"$set": class_to_dict(announcement)})
+                                           {"$set": class_to_dict(announcement)})
     redis_db.delete(redis_announcement_prefix)
     return result.modified_count
 

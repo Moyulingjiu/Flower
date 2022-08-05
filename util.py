@@ -55,6 +55,8 @@ def get_user(qq: int, username: str) -> User:
     return user
 
 
+####################################################################################################
+
 def get_soil_list(soil_id_list: List[str]) -> str:
     """
     根据土壤id列表获取土壤名列表
@@ -146,6 +148,8 @@ def show_conditions(conditions: Conditions) -> str:
     res += show_condition(conditions.normal_condition)
     return res
 
+
+####################################################################################################
 
 def analysis_item(data: str) -> DecorateItem:
     """
@@ -314,6 +318,8 @@ def remove_items(warehouse: WareHouse, items: List[DecorateItem]):
     warehouse.items = [item for item in copy_items if item.number > 0]
 
 
+####################################################################################################
+
 class UserRight(Enum):
     """
     用户权限
@@ -334,6 +340,8 @@ def get_user_right(qq: int):
         return UserRight.ADMIN
     return UserRight.ADMIN
 
+
+####################################################################################################
 
 def get_weather(city: City) -> Weather:
     """
@@ -556,6 +564,8 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
                 real_time_weather = weather
 
 
+####################################################################################################
+
 def get_all_weather() -> None:
     """
     获取所有城市的天气
@@ -581,6 +591,8 @@ def get_all_weather() -> None:
     # 解除获取获取天气的锁
     global_config.get_all_weather = False
 
+
+####################################################################################################
 
 def calculation_mailbox(user: User):
     """
@@ -722,9 +734,10 @@ def init_user_farm(user: User, city: City) -> None:
     user.farm.humidity = (soil.max_humidity + soil.min_humidity) / 2
     user.farm.nutrition = (soil.max_nutrition + soil.min_nutrition) / 2
     weather: Weather = get_weather(city)
-    user.farm.temperature = (weather.max_temperature - weather.min_temperature) \
-                            * 3 / 4 + weather.min_temperature
+    user.farm.temperature = (weather.max_temperature - weather.min_temperature) * 3 / 4 + weather.min_temperature
 
+
+####################################################################################################
 
 def analysis_time(message: str) -> int:
     """
