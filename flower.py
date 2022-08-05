@@ -1271,7 +1271,7 @@ class FlowerService:
         """
         user: User = util.get_user(qq, username)
         total_number = len(user.warehouse.items)
-        reply = user.username + '你的花店仓库如下：' + str(total_number) + '/' + str(user.warehouse.max_size)
+        reply = user.username + '，你的花店仓库如下：' + str(total_number) + '/' + str(user.warehouse.max_size)
         if total_number == 0:
             reply += '\n暂无'
         else:
@@ -1494,13 +1494,13 @@ class FlowerService:
             user.farm.humidity += humidity_change
         cost_gold: int = int(humidity_change * global_config.watering_cost_gold)
         if user.gold < cost_gold:
-            return '浇水失败！金币不足！\n每浇水1%%，需要金币%.2f' % (global_config.watering_cost_gold / 100)
+            return user.username + '，浇水失败！金币不足！\n每浇水1%%，需要金币%.2f' % (global_config.watering_cost_gold / 100)
         user.gold -= cost_gold
         flower_dao.update_user_by_qq(user)
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         if humidity_change == 0.0:
-            return '浇水失败！当前可能没有浇水壶。'
-        return '浇水成功！湿度增加%.2f，花费金币%.2f' % (humidity_change, cost_gold / 100)
+            return user.username + '，浇水失败！当前可能没有浇水壶。'
+        return user.username + '，浇水成功！湿度增加%.2f，花费金币%.2f' % (humidity_change, cost_gold / 100)
 
     @classmethod
     def remove_flower(cls, qq: int, username: str) -> str:
