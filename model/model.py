@@ -234,6 +234,7 @@ class Flower(EntityClass):
                  water_absorption: int = 0, nutrition_absorption: int = 0,
                  seed_time: int = 0, grow_time: int = 0, mature_time: int = 0,
                  overripe_time: int = 0, withered_time: int = 0, prefect_time: int = 0, flower_yield: int = 1,
+                 gold: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -263,8 +264,8 @@ class Flower(EntityClass):
         self.withered_time = withered_time  # 枯萎的时间（这个是累计一定时间后将会枯萎）
         self.prefect_time = prefect_time  # 完美的时间（这个累计一定时间后将会变为完美）
         
-        # 产量
         self.flower_yield = flower_yield  # 花的产量
+        self.gold = gold  # 基准产量
     
     def valid_climate(self, climate_id: str) -> bool:
         """
