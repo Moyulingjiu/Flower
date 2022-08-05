@@ -3,6 +3,6 @@ from flower_exceptions.flower_exception import *
 
 __all__ = [
     "UserNotRegisteredException", "ItemNegativeNumberException", "ItemNotFoundException", "ItemNotEnoughException",
-    "WareHouseSizeNotEnoughException", "UserBeLockedException", "AtListNullException", "TypeException",
+    "WareHouseSizeNotEnoughException", "ResBeLockedException", "AtListNullException", "TypeException",
     "PageOutOfRangeException", "FunctionArgsException", "UseFailException", "ConfigException"
 ]

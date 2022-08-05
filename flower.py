@@ -257,7 +257,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
     except UserNotRegisteredException:
         return Result.init(reply_text='您还未初始化花店账号，请输入“初始化花店”进行初始化')
-    except UserBeLockedException:
+    except ResBeLockedException:
         logger.warning('用户被锁定%s<%d>@%s<%d>' % (username, qq, bot_name, bot_qq))
         return Result.init(
             reply_text='操作超时，请稍后再试\n出现的原因可能有：\n1.您的操作过于频繁，请稍后再试\n2.账号风险行为，耐心等待两小时重置\n3.网络波动')
@@ -1309,7 +1309,7 @@ class FlowerService:
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
                     reply += '\n对' + str(target_qq) + '转账成功，余额：' + '%.2f' % (user.gold / 100)
-            except UserBeLockedException:
+            except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
                 reply += '\n对' + str(target_qq) + '转账失败，还未注册'

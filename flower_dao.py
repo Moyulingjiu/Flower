@@ -204,7 +204,7 @@ def lock(key: str, wait_time: int = lock_wait_time, try_interval: int = lock_try
             return
         time.sleep(try_interval / 1000)
         wait_time -= try_interval
-    raise UserBeLockedException('用户被锁定')
+    raise ResBeLockedException('资源被锁定')
 
 
 def unlock(key: str) -> int:
