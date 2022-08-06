@@ -331,6 +331,11 @@ class AdminHandler:
             data: str = message[4:].strip()
             try:
                 humidity: float = float(data)
+                if humidity > global_config.soil_max_humidity or humidity < global_config.soil_min_humidity:
+                    raise TypeException('格式错误！湿度范围为%.2f~%.2f' % (
+                        global_config.soil_min_humidity,
+                        global_config.soil_max_humidity
+                    ))
                 update_number: int = 0
                 if len(at_list) == 0:
                     if cls.edit_humidity_nutrition(qq, qq, humidity=humidity):
@@ -348,6 +353,11 @@ class AdminHandler:
             data: str = message[4:].strip()
             try:
                 nutrition: float = float(data)
+                if nutrition > global_config.soil_max_nutrition or nutrition < global_config.soil_min_nutrition:
+                    raise TypeException('格式错误！营养范围为%.2f~%.2f' % (
+                        global_config.soil_min_nutrition,
+                        global_config.soil_max_nutrition
+                    ))
                 update_number: int = 0
                 if len(at_list) == 0:
                     if cls.edit_humidity_nutrition(qq, qq, nutrition=nutrition):
@@ -1558,6 +1568,11 @@ class FlowerService:
             humidity_change = 0.1 * multiple
             user.farm.humidity += humidity_change
         cost_gold: int = global_config.watering_cost_gold * multiple
+        # 设置湿度的上限
+        if user.farm.humidity > global_config.soil_max_humidity:
+            humidity_change -= user.farm.humidity - global_config.soil_max_humidity
+            user.farm.humidity = global_config.soil_max_humidity
+        # 金币消耗
         if user.gold < cost_gold:
             return user.username + '，浇水失败！金币不足！\n每浇水一次，需要金币%.2f' % (
                     global_config.watering_cost_gold / 100)
@@ -1661,7 +1676,7 @@ class FlowerService:
             # 化肥
             elif item.item_type == ItemType.fertilizer:
                 nutrition: float = item.nutrition * item.number
-                user.farm.nutrition += nutrition
+                nutrition = user.farm.add_nutrition(nutrition)
                 return user.username + '，成功增加营养%.2f' % nutrition
             # 温度计
             elif item.item_type == ItemType.thermometer:
@@ -1759,11 +1774,11 @@ class FlowerService:
                     return user.username + '，温度%.2f℃' % temperature
                 elif item.item_name == '小施肥卡' or item.item_name == '大施肥卡':
                     nutrition: float = item.nutrition * item.number
-                    user.farm.nutrition += nutrition
+                    nutrition = user.farm.add_nutrition(nutrition)
                     return user.username + '，营养+%.2f' % nutrition
                 elif item.item_name == '小浇水卡' or item.item_name == '大浇水卡':
                     humidity: float = item.humidity * item.number
-                    user.farm.humidity += humidity
+                    humidity = user.farm.add_humidity(humidity)
                     return user.username + '，湿度+%.2f' % humidity
             raise UseFailException(user.username + '，该物品不可以使用')
         except ItemNotFoundException:

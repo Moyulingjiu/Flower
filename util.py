@@ -485,6 +485,15 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     # 花吸收的水分与营养
     user.farm.humidity -= flower.water_absorption
     user.farm.nutrition -= flower.nutrition_absorption
+    # 限制湿度与营养的上下限
+    if user.farm.humidity < global_config.soil_min_humidity:
+        user.farm.humidity = global_config.soil_min_humidity
+    elif user.farm.humidity > global_config.soil_max_humidity:
+        user.farm.humidity = global_config.soil_max_humidity
+    if user.farm.nutrition < global_config.soil_min_nutrition:
+        user.farm.nutrition = global_config.soil_min_nutrition
+    elif user.farm.nutrition > global_config.soil_max_nutrition:
+        user.farm.nutrition = global_config.soil_max_nutrition
 
 
 def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: int, mature_time: int,

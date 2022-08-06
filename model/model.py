@@ -1,4 +1,5 @@
 # coding=utf-8
+import global_config
 from model.base_model import *
 
 from datetime import datetime, timedelta
@@ -744,6 +745,36 @@ class Farm(InnerClass):
         self.soil_humidity_max_change_hour = soil_humidity_max_change_hour  # 营养不合格累计的小时数
         self.soil_nutrition_min_change_hour = soil_nutrition_min_change_hour  # 湿度不合格累计的小时数
         self.soil_nutrition_max_change_hour = soil_nutrition_max_change_hour  # 湿度不合格累计的小时数
+    
+    def add_nutrition(self, nutrition: float) -> float:
+        """
+        修改营养
+        :param nutrition: 改变的值
+        :return: 实际改变的值
+        """
+        self.nutrition += nutrition
+        if self.nutrition > global_config.soil_max_nutrition:
+            nutrition -= self.nutrition - global_config.soil_max_nutrition
+            self.nutrition = global_config.soil_max_nutrition
+        elif self.nutrition < global_config.soil_min_nutrition:
+            nutrition += global_config.soil_min_nutrition - self.nutrition
+            self.nutrition = global_config.soil_min_nutrition
+        return nutrition
+    
+    def add_humidity(self, humidity: float) -> float:
+        """
+        修改湿度
+        :param humidity: 湿度
+        :return: 实际更改的湿度
+        """
+        self.humidity += humidity
+        if self.humidity > global_config.soil_max_humidity:
+            humidity -= self.humidity - global_config.soil_max_humidity
+            self.humidity = global_config.soil_max_humidity
+        elif self.humidity < global_config.soil_min_humidity:
+            humidity += global_config.soil_min_humidity - self.humidity
+            self.humidity = global_config.soil_min_humidity
+        return humidity
 
 
 class SignRecord(EntityClass):
@@ -856,7 +887,7 @@ class Announcement:
                  is_delete: int = 0, _id: str or None = None):
         self._id = _id
         self.is_delete = is_delete
-
+        
         self.qq = qq  # 发布人
         self.username = username  # 发布人名
         self.text = text  # 公告正文
