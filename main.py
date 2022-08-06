@@ -16,6 +16,7 @@ import flower_dao
 import util
 from global_config import logger
 from model import *
+from world_handler import update_world
 
 redis_db = {
     "db": global_config.redis_background_db,
@@ -47,11 +48,16 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def start_event():
+    # 每天凌晨3、4点更新天气
     scheduler.add_job(util.get_all_weather, 'cron', day_of_week='0-6', hour=3, minute=0,
                       second=0, timezone='Asia/Shanghai', args=[], id="get_all_weather_regularly",
                       replace_existing=True)
     scheduler.add_job(util.get_all_weather, 'cron', day_of_week='0-6', hour=4, minute=0,
                       second=0, timezone='Asia/Shanghai', args=[], id="get_all_weather_regularly2",
+                      replace_existing=True)
+    # 每天凌晨3天更新世界
+    scheduler.add_job(update_world, 'cron', day_of_week='0-6', hour=3, minute=0,
+                      second=0, timezone='Asia/Shanghai', args=[], id="update_world",
                       replace_existing=True)
     scheduler.start()
     logger.info('背景任务已启动')

@@ -32,6 +32,12 @@ mongo_item = mongo_db['item']  # 物品
 mongo_weather = mongo_db['weather']  # 天气
 mongo_mail = mongo_db['mail']  # 信件
 
+mongo_world_terrain = mongo_db['world_terrain']  # 世界地形
+mongo_world_area = mongo_db['world_area']  # 世界地区
+mongo_kingdom = mongo_db['kingdom']  # 世界地区
+mongo_relationship = mongo_db['relationship']  # 世界地区
+mongo_person = mongo_db['person']  # npc
+
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
 
 # Redis
@@ -54,6 +60,13 @@ redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品i
 redis_weather_prefix = redis_global_prefix + 'weather_'  # 天气redis前缀（城市id+日期）
 redis_mail_prefix = redis_global_prefix + 'mail_'  # 信件redis前缀（信件id）
 redis_mails_prefix = redis_global_prefix + 'mails'  # 正在投递中的mail
+
+redis_world_terrain_prefix = redis_global_prefix + 'world_terrain_'  # 世界地形redis前缀
+redis_world_area_prefix = redis_global_prefix + 'world_area_'  # 世界地区redis前缀
+redis_kingdom_prefix = redis_global_prefix + 'kingdom_'  # 国家redis前缀
+redis_person_prefix = redis_global_prefix + 'person_'  # npc redis前缀
+redis_relationship_prefix = redis_global_prefix + 'relationship_'  # 关系redis前缀
+redis_all_person_prefix = redis_global_prefix + 'all_person_'  # npc redis前缀
 
 redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
 redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
@@ -858,8 +871,242 @@ def insert_mail(mail: Mail) -> str:
     :return: id
     """
     result = mongo_mail.insert_one(class_to_dict(mail))
-    redis_db.delete(redis_weather_prefix + str(result.inserted_id))
+    redis_db.delete(redis_mail_prefix + str(result.inserted_id))
     redis_db.delete(redis_mails_prefix)
+    return str(result.inserted_id)
+
+
+####################################################################################################
+# 世界模型
+
+
+def select_world_terrain(_id: str) -> WorldTerrain:
+    """
+    根据id查询世界地形
+    :param _id: id
+    :return: 世界地形
+    """
+    redis_ans = redis_db.get(redis_world_terrain_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_terrain.find_one({"_id": ObjectId(_id)})
+        world_terrain: WorldTerrain = WorldTerrain()
+        dict_to_class(result, world_terrain)
+        redis_db.set(redis_world_terrain_prefix + _id, serialization(world_terrain), ex=get_long_random_expire())
+        return world_terrain
+
+
+def select_world_terrain_by_name(name: str) -> WorldTerrain:
+    """
+    根据id查询世界地形
+    :param name: 地形名
+    :return: 世界地形
+    """
+    redis_ans = redis_db.get(redis_world_terrain_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_terrain.find_one({"name": name})
+        world_terrain: WorldTerrain = WorldTerrain()
+        dict_to_class(result, world_terrain)
+        redis_db.set(redis_world_terrain_prefix + name, serialization(world_terrain), ex=get_long_random_expire())
+        return world_terrain
+
+
+def insert_world_terrain(world_terrain: WorldTerrain) -> str:
+    """
+    插入地形
+    :param world_terrain: 世界地形
+    :return: id
+    """
+    result = mongo_world_terrain.insert_one(class_to_dict(world_terrain))
+    redis_db.delete(redis_world_terrain_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_world_area(_id: str) -> WorldArea:
+    """
+    根据id查询世界地区
+    :param _id: id
+    :return: 世界地区
+    """
+    redis_ans = redis_db.get(redis_world_area_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_area.find_one({"_id": ObjectId(_id)})
+        world_area: WorldArea = WorldArea()
+        dict_to_class(result, world_area)
+        redis_db.set(redis_world_area_prefix + _id, serialization(world_area), ex=get_long_random_expire())
+        return world_area
+
+
+def select_world_area_by_name(name: str) -> WorldArea:
+    """
+    根据名字查询世界地区
+    :param name: 地区名
+    :return: 世界地区
+    """
+    redis_ans = redis_db.get(redis_world_area_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_area.find_one({"name": name})
+        world_area: WorldArea = WorldArea()
+        dict_to_class(result, world_area)
+        redis_db.set(redis_world_area_prefix + name, serialization(world_area), ex=get_long_random_expire())
+        return world_area
+
+
+def insert_world_area(world_area: WorldArea) -> str:
+    """
+    插入地形
+    :param world_area: 世界地区
+    :return: id
+    """
+    result = mongo_world_area.insert_one(class_to_dict(world_area))
+    redis_db.delete(redis_world_area_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_kingdom(_id: str) -> Kingdom:
+    """
+    根据id查询帝国
+    :param _id: id
+    :return: 帝国
+    """
+    redis_ans = redis_db.get(redis_kingdom_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_kingdom.find_one({"_id": ObjectId(_id)})
+        kingdom: Kingdom = Kingdom()
+        dict_to_class(result, kingdom)
+        redis_db.set(redis_kingdom_prefix + _id, serialization(kingdom), ex=get_long_random_expire())
+        return kingdom
+
+
+def select_kingdom_by_name(name: str) -> Kingdom:
+    """
+    根据名字查询帝国
+    :param name: 帝国名
+    :return: 帝国
+    """
+    redis_ans = redis_db.get(redis_kingdom_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_kingdom.find_one({"name": name})
+        kingdom: Kingdom = Kingdom()
+        dict_to_class(result, kingdom)
+        redis_db.set(redis_kingdom_prefix + name, serialization(kingdom), ex=get_long_random_expire())
+        return kingdom
+
+
+def insert_kingdom(kingdom: Kingdom) -> str:
+    """
+    插入帝国
+    :param kingdom: 国家
+    :return: id
+    """
+    result = mongo_kingdom.insert_one(class_to_dict(kingdom))
+    redis_db.delete(redis_kingdom_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_relationship(_id: str) -> Relationship:
+    """
+    根据id查询关系
+    :param _id: id
+    :return: 关系
+    """
+    redis_ans = redis_db.get(redis_relationship_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_relationship.find_one({"_id": ObjectId(_id)})
+        relationship: Relationship = Relationship()
+        dict_to_class(result, relationship)
+        redis_db.set(redis_relationship_prefix + _id, serialization(relationship), ex=get_long_random_expire())
+        return relationship
+
+
+def select_relationship_by_pair(src_person: str, dst_person: str) -> Relationship:
+    """
+    根据人物查询关系
+    :param src_person: 人物1
+    :param dst_person: 人物2
+    :return: 关系
+    """
+    redis_ans = redis_db.get(redis_relationship_prefix + src_person + '_' + dst_person)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_relationship.find_one({"src_person": src_person, 'dst_person': dst_person})
+        relationship: Relationship = Relationship()
+        dict_to_class(result, relationship)
+        redis_db.set(redis_relationship_prefix + src_person + '_' + dst_person, serialization(relationship),
+                     ex=get_long_random_expire())
+        return relationship
+
+
+def insert_relationship(relationship: Relationship) -> str:
+    """
+    插入地形
+    :param relationship: 关系
+    :return: id
+    """
+    result = mongo_relationship.insert_one(class_to_dict(relationship))
+    redis_db.delete(redis_relationship_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_all_person(page: int, page_size: int = 30) -> List[str]:
+    """
+    查询所有npc
+    :param page: 页码
+    :param page_size: 页面大小
+    :return: npc 的 id数组
+    """
+    redis_ans = redis_db.get(redis_all_person_prefix + '%d_%d' % (page, page_size))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_person.find({"is_delete": 0})
+        person_id_list: List[str] = []
+        for person_result in result:
+            person_id_list.append(str(person_result['_id']))
+        redis_db.set(redis_all_person_prefix + '%d_%d' % (page, page_size), serialization(person_id_list),
+                     ex=get_long_random_expire())
+        return person_id_list
+
+
+def select_person(_id: str) -> Person:
+    """
+    根据id查询npc
+    :param _id: id
+    :return: npc
+    """
+    redis_ans = redis_db.get(redis_person_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_person.find_one({"_id": ObjectId(_id)})
+        person: Person = Person()
+        dict_to_class(result, person)
+        redis_db.set(redis_person_prefix + _id, serialization(person), ex=get_long_random_expire())
+        return person
+
+
+def insert_person(person: Person) -> str:
+    """
+    插入地形
+    :param person: npc
+    :return: id
+    """
+    result = mongo_person.insert_one(class_to_dict(person))
+    redis_db.delete(redis_person_prefix + str(result.inserted_id))
     return str(result.inserted_id)
 
 

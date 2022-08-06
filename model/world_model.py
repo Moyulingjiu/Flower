@@ -12,13 +12,13 @@ class Disease(Enum):
     """
     疾病枚举类
     """
-
+    
     none = 0
-
+    
     @classmethod
     def view_level(cls, disease) -> str:
         pass
-
+    
     @classmethod
     def get_level(cls, disease: str):
         pass
@@ -28,13 +28,13 @@ class Profession(Enum):
     """
     职业类
     """
-
+    
     none = 0
-
+    
     @classmethod
     def view_level(cls, profession) -> str:
         pass
-
+    
     @classmethod
     def get_level(cls, profession: str):
         pass
@@ -44,26 +44,39 @@ class Race(Enum):
     """
     种族类
     """
-
+    
     @classmethod
     def view_level(cls, race) -> str:
         pass
-
+    
     @classmethod
     def get_level(cls, race: str):
         pass
+
+
+class WorldTerrain(EntityClass):
+    """
+    世界地区
+    """
+    
+    def __init__(self, name: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 世界地形名
 
 
 class WorldArea(EntityClass):
     """
     世界地区
     """
-
+    
     def __init__(self, name: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 地区名
 
 
@@ -71,12 +84,12 @@ class Kingdom(EntityClass):
     """
     王国
     """
-
+    
     def __init__(self, name: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 王国名
 
 
@@ -85,13 +98,13 @@ class Relationship(EntityClass):
     人际关系
     人物src_person->des_person的好感为value，value为0表示不喜欢也不讨厌，小于0讨厌，大于0喜欢
     """
-
-    def __init__(self, src_person: str = '', des_person: str = '', value: int = 0,
+    
+    def __init__(self, src_person: str = '', dst_person: str = '', value: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
         self.src_person = src_person  # 人物1
-        self.des_person = des_person  # 人物2
+        self.dst_person = dst_person  # 人物2
         self.value = value  # 关系水平
 
 
@@ -99,10 +112,11 @@ class Person(EntityClass):
     """
     人物模型
     """
-
+    
     def __init__(self, name: str = '', gender: Gender = Gender.male, sexual_orientation: Gender = Gender.female,
                  spouse_id: str = '', predecessor: List[Tuple[str, datetime]] = None, relationships: List[str] = None,
                  children: List[str] = None, father_id: str = '', mother_id: str = '',
+                 die: bool = False, die_time: datetime = datetime.now(),
                  world_area_id: str = '', born_area_id: str = '', born_time: datetime = datetime.now(),
                  gold: int = 0, disease: Disease = Disease.none, profession: Profession = Profession.none,
                  wisdom: int = 0, leadership: int = 0, force: int = 0, affinity: int = 0, ambition: int = 0,
@@ -112,7 +126,7 @@ class Person(EntityClass):
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 名字
         self.gender = gender  # 性别
         self.sexual_orientation = sexual_orientation  # 性取向
@@ -131,11 +145,14 @@ class Person(EntityClass):
         self.world_area_id = world_area_id  # 当前所在地
         self.born_area_id = born_area_id  # 出生地
         self.born_time = born_time  # 出生时间（现实中每一天是其一年）
-
+        
         self.gold = gold  # 金币
         self.disease = disease  # 疾病
         self.profession = profession  # 职业
-
+        
+        self.die = die  # 是否死亡
+        self.die_time = die_time  # 死亡时间
+        
         self.wisdom = wisdom  # 智慧
         self.leadership = leadership  # 领导力
         self.force = force  # 武力
@@ -144,7 +161,7 @@ class Person(EntityClass):
         self.health = health  # 健康（健康与疾病不同，健康影响的是患疾病的概率，而不是直接有病，病还可能是外伤）
         self.appearance = appearance  # 外貌
         self.appearance_description = appearance_description  # 外貌描述
-
+        
         self.justice_or_evil = justice_or_evil  # 正义/邪恶：（0~100）：影响是否会帮助弱小，是否会欺骗别人。
         self.extroversion_or_introversion = extroversion_or_introversion  # 外向/内向：（0~100）：影响是否愿意出门，是否愿意和其他人交朋友。
         self.bravery_or_cowardly = bravery_or_cowardly  # 勇敢/胆怯：（0~100）：影响是否会上战场，遇见危机的情况。
