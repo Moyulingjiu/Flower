@@ -926,7 +926,7 @@ class User(EntityClass):
                  last_sign_date: datetime = datetime.today() - timedelta(days=1), sign_count: int = 0,
                  sign_continuous: int = 0, draw_card_number: int = 5, beginner_pack: bool = False,
                  warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), mailbox: MailBox = MailBox(),
-                 buff: List[DecorateBuff] = None,
+                 buff: List[DecorateBuff] = None, achievement: List[DecorateAchievement] = None,
                  born_city_id: str = '', city_id: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
@@ -951,6 +951,9 @@ class User(EntityClass):
         if buff is None:
             buff = []
         self.buff = buff  # Buff
+        if achievement is None:
+            achievement = []
+        self.achievement = achievement  # 成就
         
         self.born_city_id = born_city_id  # 出生城市id
         self.city_id = city_id  # 当前城市id

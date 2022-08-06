@@ -524,7 +524,8 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     :param overripe_time: mature_time——overripe_time过熟
     :return:
     """
-    if user.farm.hour <= overripe_time:
+    if user.farm.hour <= overripe_time * 2:
+        # 计算条件
         if user.farm.hour <= seed_time:
             condition_level: ConditionLevel = flower.seed_condition.get_condition_level(user.farm.temperature,
                                                                                         user.farm.humidity,
@@ -541,6 +542,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             condition_level: ConditionLevel = flower.mature_condition.get_condition_level(user.farm.temperature,
                                                                                           user.farm.humidity,
                                                                                           user.farm.nutrition)
+        # 根据条件不同来计算完美时间和糟糕的时间
         if condition_level == ConditionLevel.PERFECT:
             user.farm.perfect_hour += 1
         elif condition_level == ConditionLevel.BAD:
@@ -548,8 +550,39 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.bad_hour += 1
         else:
             user.farm.perfect_hour = 0
-            user.farm.hour += 1
         
+        # 根据条件不同，每小时增长的小时不同
+        if condition_level == ConditionLevel.PERFECT:
+            if flower.level == FlowerLevel.S:
+                user.farm.hour += 1.2
+            elif flower.level == FlowerLevel.A:
+                user.farm.hour += 1.6
+            elif flower.level == FlowerLevel.B:
+                user.farm.hour += 1.8
+            elif flower.level == FlowerLevel.C:
+                user.farm.hour += 2.0
+            else:
+                user.farm.hour += 1.0
+        elif condition_level == ConditionLevel.SUITABLE:
+            user.farm.hour += 1
+        if condition_level == ConditionLevel.NORMAL:
+            if flower.level == FlowerLevel.S:
+                user.farm.hour += 0.5
+            else:
+                user.farm.hour += 0.8
+        else:
+            if flower.level == FlowerLevel.S:
+                user.farm.hour += 0.3
+            elif flower.level == FlowerLevel.A:
+                user.farm.hour += 0.4
+            elif flower.level == FlowerLevel.B:
+                user.farm.hour += 0.5
+            elif flower.level == FlowerLevel.C:
+                user.farm.hour += 0.6
+            else:
+                user.farm.hour += 1.0
+        
+        # 根据条件来查看花的状态
         if user.farm.bad_hour > flower.withered_time:
             user.farm.flower_state = FlowerState.withered
         elif user.farm.perfect_hour > flower.prefect_time > 0:
@@ -557,6 +590,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
         else:
             user.farm.flower_state = FlowerState.normal
     else:
+        # 如果已经超过过熟的时间那么一定是枯萎了
         user.farm.flower_state = FlowerState.withered
 
 

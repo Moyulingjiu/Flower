@@ -13,7 +13,7 @@ __all__ = [
     "Condition", "Conditions", "ConditionLevel", "FlowerLevel", "Flower",
     "User", "SignRecord", "Weather", "FlowerState", "Mail", "MailBox",
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
-    "Result", "SystemData", "Announcement", "Buff", "DecorateBuff",
+    "Result", "SystemData", "Announcement", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
     
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person",
     

@@ -146,6 +146,8 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return dict_to_class(d, MailBox())
     elif d['class_type'] == 'DecorateBuff':
         return dict_to_class(d, DecorateBuff())
+    elif d['class_type'] == 'DecorateAchievement':
+        return dict_to_class(d, DecorateAchievement())
     return None
 
 

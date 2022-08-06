@@ -2217,7 +2217,7 @@ class FlowerService:
                     context: TravelContext = TravelContext()
                     flower_dao.insert_context(qq, context)
                     return user.username + '，请输入一个城市名前往，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
-                if item.item_name == '小金币卡':
+                elif item.item_name == '小金币卡':
                     gold = random.randint(50 * item.number, 501 * item.number)
                     user.gold += gold
                     return user.username + '，获得%.2f金币' % (gold / 100)
