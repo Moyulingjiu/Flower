@@ -2138,6 +2138,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.thermometer.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.thermometer])
+                    item.update = datetime.now()
                     user.farm.thermometer = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2147,6 +2148,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.soil_monitoring_station.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.soil_monitoring_station])
+                    item.update = datetime.now()
                     user.farm.soil_monitoring_station = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2156,6 +2158,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.watering_pot.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.watering_pot])
+                    item.update = datetime.now()
                     user.farm.watering_pot = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2165,6 +2168,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.weather_station.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.weather_station])
+                    item.update = datetime.now()
                     user.farm.weather_station = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2174,6 +2178,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.mailbox.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.mailbox])
+                    item.update = datetime.now()
                     user.farm.mailbox = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2183,6 +2188,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.greenhouse.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.greenhouse])
+                    item.update = datetime.now()
                     user.farm.greenhouse = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2192,6 +2198,7 @@ class FlowerService:
                 if item.number == 1:
                     if user.farm.warehouse.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.warehouse])
+                    item.update = datetime.now()
                     user.farm.warehouse = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2199,21 +2206,25 @@ class FlowerService:
             # 特殊道具
             elif item.item_type == ItemType.props:
                 if item.item_name == '随机旅行卡':
+                    if item.number != 1:
+                        raise UseFailException(user.username + '，该类型物品只能使用一个')
                     context: RandomTravelContext = RandomTravelContext()
                     flower_dao.insert_context(qq, context)
                     return user.username + '，请输入“确认”来随机旅行，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
                 elif item.item_name == '定向旅行卡':
+                    if item.number != 1:
+                        raise UseFailException(user.username + '，该类型物品只能使用一个')
                     context: TravelContext = TravelContext()
                     flower_dao.insert_context(qq, context)
                     return user.username + '，请输入一个城市名前往，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
                 if item.item_name == '小金币卡':
                     gold = random.randint(50 * item.number, 501 * item.number)
                     user.gold += gold
-                    return user.username + '，获得%.2f金币' % int(user.gold / 100)
+                    return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '大金币卡':
                     gold = random.randint(50 * item.number, 1000001 * item.number)
                     user.gold += gold
-                    return user.username + '，获得%.2f金币' % int(user.gold / 100)
+                    return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '铲除卡':
                     if user.farm.flower_id == '':
                         raise UseFailException(user.username + '，你的农场没有花')

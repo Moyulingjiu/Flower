@@ -535,7 +535,7 @@ class DecorateItem(InnerClass):
         self.hour = hour  # 加速的时间
         self.level = level  # 级别（用于检测农场的气象站等）
         self.create = create  # 创建时间（用于一些物品失效检测）
-        self.update = update  # 修改时间
+        self.update = update  # 修改时间（用于耐久度检测，装备的耐久度都是时间）
     
     def show_without_number(self):
         ans: str = self.__str__()
@@ -802,7 +802,7 @@ class Mail(EntityClass):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
         self.role_id = role_id  # npc的id
         self.from_qq = from_qq  # 谁寄出来的（用户和npc只能有一个）
-        self.username= username  # 寄件人，可能会用名义去送（而不会实名）
+        self.username = username  # 寄件人，可能会用名义去送（而不会实名）
         self.target_qq = target_qq  # 谁收到这封
         self.title = title  # 标题
         self.text = text  # 正文
@@ -828,6 +828,94 @@ class MailBox(InnerClass):
         self.max_size = max_size
 
 
+class Buff(EntityClass):
+    """
+    增益or减益
+    """
+    
+    def __init__(self, name: str = '', lock_humidity: bool = False, lock_nutrition: bool = False,
+                 lock_soil: bool = False, lock_temperature: bool = False,
+                 change_humidity: float = 0.0, change_nutrition: float = 0.0, change_temperature: float = 0.0,
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # buff名字
+        self.lock_humidity = lock_humidity  # 是否锁定湿度
+        self.lock_nutrition = lock_nutrition  # 是否锁定营养
+        self.lock_temperature = lock_temperature  # 是否锁定温度
+        self.lock_soil = lock_soil  # 是否锁定土壤，不让转变
+        self.change_humidity = change_humidity  # 每小时改变的湿度
+        self.change_nutrition = change_nutrition  # 每小时改变的营养
+        self.change_temperature = change_temperature  # 每小时改变的营养
+
+
+class DecorateBuff(InnerClass):
+    """
+    装饰的buff
+    """
+    
+    def __init__(self, name: str = '', lock_humidity: bool = False, lock_nutrition: bool = False,
+                 lock_soil: bool = False, lock_temperature: bool = False,
+                 change_humidity: float = 0.0, change_nutrition: float = 0.0, change_temperature: float = 0.0,
+                 expired_time: datetime = datetime.now()):
+        super().__init__('DecorateBuff')
+        
+        self.name = name  # buff名字
+        self.lock_humidity = lock_humidity  # 是否锁定湿度
+        self.lock_nutrition = lock_nutrition  # 是否锁定营养
+        self.lock_temperature = lock_temperature  # 是否锁定温度
+        self.lock_soil = lock_soil  # 是否锁定土壤，不让转变
+        self.change_humidity = change_humidity  # 每小时改变的湿度
+        self.change_nutrition = change_nutrition  # 每小时改变的营养
+        self.change_temperature = change_temperature  # 每小时改变的营养
+        
+        self.expired_time = expired_time  # 过期时间
+    
+    def generate(self, buff: Buff):
+        """
+        将buff的数据填入自己
+        :param buff: buff
+        :return:
+        """
+        self.name = buff.name
+        self.lock_humidity = buff.lock_humidity
+        self.lock_nutrition = buff.lock_nutrition
+        self.lock_temperature = buff.lock_temperature
+        self.lock_soil = buff.lock_soil
+        self.change_humidity = buff.change_humidity
+        self.change_nutrition = buff.change_nutrition
+        self.change_temperature = buff.change_temperature
+    
+    def expired(self, now: datetime = datetime.now()):
+        return self.expired_time < now
+
+
+class Achievement(EntityClass):
+    """
+    成就类
+    """
+    
+    def __init__(self, name: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 成就名
+
+
+class DecorateAchievement(InnerClass):
+    """
+    装饰的成就类
+    """
+    
+    def __init__(self, name: str = '', achievement_time: datetime = datetime.now()):
+        super().__init__('DecorateAchievement')
+        
+        self.name = name
+        self.achievement_time = achievement_time
+
+
 class User(EntityClass):
     """
     用户类
@@ -838,6 +926,7 @@ class User(EntityClass):
                  last_sign_date: datetime = datetime.today() - timedelta(days=1), sign_count: int = 0,
                  sign_continuous: int = 0, draw_card_number: int = 5, beginner_pack: bool = False,
                  warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), mailbox: MailBox = MailBox(),
+                 buff: List[DecorateBuff] = None,
                  born_city_id: str = '', city_id: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
@@ -859,6 +948,9 @@ class User(EntityClass):
         self.warehouse = warehouse  # 仓库
         self.farm = farm  # 农场
         self.mailbox = mailbox  # 信箱
+        if buff is None:
+            buff = []
+        self.buff = buff  # Buff
         
         self.born_city_id = born_city_id  # 出生城市id
         self.city_id = city_id  # 当前城市id
