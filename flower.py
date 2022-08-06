@@ -97,6 +97,30 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise TypeException('格式错误！格式“花店信箱 【序号】”，省略序号查看整个信箱')
+            elif message[:4] == '花店成就':
+                data = message[4:].strip()
+                try:
+                    if len(data) > 0:
+                        page: int = int(data) - 1
+                    else:
+                        page: int = 0
+                    reply = FlowerService.view_achievement(qq, username, page)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise '格式错误！格式“花店成就 【页码】”页码可省略。'
+            elif message[:6].lower() == '花店buff':
+                data = message[6:].strip()
+                try:
+                    if len(data) > 0:
+                        page: int = int(data) - 1
+                    else:
+                        page: int = 0
+                    reply = FlowerService.view_buff(qq, username, page)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise '格式错误！格式“花店buff 【页码】”页码可省略。'
             
             # 操作部分
             elif message == '初始化花店':
@@ -597,6 +621,34 @@ class AdminHandler:
                 return '对方未注册'
             except ValueError:
                 raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+        elif message[:4] == '花店成就':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+            data = message[4:].strip()
+            try:
+                if len(data) > 0:
+                    page: int = int(data) - 1
+                else:
+                    page: int = 0
+                return FlowerService.view_achievement(at_list[0], '', page)
+            except ValueError:
+                raise '格式错误！格式“@xxx 花店成就 【页码】”页码可省略。'
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message[:6].lower() == '花店buff':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+            data = message[6:].strip()
+            try:
+                if len(data) > 0:
+                    page: int = int(data) - 1
+                else:
+                    page: int = 0
+                return FlowerService.view_buff(at_list[0], '', page)
+            except ValueError:
+                raise '格式错误！格式“@xxx 花店buff 【页码】”页码可省略。'
+            except UserNotRegisteredException:
+                return '对方未注册'
         elif message == '发送信件':
             context: AdminSendMailContext = AdminSendMailContext()
             flower_dao.insert_context(qq, context)
@@ -1694,6 +1746,68 @@ class FlowerService:
             return user.username + '，领取失败！该附件可能在送信的路上已损坏。人生命途总是充满了变数。'
         finally:
             flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+    
+    @classmethod
+    def view_buff(cls, qq: int, username: str, page: int = 0, page_size: int = 20):
+        """
+        查看成就
+        :param qq:
+        :param username:
+        :param page:
+        :param page_size:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        reply: str = '%s，你的BUFF如下：' % user.username
+        if len(user.buff) == 0:
+            reply += '\n没有任何buff呢~'
+            return reply
+        index = -1
+        for buff in user.buff:
+            index += 1
+            if index < page * page_size:
+                continue
+            elif index > (page + 1) * page_size:
+                break
+            reply += '\n' + str(buff)
+        total = len(user.buff)
+        if total > page_size:
+            total_page = total // page_size
+            if total % page_size > 0:
+                total_page += 1
+            reply += '\n------\n当前页码：%d/%d，输入“花店buff %d”查看下一页' % (page + 1, total_page, page + 2)
+        return reply
+    
+    @classmethod
+    def view_achievement(cls, qq: int, username: str, page: int = 0, page_size: int = 20) -> str:
+        """
+        查看成就
+        :param qq:
+        :param username:
+        :param page:
+        :param page_size:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        reply: str = '%s，你的成就如下：' % user.username
+        if len(user.achievement) == 0:
+            reply += '\n你的成就栏看起来还空空如也'
+            return reply
+        index = -1
+        for achievement in user.achievement:
+            index += 1
+            if index < page * page_size:
+                continue
+            elif index > (page + 1) * page_size:
+                break
+            reply += '\n' + str(achievement)
+        total = len(user.achievement)
+        if total > page_size:
+            total_page = total // page_size
+            if total % page_size > 0:
+                total_page += 1
+            reply += '\n------\n当前页码：%d/%d，输入“花店成就 %d”查看下一页' % (page + 1, total_page, page + 2)
+        return reply
     
     @classmethod
     def init_user(cls, qq: int, username: str) -> str:

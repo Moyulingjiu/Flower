@@ -872,6 +872,12 @@ class DecorateBuff(InnerClass):
         
         self.expired_time = expired_time  # 过期时间
     
+    def __str__(self):
+        return self.name + '（到期时间：%d）' % self.expired_time.strftime('%Y-%m-%d %H:%M:%S')
+    
+    def __repr__(self):
+        return self.__str__()
+    
     def generate(self, buff: Buff):
         """
         将buff的数据填入自己
@@ -909,11 +915,71 @@ class DecorateAchievement(InnerClass):
     装饰的成就类
     """
     
-    def __init__(self, name: str = '', achievement_time: datetime = datetime.now()):
+    def __init__(self, name: str = '', achievement_time: datetime = datetime.now(), level: int = 0):
         super().__init__('DecorateAchievement')
         
         self.name = name
         self.achievement_time = achievement_time
+        self.level = level
+    
+    @classmethod
+    def show_level(cls, level: int):
+        if level == 1:
+            return 'I'
+        elif level == 2:
+            return 'II'
+        elif level == 3:
+            return 'III'
+        elif level == 4:
+            return 'IV'
+        elif level == 5:
+            return 'V'
+        elif level == 6:
+            return 'VI'
+        elif level == 7:
+            return 'VII'
+        elif level == 8:
+            return 'VIII'
+        elif level == 9:
+            return 'IX'
+        elif level == 10:
+            return 'X'
+        return 'O'
+    
+    def __str__(self):
+        return '%s%s（%s）' % (
+            self.name,
+            self.show_level(self.level),
+            self.achievement_time.strftime('%Y-%m-%d %H:%M:%S')
+        )
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    def __gt__(self, other):
+        if not isinstance(other, DecorateAchievement):
+            raise TypeError('不可比较')
+        if self.level != other.level:
+            return self.level > other.level
+        return self.name > other.name
+    
+    def __lt__(self, other):
+        if not isinstance(other, DecorateAchievement):
+            raise TypeError('不可比较')
+        if self.level != other.level:
+            return self.level < other.level
+        return self.name < other.name
+    
+    def __eq__(self, other):
+        if not isinstance(other, DecorateAchievement):
+            raise TypeError('不可比较')
+        return self.level == other.level and self.name == other.name
+    
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+    
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
 
 
 class User(EntityClass):
