@@ -197,6 +197,8 @@ def analysis_item(data: str) -> DecorateItem:
     item.number = item_number
     
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+    if not item_obj.valid():
+        raise ItemNotFoundException('')
     item.item_type = item_obj.item_type
     if item_obj.item_type == ItemType.flower:
         item.flower_quality = FlowerQuality.normal

@@ -168,6 +168,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except TypeException:
                     raise TypeException('格式错误，格式“使用 【物品名字】 【数量】”')
+                except ItemNotFoundException:
+                    raise TypeException('该物品不存在！')
             elif message[:2] == '丢弃':
                 data = message[2:]
                 try:
@@ -209,6 +211,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except TypeException:
                     raise TypeException('格式错误，格式“丢弃 【物品名字】 【数量】”')
+                except ItemNotFoundException:
+                    raise TypeException('该物品不存在！')
             elif message == '清空花店仓库':
                 reply = FlowerService.throw_all_items(qq, username)
                 result.reply_text.append(reply)
@@ -348,6 +352,8 @@ class AdminHandler:
             except TypeException:
                 raise TypeException(
                     '格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【小时】/【耐久度】/【花的品质】）”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略')
+            except ItemNotFoundException:
+                raise TypeException('该物品不存在！')
             update_number: int = 0
             if len(at_list) == 0:
                 if cls.give_item(qq, qq, item):
@@ -1240,17 +1246,22 @@ class ContextHandler:
                             reply = '格式错误！格式“删除收件人 QQ号”'
                             result.context_reply_text.append(reply)
                     elif message[:4] == '追加附件':
-                        data = message[4:].strip()
-                        item: DecorateItem = util.analysis_item(data)
-                        if item.number < 1:
-                            reply = '格式错误！格式“追加附件 物品 数量 【小时数/品质/耐久】”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略'
+                        try:
+                            data = message[4:].strip()
+                            item: DecorateItem = util.analysis_item(data)
+                            if item.number < 1:
+                                reply = '格式错误！格式“追加附件 物品 数量 【小时数/品质/耐久】”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略'
+                                result.context_reply_text.append(reply)
+                                continue
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.appendix.append(item)
+                            flower_dao.insert_context(qq, context)
+                            reply = '成功追加物品：%s' % str(item)
                             result.context_reply_text.append(reply)
-                            continue
-                        flower_dao.remove_context(qq, origin_list[index])
-                        context.appendix.append(item)
-                        flower_dao.insert_context(qq, context)
-                        reply = '成功追加物品：%s' % str(item)
-                        result.context_reply_text.append(reply)
+                        except TypeException:
+                            raise '格式错误！格式“追加附件 物品 数量 【小时数/品质/耐久】”'
+                        except ItemNotFoundException:
+                            raise '格式错误！物品不存在'
                     elif message[:4] == '删除附件':
                         data = message[4:].strip()
                         try:
