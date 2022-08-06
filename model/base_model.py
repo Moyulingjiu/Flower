@@ -3,9 +3,46 @@
 模型基类
 """
 from datetime import datetime
+from enum import Enum
 from typing import List
 
 from pydantic import BaseModel
+
+
+class Gender(Enum):
+    """
+    性别
+    """
+    
+    male = 0  # 男
+    female = 1  # 女
+    intersex = 2  # 双性
+    unknown = 3  # 未知
+    
+    @classmethod
+    def get(cls, gender):
+        if gender == 0:
+            return cls.male
+        elif gender == 1:
+            return cls.female
+        elif gender == 2:
+            return cls.intersex
+        return cls.unknown
+    
+    def show(self) -> str:
+        if self == Gender.male:
+            return '男'
+        elif self == Gender.female:
+            return '女'
+        elif self == Gender.intersex:
+            return '双性'
+        return '未知'
+    
+    def __str__(self):
+        return self.show()
+    
+    def __repr__(self):
+        return self.show()
 
 
 class InnerClass:

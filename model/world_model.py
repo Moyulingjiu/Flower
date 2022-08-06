@@ -95,17 +95,6 @@ class Relationship(EntityClass):
         self.value = value  # 关系水平
 
 
-class Gender(Enum):
-    """
-    性别
-    """
-
-    male = 0  # 男
-    female = 1  # 女
-    intersex = 2  # 双性
-    unknown = 3  # 未知
-
-
 class Person(EntityClass):
     """
     人物模型

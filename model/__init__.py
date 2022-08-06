@@ -7,7 +7,7 @@ from model.base_model import *
 from model.stock_market_model import *
 
 __all__ = [
-    "InnerClass",
+    "InnerClass", "Gender",
     "FixPointNumber",
     "Region", "Terrain", "Climate", "Soil", "City",
     "Condition", "Conditions", "ConditionLevel", "FlowerLevel", "Flower",

@@ -809,12 +809,30 @@ class ContextHandler:
                         reply = FlowerService.query_city(message) + '\n请选择一座城市，只支持地级市（你可以输入“取消”来取消初始化账户）。'
                         result.context_reply_text.append(reply)
                         continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.city = city
+                    flower_dao.insert_context(qq, context)
+                    reply = bot_name + '已选择城市“%s”\n请为你的角色选择一个性别：男/女' % message
+                    result.context_reply_text.append(reply)
+                elif context.step == 1:
+                    gender: Gender = Gender.unknown
+                    if message == '男':
+                        gender = Gender.male
+                    elif message == '女':
+                        gender = Gender.female
+                    if gender == Gender.unknown:
+                        reply = bot_name + '请为你的角色选择一个性别：男/女（你可以输入“取消”来取消初始化账户）'
+                        result.context_reply_text.append(reply)
+                        continue
                     user: User = User()
                     user.qq = qq
                     user.username = username
+                    user.gender = gender
                     user.create_id = str(bot_qq)
                     user.update(bot_qq)
                     
+                    city: City = context.city
                     user.city_id = city.get_id()
                     user.born_city_id = city.get_id()
                     
@@ -823,7 +841,7 @@ class ContextHandler:
                     
                     flower_dao.insert_user(user)
                     del_context_list.append(origin_list[index])
-                    reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关，城市只是为了增强代入感！\n' + '现在输入“领取花店初始礼包”试试吧'
+                    reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关（包括但不限于城市、人物、事件），城市只是为了方便计算天气！\n' + '现在输入“领取花店初始礼包”试试吧'
                     result.context_reply_text.append(reply)
             # 新手指引
             elif isinstance(context, BeginnerGuideContext):
@@ -1156,6 +1174,7 @@ class FlowerService:
             if user.exp >= system_data.exp_level[i]:
                 level = i
         res += str(level + 1)
+        res += '\n角色性别：' + user.gender.show()
         res += '\n出生地：' + born_city.city_name
         res += '\n所在城市：' + city.city_name
         res += '\n金币：' + '%.2f' % (user.gold / 100)

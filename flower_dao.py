@@ -100,8 +100,10 @@ def class_to_dict(obj) -> Dict:
     """
     ans = {}
     if isinstance(obj, dict):
-        return obj
-    for key in obj.__dict__:
+        obj_dict = obj
+    else:
+        obj_dict = obj.__dict__
+    for key in obj_dict:
         if key[0] == '_':
             continue
         elif isinstance(obj.__dict__[key], Enum):
@@ -528,6 +530,7 @@ def select_user_by_qq(qq: int) -> User:
         result = mongo_user.find_one({"qq": qq, "is_delete": 0})
         user: User = User()
         dict_to_class(result, user)
+        user.gender = Gender.get(user.gender)
         redis_db.set(redis_user_prefix + str(qq), serialization(user), ex=get_random_expire())
         return user
 
@@ -544,6 +547,7 @@ def select_all_user(page: int = 0, page_size: int = 20) -> List[User]:
     for result_user in result:
         user: User = User()
         dict_to_class(result_user, user)
+        user.gender = Gender.get(user.gender)
         user_list.append(user)
     return user_list
 
@@ -561,6 +565,7 @@ def select_user_by_username(username: str) -> User:
         result = mongo_user.find_one({"username": username, "auto_get_name": False, "is_delete": 0})
         user: User = User()
         dict_to_class(result, user)
+        user.gender = Gender.get(user.gender)
         redis_db.set(redis_username_prefix + str(username), serialization(user), ex=get_random_expire())
         return user
 
