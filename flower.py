@@ -36,218 +36,251 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             return result
         flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
         
-        # 数据查询部分
-        if message[:4] == '查询城市' and message[4:].strip() != '':
-            reply = FlowerService.query_city(message[4:].strip())
-            result.reply_text.append(reply)
-            return result
-        elif message[:4] == '查询土壤' and message[4:].strip() != '':
-            reply = FlowerService.query_soil(message[4:].strip())
-            result.reply_text.append(reply)
-            return result
-        elif message[:3] == '查询花' and message[3:].strip() != '':
-            reply = FlowerService.query_flower(message[3:].strip())
-            result.reply_text.append(reply)
-            return result
-        elif message == '花店数据' and len(at_list) == 0:
-            reply = FlowerService.view_user_data(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message[:4] == '花店仓库' and len(at_list) == 0:
-            data = message[4:].strip()
-            page = 0
-            if data != '':
+        if len(at_list) == 0:
+            # 数据查询部分
+            if message[:4] == '查询城市' and message[4:].strip() != '':
+                reply = FlowerService.query_city(message[4:].strip())
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '查询土壤' and message[4:].strip() != '':
+                reply = FlowerService.query_soil(message[4:].strip())
+                result.reply_text.append(reply)
+                return result
+            elif message[:3] == '查询花' and message[3:].strip() != '':
+                reply = FlowerService.query_flower(message[3:].strip())
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店数据':
+                reply = FlowerService.view_user_data(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店仓库':
+                data = message[4:].strip()
+                page = 0
+                if data != '':
+                    try:
+                        page = int(data)
+                    except ValueError:
+                        raise TypeException('格式错误，格式“花店仓库【页码】”')
+                reply, description = FlowerService.view_warehouse(qq, username, page)
+                result.reply_text.append(reply)
+                if description != '':
+                    result.reply_text.append(description)
+                return result
+            elif message[:4] == '花店物品':
+                data = message[4:].strip()
+                reply = FlowerService.view_item(data)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店天气':
+                data = message[4:].strip()
+                reply = FlowerService.view_weather(data)
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店农场设备':
+                reply = FlowerService.view_user_farm_equipment(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店农场':
+                reply = FlowerService.view_user_farm(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店信箱':
+                reply = FlowerService.view_mailbox(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店信箱':
                 try:
-                    page = int(data)
+                    index = int(message[4:].strip())
+                    reply = FlowerService.view_mail(qq, username, index)
+                    result.reply_text.append(reply)
+                    return result
                 except ValueError:
-                    raise TypeException('格式错误，格式“花店仓库【页码】”')
-            reply, description = FlowerService.view_warehouse(qq, username, page)
-            result.reply_text.append(reply)
-            if description != '':
-                result.reply_text.append(description)
-            return result
-        elif message[:4] == '花店物品':
-            data = message[4:].strip()
-            reply = FlowerService.view_item(data)
-            result.reply_text.append(reply)
-            return result
-        elif message[:4] == '花店天气':
-            data = message[4:].strip()
-            reply = FlowerService.view_weather(data)
-            result.reply_text.append(reply)
-            return result
-        elif message == '花店农场设备' and len(at_list) == 0:
-            reply = FlowerService.view_user_farm_equipment(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '花店农场' and len(at_list) == 0:
-            reply = FlowerService.view_user_farm(qq, username)
-            result.reply_text.append(reply)
-            return result
-        
-        # 操作部分
-        elif message == '初始化花店':
-            reply = FlowerService.init_user(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '领取花店初始礼包':
-            reply = FlowerService.receive_beginner_gifts(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '花店签到':
-            reply = FlowerService.user_sign_in(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message[:2] == '转账':
-            data: str = message[2:]
-            if len(at_list) == 0:
-                raise AtListNullException('没有转账对象呢')
-            try:
-                origin_gold: float = float(data)
-                origin_gold *= 100.0
-                gold: int = int(origin_gold)
-            except ValueError:
-                raise TypeException('格式错误，格式“@xxx 转账 【数字】”')
-            reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
-            result.reply_text.append(reply)
-            return result
-        elif message[:2] == '使用':
-            data = message[2:]
-            try:
+                    raise TypeException('格式错误！格式“花店信箱 【序号】”，省略序号查看整个信箱')
+            
+            # 操作部分
+            elif message == '初始化花店':
+                reply = FlowerService.init_user(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '领取花店初始礼包':
+                reply = FlowerService.receive_beginner_gifts(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店签到':
+                reply = FlowerService.user_sign_in(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message[:2] == '转账':
+                data: str = message[2:]
+                if len(at_list) == 0:
+                    raise AtListNullException('没有转账对象呢')
+                try:
+                    origin_gold: float = float(data)
+                    origin_gold *= 100.0
+                    gold: int = int(origin_gold)
+                except ValueError:
+                    raise TypeException('格式错误，格式“@xxx 转账 【数字】”')
+                reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
+                result.reply_text.append(reply)
+                return result
+            elif message[:2] == '使用':
+                data = message[2:]
+                try:
+                    flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+                    user: User = util.get_user(qq, username)
+                    item: DecorateItem = util.analysis_item(data)
+                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
+                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
+                            item.item_type == ItemType.accelerate:
+                        item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
+                        choices: Dict[str, Choice] = {}
+                        if len(item_list) > 1:
+                            similar_items_name: List[DecorateItem] = []
+                            reply = '你的仓库有多件相似物品，可能为以下物品：'
+                            index: int = 0
+                            for warehouse_item in item_list:
+                                if warehouse_item not in similar_items_name:
+                                    index += 1
+                                    reply += '\n%d.' % index + warehouse_item.show_without_number()
+                                    item.flower_quality = warehouse_item.flower_quality
+                                    item.durability = warehouse_item.durability
+                                    item.hour = warehouse_item.hour
+                                    args = {
+                                        'qq': qq,
+                                        'username': username,
+                                        'item': copy.deepcopy(item)
+                                    }
+                                    choices[str(index)] = Choice(args=args, callback=FlowerService.use_item)
+                                    similar_items_name.append(warehouse_item)
+                            reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
+                            if len(similar_items_name) > 1:
+                                flower_dao.insert_context(qq, ChooseContext(choices=choices))
+                                result.reply_text.append(reply)
+                                return result
+                        # 如果只有一件物品，那么丢弃的应该是这件物品
+                        item.durability = item_list[0].durability
+                        item.flower_quality = item_list[0].flower_quality
+                        item.hour = item_list[0].hour
+                    flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+                    reply = FlowerService.use_item(qq, username, item)
+                    result.reply_text.append(reply)
+                    return result
+                except TypeException:
+                    raise TypeException('格式错误，格式“使用 【物品名字】 【数量】”')
+            elif message[:2] == '丢弃':
+                data = message[2:]
+                try:
+                    flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+                    user: User = util.get_user(qq, username)
+                    item: DecorateItem = util.analysis_item(data)
+                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
+                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
+                        item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
+                        choices: Dict[str, Choice] = {}
+                        if len(item_list) > 1:
+                            similar_items_name: List[DecorateItem] = []
+                            reply = '你的仓库有多件相似物品，可能为以下物品：'
+                            index: int = 0
+                            for warehouse_item in item_list:
+                                if warehouse_item not in similar_items_name:
+                                    index += 1
+                                    reply += '\n%d.' % index + warehouse_item.show_without_number()
+                                    item.flower_quality = warehouse_item.flower_quality
+                                    item.durability = warehouse_item.durability
+                                    args = {
+                                        'qq': qq,
+                                        'username': username,
+                                        'item': copy.deepcopy(item)
+                                    }
+                                    choices[str(index)] = Choice(args=args, callback=FlowerService.throw_item)
+                                    similar_items_name.append(warehouse_item)
+                            reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
+                            if len(similar_items_name) > 1:
+                                flower_dao.insert_context(qq, ChooseContext(choices=choices))
+                                result.reply_text.append(reply)
+                                return result
+                        # 如果只有一件物品，那么丢弃的应该是这件物品
+                        item.durability = item_list[0].durability
+                        item.flower_quality = item_list[0].flower_quality
+                    flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+                    reply = FlowerService.throw_item(qq, username, item)
+                    result.reply_text.append(reply)
+                    return result
+                except TypeException:
+                    raise TypeException('格式错误，格式“丢弃 【物品名字】 【数量】”')
+            elif message == '清空花店仓库':
+                reply = FlowerService.throw_all_items(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message[:2] == '种植':
+                data = message[2:].strip()
+                reply = FlowerService.plant_flower(qq, username, data)
+                result.reply_text.append(reply)
+                return result
+            elif message[:2] == '浇水':
+                data = message[2:].strip()
+                try:
+                    if len(data) > 0:
+                        multiple: int = int(data)
+                    else:
+                        multiple: int = 1
+                    reply = FlowerService.watering(qq, username, multiple)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise TypeException('格式错误，格式“浇水 【次数】”。次数可以省略，默认一次。')
+            elif message == '收获':
+                reply = FlowerService.reward_flower(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '铲除花':
+                reply = FlowerService.remove_flower(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message[:6] == '设置花店昵称':
+                new_username = message[6:].strip()
+                if len(new_username) == 0 or '_' in new_username:
+                    raise TypeException('格式错误！格式“设置花店昵称 【新的昵称】”')
+                system_data: SystemData = flower_dao.select_system_data()
+                for word in system_data.username_screen_words:
+                    if word in new_username:
+                        raise TypeException('名字中含有违禁词或敏感词汇')
+                reply = FlowerService.change_username(qq, username, new_username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '清除花店昵称':
+                reply = FlowerService.clear_username(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '整理仓库':
                 flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
                 user: User = util.get_user(qq, username)
-                item: DecorateItem = util.analysis_item(data)
-                if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                        item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
-                        item.item_type == ItemType.accelerate:
-                    item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
-                    choices: Dict[str, Choice] = {}
-                    if len(item_list) > 1:
-                        similar_items_name: List[DecorateItem] = []
-                        reply = '你的仓库有多件相似物品，可能为以下物品：'
-                        index: int = 0
-                        for warehouse_item in item_list:
-                            if warehouse_item not in similar_items_name:
-                                index += 1
-                                reply += '\n%d.' % index + warehouse_item.show_without_number()
-                                item.flower_quality = warehouse_item.flower_quality
-                                item.durability = warehouse_item.durability
-                                item.hour = warehouse_item.hour
-                                args = {
-                                    'qq': qq,
-                                    'username': username,
-                                    'item': copy.deepcopy(item)
-                                }
-                                choices[str(index)] = Choice(args=args, callback=FlowerService.use_item)
-                                similar_items_name.append(warehouse_item)
-                        reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
-                        if len(similar_items_name) > 1:
-                            flower_dao.insert_context(qq, ChooseContext(choices=choices))
-                            result.reply_text.append(reply)
-                            return result
-                    # 如果只有一件物品，那么丢弃的应该是这件物品
-                    item.durability = item_list[0].durability
-                    item.flower_quality = item_list[0].flower_quality
-                    item.hour = item_list[0].hour
-                flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-                reply = FlowerService.use_item(qq, username, item)
+                util.sort_items(user.warehouse)
+                flower_dao.update_user_by_qq(user)
+                reply = '整理完成'
                 result.reply_text.append(reply)
                 return result
-            except TypeException:
-                raise TypeException('格式错误，格式“使用 【物品名字】 【数量】”')
-        elif message[:2] == '丢弃':
-            data = message[2:]
-            try:
-                flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
-                user: User = util.get_user(qq, username)
-                item: DecorateItem = util.analysis_item(data)
-                if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                        item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
-                    item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
-                    choices: Dict[str, Choice] = {}
-                    if len(item_list) > 1:
-                        similar_items_name: List[DecorateItem] = []
-                        reply = '你的仓库有多件相似物品，可能为以下物品：'
-                        index: int = 0
-                        for warehouse_item in item_list:
-                            if warehouse_item not in similar_items_name:
-                                index += 1
-                                reply += '\n%d.' % index + warehouse_item.show_without_number()
-                                item.flower_quality = warehouse_item.flower_quality
-                                item.durability = warehouse_item.durability
-                                args = {
-                                    'qq': qq,
-                                    'username': username,
-                                    'item': copy.deepcopy(item)
-                                }
-                                choices[str(index)] = Choice(args=args, callback=FlowerService.throw_item)
-                                similar_items_name.append(warehouse_item)
-                        reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
-                        if len(similar_items_name) > 1:
-                            flower_dao.insert_context(qq, ChooseContext(choices=choices))
-                            result.reply_text.append(reply)
-                            return result
-                    # 如果只有一件物品，那么丢弃的应该是这件物品
-                    item.durability = item_list[0].durability
-                    item.flower_quality = item_list[0].flower_quality
-                flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
-                reply = FlowerService.throw_item(qq, username, item)
+            elif message[:4] == '删除信件':
+                try:
+                    index = int(message[4:].strip())
+                    reply = FlowerService.delete_mail(qq, username, index)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise TypeException('格式错误！格式“删除信件 【序号】”')
+            elif message == '清空信箱':
+                reply = FlowerService.clear_mailbox(qq, username)
                 result.reply_text.append(reply)
                 return result
-            except TypeException:
-                raise TypeException('格式错误，格式“丢弃 【物品名字】 【数量】”')
-        elif message == '清空花店仓库':
-            reply = FlowerService.throw_all_items(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message[:2] == '种植':
-            data = message[2:].strip()
-            reply = FlowerService.plant_flower(qq, username, data)
-            result.reply_text.append(reply)
-            return result
-        elif message[:2] == '浇水':
-            data = message[2:].strip()
-            try:
-                if len(data) > 0:
-                    multiple: int = int(data)
-                else:
-                    multiple: int = 1
-                reply = FlowerService.watering(qq, username, multiple)
-                result.reply_text.append(reply)
-                return result
-            except ValueError:
-                raise TypeException('格式错误，格式“浇水 【次数】”。次数可以省略，默认一次。')
-        elif message == '收获':
-            reply = FlowerService.reward_flower(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '铲除花':
-            reply = FlowerService.remove_flower(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message[:6] == '设置花店昵称':
-            new_username = message[6:].strip()
-            if len(new_username) == 0 or '_' in new_username:
-                raise TypeException('格式错误！格式“设置花店昵称 【新的昵称】”')
-            system_data: SystemData = flower_dao.select_system_data()
-            for word in system_data.username_screen_words:
-                if word in new_username:
-                    raise TypeException('名字中含有违禁词或敏感词汇')
-            reply = FlowerService.change_username(qq, username, new_username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '清除花店昵称':
-            reply = FlowerService.clear_username(qq, username)
-            result.reply_text.append(reply)
-            return result
-        elif message == '整理仓库':
-            flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
-            user: User = util.get_user(qq, username)
-            util.sort_items(user.warehouse)
-            flower_dao.update_user_by_qq(user)
-            reply = '整理完成'
-            result.reply_text.append(reply)
-            return result
+            elif message[:4] == '领取附件':
+                try:
+                    index = int(message[4:].strip())
+                    reply = FlowerService.receive_appendix_mail(qq, username, index)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise TypeException('格式错误！格式“领取附件 【序号】”，领取某一封信的附件')
         
         # 管理员操作
         if util.get_user_right(qq) == UserRight.ADMIN:
@@ -311,10 +344,10 @@ class AdminHandler:
                 item: DecorateItem = util.analysis_item(data)
                 if item.number < 1:
                     raise TypeException(
-                        '格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【耐久度】/【花的品质】）”。数量需要大于0')
+                        '格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【小时】/【耐久度】/【花的品质】）”。数量需要大于0')
             except TypeException:
                 raise TypeException(
-                    '格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【耐久度】/【花的品质】）”。如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略')
+                    '格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【小时】/【耐久度】/【花的品质】）”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略')
             update_number: int = 0
             if len(at_list) == 0:
                 if cls.give_item(qq, qq, item):
@@ -541,6 +574,27 @@ class AdminHandler:
                 return FlowerService.view_user_farm_equipment(at_list[0], '')
             except UserNotRegisteredException:
                 return '对方未注册'
+        elif message == '花店信箱':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+            try:
+                return FlowerService.view_mailbox(at_list[0], '')
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message[:4] == '花店信箱':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+            try:
+                index = int(message[4:].strip())
+                return FlowerService.view_mail(at_list[0], '', index)
+            except UserNotRegisteredException:
+                return '对方未注册'
+            except ValueError:
+                raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+        elif message == '发送信件':
+            context: AdminSendMailContext = AdminSendMailContext()
+            flower_dao.insert_context(qq, context)
+            return '请问信件的标题是什么？只可以包含文字。'
         elif message == '更新所有城市天气':
             @async_function
             def get_all_weather():
@@ -841,7 +895,9 @@ class ContextHandler:
                     
                     flower_dao.insert_user(user)
                     del_context_list.append(origin_list[index])
-                    reply = bot_name + '已为您初始化花店\n' + '免责声明：本游戏一切内容与现实无关（包括但不限于城市、人物、事件），城市只是为了方便计算天气！\n' + '现在输入“领取花店初始礼包”试试吧'
+                    reply = bot_name + '已为您初始化花店\n' \
+                                       '免责声明：本游戏一切内容与现实无关（包括但不限于城市、人物、事件），城市只是为了方便计算天气！\n' \
+                                       '现在输入“领取花店初始礼包”试试吧'
                     result.context_reply_text.append(reply)
             # 新手指引
             elif isinstance(context, BeginnerGuideContext):
@@ -1031,6 +1087,235 @@ class ContextHandler:
                     del_context_list.append(origin_list[index])
                     reply = '公告已推送'
                     result.context_reply_text.append(reply)
+            # 发送信件
+            elif isinstance(context, AdminSendMailContext):
+                if message == '取消' and context.step != 4:
+                    del_context_list.append(origin_list[index])
+                    reply = '已为您取消发送信件'
+                    result.context_reply_text.append(reply)
+                    continue
+                if context.step == 0:
+                    title = message.strip()
+                    if len(title) == 0:
+                        reply = '信件的标题不能为空哦！（你可以输入“取消”来取消发送信件）'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.title = title
+                    flower_dao.insert_context(qq, context)
+                    reply = '请问信件的正文内容是什么？只可以包含文字。'
+                    result.context_reply_text.append(reply)
+                elif context.step == 1:
+                    text = message.strip()
+                    if len(text) == 0:
+                        reply = '信件的正文不能为空哦！（你可以输入“取消”来取消发送信件）'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.text = text
+                    flower_dao.insert_context(qq, context)
+                    reply = '请问信件的发送名义是什么？只可以包含文字。'
+                    result.context_reply_text.append(reply)
+                elif context.step == 2:
+                    mail_username: str = message.strip()
+                    if len(mail_username) == 0:
+                        reply = '发送的名义不能为空哦！（你可以输入“取消”来取消发送信件）'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    context.username = mail_username
+                    flower_dao.insert_context(qq, context)
+                    reply = '很好！你可以输入以下内容：\n' \
+                            '1.“追加附件 物品 数量 【小时数/品质/耐久】”来追加物品\n' \
+                            '2.“删除附件 序号”来删除一个附件\n' \
+                            '2.“追加收件人 QQ号”来追加一个收件人\n' \
+                            '3.“删除收件人 QQ号”来删除一个收件人\n' \
+                            '4.“发送给所有人”来发送信件给所有人\n' \
+                            '5.“取消发送给所有人”来取消发送信件给所有人\n' \
+                            '6.“预览信件”来预览整个信件\n' \
+                            '7.“确认”发送信件，注意必须要有一个收件人！\n' \
+                            '8.“取消”来取消发送'
+                    result.context_reply_text.append(reply)
+                elif context.step == 3:
+                    if message == '确认':
+                        if len(context.addressee) == 0 and not context.send_all_user:
+                            reply = '没有任何收件人！请追加收件人'
+                            result.context_reply_text.append(reply)
+                            continue
+                        del_context_list.append(origin_list[index])
+                        mail: Mail = Mail()
+                        mail.from_qq = qq
+                        mail.title = context.title
+                        mail.text = context.text
+                        mail.username = context.username
+                        mail.appendix = context.appendix
+                        mail.arrived = True  # 已经抵达
+                        mail.status = '由系统直接送达'
+                        reply = ''
+                        update_number: int = 0
+                        if context.send_all_user:
+                            reply = '暂未实现'
+                        else:
+                            for target_qq in context.addressee:
+                                try:
+                                    if target_qq != qq:
+                                        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(target_qq))
+                                    user: User = util.get_user(target_qq)
+                                    mail.target_qq = target_qq
+                                    mail_id: str = flower_dao.insert_mail(mail)
+                                    user.mailbox.mail_list.append(mail_id)
+                                    flower_dao.update_user_by_qq(user)
+                                    update_number += 1
+                                    reply += str(target_qq) + '，发送成功\n'
+                                except UserNotRegisteredException:
+                                    reply += str(target_qq) + '，未注册\n'
+                                except ResBeLockedException:
+                                    reply += str(target_qq) + '，无法发送信件\n'
+                                finally:
+                                    if target_qq != qq:
+                                        flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(target_qq))
+                        reply += '成功把信件发送给%d个人' % update_number
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message == '预览信件':
+                        reply = context.title
+                        reply += '\n------\n'
+                        reply += context.text
+                        reply += '\n------\n'
+                        reply += '来自：%s' % context.username
+                        if len(context.appendix) > 0:
+                            reply += '\n附件：' + util.show_items(context.appendix)
+                        reply += '\n收件人：'
+                        if context.send_all_user:
+                            reply += '所有人'
+                        elif len(context.addressee) > 0:
+                            for target_qq in context.addressee:
+                                reply += str(target_qq) + ' '
+                            reply = reply[:-1]
+                        else:
+                            reply += '暂无'
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message == '发送给所有人':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step = 4
+                        flower_dao.insert_context(qq, context)
+                        reply = '确认要把信件发送给所有人吗？输入“确认”来确认，其余表示取消'
+                        result.context_reply_text.append(reply)
+                    elif message == '取消发送给所有人':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.send_all_user = False
+                        flower_dao.insert_context(qq, context)
+                        reply = '已取消发送给所有人'
+                        result.context_reply_text.append(reply)
+                    elif message[:5] == '追加收件人':
+                        try:
+                            target_qq = int(message[5:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            if target_qq not in context.addressee:
+                                reply = '成功追加收件人！'
+                                context.addressee.append(target_qq)
+                            else:
+                                reply = '追加失败！该人已在名单中'
+                            flower_dao.insert_context(qq, context)
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“追加收件人 QQ号”'
+                            result.context_reply_text.append(reply)
+                    elif message[:5] == '删除收件人':
+                        try:
+                            target_qq = int(message[5:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            if target_qq in context.addressee:
+                                reply = '成功删除收件人！'
+                                context.addressee.remove(target_qq)
+                            else:
+                                reply = '删除失败！该人不在名单中'
+                            flower_dao.insert_context(qq, context)
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“删除收件人 QQ号”'
+                            result.context_reply_text.append(reply)
+                    elif message[:4] == '追加附件':
+                        data = message[4:].strip()
+                        item: DecorateItem = util.analysis_item(data)
+                        if item.number < 1:
+                            reply = '格式错误！格式“追加附件 物品 数量 【小时数/品质/耐久】”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略'
+                            result.context_reply_text.append(reply)
+                            continue
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.appendix.append(item)
+                        flower_dao.insert_context(qq, context)
+                        reply = '成功追加物品：%s' % str(item)
+                        result.context_reply_text.append(reply)
+                    elif message[:4] == '删除附件':
+                        data = message[4:].strip()
+                        try:
+                            item_index: int = int(data)
+                            if item_index > 0:
+                                item_index -= 1
+                            if item_index < 0 or item_index >= len(context.appendix):
+                                reply = '格式错误！格式“删除附件 【附件序号】”，序号超出范围'
+                                result.context_reply_text.append(reply)
+                                continue
+                            flower_dao.remove_context(qq, origin_list[index])
+                            item = context.appendix[item_index]
+                            del context.appendix[item_index]
+                            flower_dao.insert_context(qq, context)
+                            reply = '成功删除物品：%s' % str(item)
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“删除附件 【附件序号】”'
+                            result.context_reply_text.append(reply)
+                            continue
+                elif context.step == 4:
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step = 3
+                    if message == '确认':
+                        context.send_all_user = True
+                        reply = '成功切换为把信件发给所有用户'
+                        result.context_reply_text.append(reply)
+                    else:
+                        reply = '已取消把信件发送给所有人'
+                        result.context_reply_text.append(reply)
+                    flower_dao.insert_context(qq, context)
+            # 删除信件
+            elif isinstance(context, DeleteMailContext):
+                del_context_list.append(origin_list[index])
+                # context 会自动lock无需手动加锁
+                user: User = util.get_user(qq, username)
+                if message != '确认':
+                    reply = user.username + '，已取消删除信件'
+                    result.context_reply_text.append(reply)
+                    continue
+                if context.index < 0 or context.index >= len(user.mailbox.mail_list):
+                    reply = user.username + '，序号超出范围'
+                    result.context_reply_text.append(reply)
+                    continue
+                mail_id = user.mailbox.mail_list[context.index]
+                mail: Mail = flower_dao.select_mail_by_id(mail_id)
+                del user.mailbox.mail_list[context.index]
+                mail.is_delete = 1
+                flower_dao.update_mail(mail)
+                flower_dao.update_user_by_qq(user)
+                reply = user.username + '，成功删除信件“%s”' % mail.title
+                result.context_reply_text.append(reply)
+            # 清空信箱
+            elif isinstance(context, ClearMailBoxContext):
+                del_context_list.append(origin_list[index])
+                # context 会自动lock无需手动加锁
+                user: User = util.get_user(qq, username)
+                if message != '确认':
+                    reply = user.username + '，已取消清空信箱'
+                    result.context_reply_text.append(reply)
+                    continue
+                user.mailbox.mail_list = []
+                flower_dao.update_user_by_qq(user)
+                reply = user.username + '，成功清空信箱'
+                result.context_reply_text.append(reply)
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
@@ -1258,6 +1543,146 @@ class FlowerService:
         reply += '\n土壤营养：' + util.show_nutrition(user)
         
         return reply
+    
+    @classmethod
+    def view_mailbox(cls, qq: int, username: str) -> str:
+        """
+        查看信箱
+        :param qq:
+        :param username:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        total_number = len(user.mailbox.mail_list)
+        reply: str = '%s，你的信箱如下：%d/%d' % (user.username, total_number, user.mailbox.max_size)
+        if total_number == 0:
+            reply += '\n暂无'
+            reply += '\n------'
+            reply += '\n有些时候有太多的信件也不是一件好事情呢~'
+            return reply
+        index = 0
+        for mail_id in user.mailbox.mail_list:
+            index += 1
+            mail: Mail = flower_dao.select_mail_by_id(mail_id)
+            if not mail.valid():
+                reply += '\n%d.信件已损坏' % index
+                continue
+            reply += '\n%d.%s' % (index, mail.title)
+            if len(mail.status) > 0:
+                reply += '（%s）' % mail.status
+        return reply
+    
+    @classmethod
+    def view_mail(cls, qq: int, username: str, mail_index: int) -> str:
+        """
+        查看信件
+        :param qq:
+        :param username:
+        :param mail_index:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        if mail_index > 0:
+            mail_index -= 1
+        if mail_index < 0 or mail_index >= len(user.mailbox.mail_list):
+            return user.username + '，超出范围'
+        mail_id = user.mailbox.mail_list[mail_index]
+        mail: Mail = flower_dao.select_mail_by_id(mail_id)
+        if not mail.valid():
+            return user.username + '，信件已损坏'
+        reply = mail.title
+        reply += '\n------\n'
+        reply += mail.text
+        reply += '\n------\n'
+        mail_username: str = '【匿名】'
+        if mail.username != '':
+            # 如果有名义寄件人，直接采用名义寄件人
+            mail_username = mail.username
+        elif mail.from_qq != 0:
+            try:
+                from_user: User = util.get_user(mail.from_qq)
+                mail_username = from_user.username
+            except UserNotRegisteredException:
+                mail_username = '【玩家已注销】'
+        elif mail.role_id != '':
+            # todo: 接入npc
+            mail_username = 'npc'
+        reply += '来自：%s，日期：%s' % (mail_username, mail.create_time.strftime('%Y-%m-%d %H:%M:%S'))
+        if len(mail.appendix) > 0:
+            reply += '\n附件：' + util.show_items(mail.appendix)
+        if mail.received:
+            reply += '（已领取附件）'
+        return reply
+    
+    @classmethod
+    def delete_mail(cls, qq: int, username: str, mail_index: int = 0) -> str:
+        """
+        删除信件
+        :param qq:
+        :param username:
+        :param mail_index:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        if mail_index > 0:
+            mail_index -= 1
+        if mail_index < 0 or mail_index >= len(user.mailbox.mail_list):
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+            return user.username + '，超出范围'
+        context: DeleteMailContext = DeleteMailContext(index=mail_index)
+        flower_dao.insert_context(qq, context)
+        return user.username + '，输入“确认”删除信件，其余输入取消'
+    
+    @classmethod
+    def clear_mailbox(cls, qq: int, username: str) -> str:
+        """
+        删除信件
+        :param qq:
+        :param username:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        if len(user.mailbox.mail_list) == 0:
+            return user.username + '，你的信箱空空如也呢'
+        context: ClearMailBoxContext = ClearMailBoxContext()
+        flower_dao.insert_context(qq, context)
+        return user.username + '，输入“确认”清空信箱，其余输入取消'
+    
+    @classmethod
+    def receive_appendix_mail(cls, qq: int, username: str, mail_index: int = 0) -> str:
+        """
+        领取附件
+        :param qq:
+        :param username:
+        :param mail_index:
+        :return:
+        """
+        flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+        user: User = util.get_user(qq, username)
+        try:
+            if mail_index > 0:
+                mail_index -= 1
+            if mail_index < 0 or mail_index >= len(user.mailbox.mail_list):
+                return user.username + '，超出范围'
+            mail_id = user.mailbox.mail_list[mail_index]
+            mail: Mail = flower_dao.select_mail_by_id(mail_id)
+            if len(mail.appendix) == 0:
+                return user.username + '，该信件没有附件可以领取。'
+            if mail.received:
+                return user.username + '，你已经领取过该附件了。'
+            util.insert_items(user.warehouse, copy.deepcopy(mail.appendix))
+            mail.received = True
+            flower_dao.update_mail(mail)
+            flower_dao.update_user_by_qq(user)
+            return user.username + '，领取成功，信件“%s”的附件%s' % (mail.title, util.show_items(mail.appendix))
+        except WareHouseSizeNotEnoughException:
+            return user.username + '，领取失败，仓库空间不足！'
+        except ItemNegativeNumberException:
+            return user.username + '，领取失败！该附件可能在送信的路上已损坏。人生命途总是充满了变数。'
+        except ItemNotFoundException:
+            return user.username + '，领取失败！该附件可能在送信的路上已损坏。人生命途总是充满了变数。'
+        finally:
+            flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
     
     @classmethod
     def init_user(cls, qq: int, username: str) -> str:

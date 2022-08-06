@@ -33,7 +33,7 @@ def async_function(f):
     return wrapper
 
 
-def get_user(qq: int, username: str) -> User:
+def get_user(qq: int, username: str = '') -> User:
     """
     获取用户
     :param qq: qq号
@@ -92,6 +92,18 @@ def show_cities_name(city_list: List[City]) -> str:
         return ans[:-1]
     else:
         return ''
+
+
+def show_items(item_list: List[DecorateItem]) -> str:
+    """
+    展示一组物品
+    :param item_list:
+    :return:
+    """
+    reply = ''
+    for item in item_list:
+        reply += str(item) + '、'
+    return reply[:-1]
 
 
 def show_items_name(item_list: List[Item]) -> str:

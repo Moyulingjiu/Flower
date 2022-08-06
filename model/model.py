@@ -794,19 +794,25 @@ class Mail(EntityClass):
     邮件类
     """
     
-    def __init__(self, role_id: str = '', from_qq: int = 0, target_qq: int = 0, text: str = '',
-                 appendix: List[DecorateItem] = None, place_id: str = '',
+    def __init__(self, role_id: str = '', from_qq: int = 0, target_qq: int = 0, title: str = '', text: str = '',
+                 appendix: List[DecorateItem] = None, place_id: str = '', arrived: bool = False, status: str = '',
+                 received: bool = False, username: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
         self.role_id = role_id  # npc的id
         self.from_qq = from_qq  # 谁寄出来的（用户和npc只能有一个）
+        self.username= username  # 寄件人，可能会用名义去送（而不会实名）
         self.target_qq = target_qq  # 谁收到这封
+        self.title = title  # 标题
         self.text = text  # 正文
         if not isinstance(appendix, list):
             appendix = []
         self.appendix = appendix  # 附件
-        self.place_id = place_id  # 地点id
+        self.received = received  # 是否已经领取了附件
+        self.place_id = place_id  # 地点id（当前所在的地点）
+        self.arrived = arrived  # 是否已到达（无论是损坏还是咋样都应该到达或者没有送到）
+        self.status = status  # 信件的状态描述（描述信件是已经送达，还是出了意外）
 
 
 class MailBox(InnerClass):
@@ -814,11 +820,11 @@ class MailBox(InnerClass):
     邮箱类
     """
     
-    def __init__(self, mail_list: List[Mail] = None, max_size: int = 0):
+    def __init__(self, mail_list: List[str] = None, max_size: int = 0):
         super().__init__('MailBox')
         if not isinstance(mail_list, list):
             mail_list = []
-        self.mail_list = mail_list
+        self.mail_list = mail_list  # 信件的id
         self.max_size = max_size
 
 

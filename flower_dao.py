@@ -30,6 +30,7 @@ mongo_flower = mongo_db['flower']  # 花卉
 mongo_user = mongo_db['user']  # 用户
 mongo_item = mongo_db['item']  # 物品
 mongo_weather = mongo_db['weather']  # 天气
+mongo_mail = mongo_db['mail']  # 信件
 
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
 
@@ -51,6 +52,8 @@ redis_user_prefix = redis_global_prefix + 'user_'  # 用户redis前缀（用户q
 redis_username_prefix = redis_global_prefix + 'username_'  # 用户名redis前缀（用户qq）
 redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品id）
 redis_weather_prefix = redis_global_prefix + 'weather_'  # 天气redis前缀（城市id+日期）
+redis_mail_prefix = redis_global_prefix + 'mail_'  # 信件redis前缀（信件id）
+redis_mails_prefix = redis_global_prefix + 'mails'  # 正在投递中的mail
 
 redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
 redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
@@ -106,21 +109,21 @@ def class_to_dict(obj) -> Dict:
     for key in obj_dict:
         if key[0] == '_':
             continue
-        elif isinstance(obj.__dict__[key], Enum):
-            ans[key] = obj.__dict__[key].value
-        elif isinstance(obj.__dict__[key], InnerClass):
-            ans[key] = class_to_dict(obj.__dict__[key])
-        elif isinstance(obj.__dict__[key], list):
+        elif isinstance(obj_dict[key], Enum):
+            ans[key] = obj_dict[key].value
+        elif isinstance(obj_dict[key], InnerClass):
+            ans[key] = class_to_dict(obj_dict[key])
+        elif isinstance(obj_dict[key], list):
             ans[key] = []
-            if len(obj.__dict__[key]) > 0 and isinstance(obj.__dict__[key][0], InnerClass):
-                for item in obj.__dict__[key]:
+            if len(obj_dict[key]) > 0 and isinstance(obj_dict[key][0], InnerClass):
+                for item in obj_dict[key]:
                     ans[key].append(class_to_dict(item))
             else:
-                ans[key] = obj.__dict__[key]
-        elif isinstance(obj.__dict__[key], dict):
-            ans[key] = class_to_dict(obj.__dict__[key])
+                ans[key] = obj_dict[key]
+        elif isinstance(obj_dict[key], dict):
+            ans[key] = class_to_dict(obj_dict[key])
         else:
-            ans[key] = obj.__dict__[key]
+            ans[key] = obj_dict[key]
     return ans
 
 
@@ -478,7 +481,7 @@ def insert_flower(flower: Flower) -> str:
     result = mongo_flower.insert_one(class_to_dict(flower))
     redis_db.delete(redis_flower_prefix + str(result.inserted_id))
     redis_db.delete(redis_flower_prefix + flower.name)
-    return result.inserted_id
+    return str(result.inserted_id)
 
 
 def select_flower_by_id(_id: str) -> Flower:
@@ -577,7 +580,7 @@ def update_user_by_qq(user: User) -> int:
     :return: 更新结果
     """
     result = mongo_user.update_one({"qq": user.qq, "is_delete": 0}, {"$set": class_to_dict(user)})
-    redis_db.delete(redis_user_prefix + str(user.qq))
+    redis_db.set(redis_user_prefix + str(user.qq), serialization(user), ex=get_random_expire())
     redis_db.delete(redis_username_prefix + str(user.username))
     return result.modified_count
 
@@ -591,7 +594,7 @@ def insert_user(user: User) -> str:
     result = mongo_user.insert_one(class_to_dict(user))
     redis_db.delete(redis_user_prefix + str(user.qq))
     redis_db.delete(redis_username_prefix + str(user.username))
-    return result.inserted_id
+    return str(result.inserted_id)
 
 
 def insert_sign_record(sign_record: SignRecord) -> str:
@@ -601,7 +604,7 @@ def insert_sign_record(sign_record: SignRecord) -> str:
     :return: id
     """
     result = mongo_sign_record.insert_one(class_to_dict(sign_record))
-    return result.inserted_id
+    return str(result.inserted_id)
 
 
 def select_item_by_id(item_id: str) -> Item:
@@ -669,7 +672,7 @@ def insert_item(item: Item) -> str:
     """
     result = mongo_item.insert_one(class_to_dict(item))
     redis_db.delete(redis_item_prefix + str(result.inserted_id))
-    return result.inserted_id
+    return str(result.inserted_id)
 
 
 def select_system_data() -> SystemData:
@@ -708,7 +711,7 @@ def insert_system_data(system_data: SystemData) -> str:
     """
     result = mongo_system.insert_one(class_to_dict(system_data))
     redis_db.delete(redis_system_data_prefix)
-    return result.inserted_id
+    return str(result.inserted_id)
 
 
 def select_weather_by_city_id(city_id: str, weather_time: datetime = datetime.now()):
@@ -742,7 +745,7 @@ def insert_weather(weather: Weather) -> str:
     """
     result = mongo_weather.insert_one(class_to_dict(weather))
     redis_db.delete(redis_weather_prefix + weather.city_id + '_' + weather.create_time.strftime('%Y_%m_%d'))
-    return result.inserted_id
+    return str(result.inserted_id)
 
 
 def select_valid_announcement() -> List[Announcement]:
@@ -790,7 +793,70 @@ def insert_announcement(announcement: Announcement) -> str:
     """
     result = mongo_announcement.insert_one(class_to_dict(announcement))
     redis_db.delete(redis_announcement_prefix)
-    return result.inserted_id
+    return str(result.inserted_id)
+
+
+def select_mail_by_id(_id: str) -> Mail:
+    """
+    根据id获取信件
+    :param _id: id
+    :return: 信件
+    """
+    redis_ans = redis_db.get(redis_mail_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_mail.find_one({"_id": ObjectId(_id)})
+        mail: Mail = Mail()
+        dict_to_class(result, mail)
+        redis_db.set(redis_mail_prefix + _id, serialization(mail), ex=get_long_random_expire())
+        return mail
+
+
+def select_mail_not_arrived() -> List[Mail]:
+    """
+    获取没有到达的信件
+    :return:
+    """
+    redis_ans = redis_db.get(redis_mails_prefix)
+    if redis_ans is not None:
+        mail_list: List[Mail] = deserialize(redis_ans)
+        mail_list = [mail for mail in mail_list if not mail.arrived]
+        redis_db.set(redis_mails_prefix, serialization(mail_list), ex=global_config.day_second)
+        return mail_list
+    else:
+        result = mongo_announcement.find({"arrived": False, "is_delete": 0})
+        mail_list: List[Mail] = []
+        for mail_result in result:
+            mail: Mail = Mail()
+            dict_to_class(mail_result, mail)
+            mail_list.append(mail)
+        redis_db.set(redis_mails_prefix, serialization(mail_list), ex=global_config.day_second)
+        return mail_list
+
+
+def update_mail(mail: Mail) -> int:
+    """
+    修改信件
+    :param mail: 信件
+    :return: 修改的数量
+    """
+    result = mongo_mail.update_one({"_id": ObjectId(mail.get_id())}, {"$set": class_to_dict(mail)})
+    redis_db.set(redis_mail_prefix + mail.get_id(), serialization(mail), ex=get_long_random_expire())
+    redis_db.delete(redis_mails_prefix)
+    return result.modified_count
+
+
+def insert_mail(mail: Mail) -> str:
+    """
+    插入信件
+    :param mail: 信件
+    :return: id
+    """
+    result = mongo_mail.insert_one(class_to_dict(mail))
+    redis_db.delete(redis_weather_prefix + str(result.inserted_id))
+    redis_db.delete(redis_mails_prefix)
+    return str(result.inserted_id)
 
 
 ####################################################################################################

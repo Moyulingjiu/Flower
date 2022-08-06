@@ -1,9 +1,9 @@
 # coding=utf-8
 import datetime
-from typing import Dict
+from typing import Dict, List
 
 from flower_exceptions import FunctionArgsException
-from model import City
+from model import City, DecorateItem
 
 
 class BaseContext:
@@ -119,3 +119,42 @@ class AnnouncementContext(BaseContext):
         self.text = text  # 正文
         self.valid_second = valid_second  # 有效时间
         self.username = username  # 发件人
+
+
+class AdminSendMailContext(BaseContext):
+    """
+    发送公告的上下文
+    """
+    
+    def __init__(self, title: str = '', text: str = '', appendix: List[DecorateItem] = None, username: str = '',
+                 addressee: List[int] = None, send_all_user: bool = False):
+        super().__init__(3, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        self.title = title  # 标题
+        self.text = text  # 正文
+        if not isinstance(appendix, list):
+            appendix = []
+        self.appendix = appendix  # 附件
+        self.username = username  # 发件人
+        if not isinstance(addressee, list):
+            addressee = []
+        self.addressee = addressee  # 收件人QQ号
+        self.send_all_user = send_all_user  # 是否发送给所有人
+
+
+class ClearMailBoxContext(BaseContext):
+    """
+    清空信箱的上下文
+    """
+    
+    def __init__(self):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+
+
+class DeleteMailContext(BaseContext):
+    """
+    删除信件的上下文
+    """
+    
+    def __init__(self, index: int):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        self.index = index
