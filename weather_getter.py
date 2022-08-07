@@ -14,7 +14,7 @@ from model import Weather
 from global_config import logger
 
 
-def get_html(url, data=None):
+def get_html(url, can_wait: bool = False):
     """
     模拟浏览器来获取网页的html代码
     """
@@ -34,14 +34,16 @@ def get_html(url, data=None):
             break
         except socket.timeout as e:
             print("3:", e)
-            time.sleep(random.choice(range(8, 15)))
+            if can_wait:
+                time.sleep(random.choice(range(8, 15)))
         except socket.error as e:
             print("4:", e)
-            time.sleep(random.choice(range(20, 60)))
+            if can_wait:
+                time.sleep(random.choice(range(20, 60)))
     return rep.text
 
 
-def get_city_weather(city_name: str, city_id: str) -> Weather:
+def get_city_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather:
     try:
         # 对于日照市需要特殊处理
         if city_name == '日照':
@@ -49,7 +51,7 @@ def get_city_weather(city_name: str, city_id: str) -> Weather:
         city = city_name + '天气'
         url = "https://cn.bing.com/search?q=" + quote(city) + '&PC=U316&FORM=CHROMN'
         
-        response = get_html(url)
+        response = get_html(url, can_wait)
         soup = BeautifulSoup(response, 'html.parser')
         max_temperature = soup.select(
             '#b_results > li.b_ans.b_top.b_topborder > div > div > div.wtr_hero > div > div.wtr_condition > div.wtr_condiPrimary > div.wtr_condiHighLow > div.wtr_high > span')

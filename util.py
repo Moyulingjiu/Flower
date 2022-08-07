@@ -359,15 +359,16 @@ def get_user_right(qq: int):
 
 ####################################################################################################
 
-def get_weather(city: City) -> Weather:
+def get_weather(city: City, can_wait: bool = False) -> Weather:
     """
     根据城市获取天气
     :param city: 城市
+    :param can_wait: 爬虫是否等待以尝试再次爬取
     :return: 天气
     """
     weather: Weather = flower_dao.select_weather_by_city_id(city.get_id())
     if weather.city_id != city.get_id():
-        weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id())
+        weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id(), can_wait=can_wait)
         if weather.city_id == city.get_id():
             flower_dao.insert_weather(weather)
     return weather
@@ -655,7 +656,7 @@ def get_all_weather() -> None:
         if city.father_id == '':
             continue
         index += 1
-        weather: Weather = get_weather(city)
+        weather: Weather = get_weather(city, can_wait=True)
         if weather.city_id != city.get_id():
             fail_number += 1
             logger.error('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取失败')
