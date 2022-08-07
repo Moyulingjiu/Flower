@@ -672,6 +672,113 @@ class WareHouse(InnerClass):
         return result
 
 
+class Horse(EntityClass):
+    """
+    马
+    """
+    
+    def __init__(self, name: str = '', speed: float = 0.0, strength: float = 0.0, playful: float = 0.0,
+                 description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 马的名字
+        self.speed = speed  # 速度
+        self.strength = strength  # 体力
+        self.playful = playful  # 贪玩
+        self.description = description  # 描述
+
+
+class DecorateHorse(InnerClass):
+    """
+    农场的马
+    """
+    
+    def __init__(self, name: str = '', speed: float = 0.0, strength: float = 0.0, playful: float = 0.0,
+                 description: str = '', last_race: datetime = datetime.now()):
+        super().__init__('DecorateHorse')
+        
+        self.name = name  # 马的名字
+        self.speed = speed  # 速度
+        self.strength = strength  # 体力
+        self.playful = playful  # 贪玩
+        self.description = description  # 描述
+        self.last_race = last_race  # 上一次比赛的时间（会影响体力的恢复情况）
+
+
+class Dog(EntityClass):
+    """
+    狗
+    """
+    
+    def __init__(self, name: str = '', force: float = 0.0, affinity: float = 0.0, strength: float = 0.0,
+                 description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 名字
+        self.force = force  # 武力
+        self.affinity = affinity  # 亲和力
+        self.strength = strength  # 体力（影响是否能捉到小偷）
+        self.description = description  # 描述
+
+
+class DecorateDog(EntityClass):
+    """
+    农场的狗
+    """
+    
+    def __init__(self, name: str = '', force: float = 0.0, affinity: float = 0.0, favorability: float = 0.0,
+                 strength: float = 0.0, description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 名字
+        self.force = force  # 武力
+        self.affinity = affinity  # 亲和力
+        self.favorability = favorability  # 好感度（决定狗是否会帮助主人）
+        self.strength = strength  # 体力（影响是否能捉到小偷）
+        self.description = description  # 描述
+
+
+class Cat(EntityClass):
+    """
+    猫
+    """
+    
+    def __init__(self, name: str = '', affinity: float = 0.0, playful: float = 0.0,
+                 description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 名字
+        self.affinity = affinity  # 亲和力（刷好感度的速度）
+        self.playful = playful  # 贪玩
+        self.description = description  # 描述
+
+
+class DecorateCat(EntityClass):
+    """
+    农场的猫
+    """
+    
+    def __init__(self, name: str = '', affinity: float = 0.0, favorability: float = 0.0, playful: float = 0.0,
+                 description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.name = name  # 名字
+        self.affinity = affinity  # 亲和力（刷好感度的速度）
+        self.favorability = favorability  # 好感度（决定猫咪是否会外出）
+        self.playful = playful  # 贪玩
+        self.description = description  # 描述
+
+
 class FlowerState(Enum):
     not_flower = 'not_flower'  # 不是花
     perfect = 'perfect'  # 完美
@@ -717,6 +824,8 @@ class Farm(InnerClass):
                  soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
                  mailbox: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
                  warehouse: DecorateItem = DecorateItem(),
+                 horse: DecorateHorse = DecorateHorse(), dog: DecorateDog = DecorateDog(),
+                 cat: DecorateCat = DecorateCat(),
                  soil_humidity_min_change_hour: int = 0, soil_humidity_max_change_hour: int = 0,
                  soil_nutrition_min_change_hour: int = 0, soil_nutrition_max_change_hour: int = 0):
         super().__init__('Farm')
@@ -739,6 +848,10 @@ class Farm(InnerClass):
         self.mailbox = mailbox  # 信箱
         self.greenhouse = greenhouse  # 温室
         self.warehouse = warehouse  # 仓库
+        
+        self.horse = horse  # 农场的马
+        self.dog = dog  # 农场的狗
+        self.cat = cat  # 农场的猫
         
         # 土壤改变的累计小时
         self.soil_humidity_min_change_hour = soil_humidity_min_change_hour  # 营养不合格累计的小时数

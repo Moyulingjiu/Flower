@@ -1605,6 +1605,22 @@ class FlowerService:
         reply += '\n土壤湿度：' + util.show_humidity(user)
         reply += '\n土壤营养：' + util.show_nutrition(user)
         
+        reply += '\n马：'
+        if user.farm.horse.name != '':
+            reply += user.farm.horse.name
+        else:
+            reply += '暂无'
+        reply += '\n狗：'
+        if user.farm.dog.name != '':
+            reply += user.farm.dog.name
+        else:
+            reply += '暂无'
+        reply += '\n猫：'
+        if user.farm.cat.name != '':
+            reply += user.farm.cat.name
+        else:
+            reply += '暂无'
+        
         return reply
     
     @classmethod

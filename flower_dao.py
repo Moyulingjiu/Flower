@@ -161,6 +161,12 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return dict_to_class(d, DecorateBuff())
     elif d['class_type'] == 'DecorateAchievement':
         return dict_to_class(d, DecorateAchievement())
+    elif d['class_type'] == 'DecorateHorse':
+        return dict_to_class(d, DecorateHorse())
+    elif d['class_type'] == 'DecorateDog':
+        return dict_to_class(d, DecorateDog())
+    elif d['class_type'] == 'DecorateCat':
+        return dict_to_class(d, DecorateCat())
     return None
 
 
