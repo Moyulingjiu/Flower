@@ -68,3 +68,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ### 2. 天气爬取出现错误
 
 建议重写爬虫，没有爬虫能够保证永远有效，应该是爬虫过期了，或者网络波动造成无法爬取数据。
+
+### 3. HTTPSConnection 发生错误ssl.SSLEOFError: EOF occurred in violation of protocol
+
+不要开代理！！！请使用国内的网络，或者重写天气爬虫。
