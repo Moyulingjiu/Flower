@@ -72,12 +72,17 @@ class WorldArea(EntityClass):
     世界地区
     """
     
-    def __init__(self, name: str = '',
+    def __init__(self, name: str = '', terrain_id: str = '', description: str = '', path_list: List[str] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
         
         self.name = name  # 地区名
+        self.terrain_id = terrain_id  # 地形id
+        self.description = description  # 描述
+        if path_list is None:
+            path_list = []
+        self.path_list = path_list  # 联通路径
 
 
 class Kingdom(EntityClass):
