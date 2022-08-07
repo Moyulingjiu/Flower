@@ -725,16 +725,14 @@ class Dog(EntityClass):
         self.description = description  # 描述
 
 
-class DecorateDog(EntityClass):
+class DecorateDog(InnerClass):
     """
     农场的狗
     """
     
     def __init__(self, name: str = '', force: float = 0.0, affinity: float = 0.0, favorability: float = 0.0,
-                 strength: float = 0.0, description: str = '',
-                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
-                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
-        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+                 strength: float = 0.0, description: str = ''):
+        super().__init__('DecorateDog')
         
         self.name = name  # 名字
         self.force = force  # 武力
@@ -761,16 +759,14 @@ class Cat(EntityClass):
         self.description = description  # 描述
 
 
-class DecorateCat(EntityClass):
+class DecorateCat(InnerClass):
     """
     农场的猫
     """
     
     def __init__(self, name: str = '', affinity: float = 0.0, favorability: float = 0.0, playful: float = 0.0,
-                 description: str = '',
-                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
-                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
-        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+                 description: str = ''):
+        super().__init__('DecorateCat')
         
         self.name = name  # 名字
         self.affinity = affinity  # 亲和力（刷好感度的速度）
