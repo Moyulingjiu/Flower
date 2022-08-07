@@ -2,7 +2,7 @@
 """
 工具函数文件
 """
-
+import asyncio
 import copy
 import random
 import time
@@ -662,7 +662,7 @@ def get_all_weather() -> None:
             logger.error('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取失败')
         else:
             logger.info('%.2f%%' % (index * 100 / total) + ' ' + city.city_name + '天气获取成功')
-        time.sleep(0.5)
+        asyncio.sleep(0.5)
     logger.info('天气获取结果，总计城市：%d，有效城市：%d，获取失败：%d' % (total, index, fail_number))
     # 解除获取获取天气的锁
     global_config.get_all_weather = False
