@@ -80,7 +80,7 @@ class Response(BaseModel):
 
 
 @app.get("/calibration")
-def calibration():
+async def calibration():
     """
     校准
     :return: 时间校准

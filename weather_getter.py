@@ -3,6 +3,7 @@
 天气爬虫，爬取某个城市的天气
 该文件后续可能修改
 """
+import asyncio
 
 import requests  # 导入requests包
 from bs4 import BeautifulSoup
@@ -14,7 +15,7 @@ from model import Weather
 from global_config import logger
 
 
-def get_html(url, can_wait: bool = False):
+def get_html(url, can_wait: bool = False, retries_times: int = 5):
     """
     模拟浏览器来获取网页的html代码
     """
@@ -27,20 +28,24 @@ def get_html(url, can_wait: bool = False):
     }
     # 设定超时时间，取随机数是因为防止被网站认为是爬虫
     timeout = random.choice(range(80, 180))
-    while True:
+    times: int = 0
+    while times < retries_times:
+        times += 1
         try:
             rep = requests.get(url, headers=header, timeout=timeout)
             rep.encoding = "utf-8"
-            break
+            return rep.text
         except socket.timeout as e:
             print("3:", e)
+            logger.error(str(e))
             if can_wait:
-                time.sleep(random.choice(range(8, 15)))
+                asyncio.sleep(random.choice(range(8, 15)))
         except socket.error as e:
             print("4:", e)
+            logger.error(str(e))
             if can_wait:
-                time.sleep(random.choice(range(20, 60)))
-    return rep.text
+                asyncio.sleep(random.choice(range(20, 60)))
+    return ''
 
 
 def get_city_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather:
