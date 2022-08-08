@@ -25,11 +25,11 @@ def async_function(f):
     :param f: 函数
     :return: 包装之后的函数
     """
-    
+
     def wrapper(*args, **kwargs):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
-    
+
     return wrapper
 
 
@@ -197,7 +197,7 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
-    
+
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
     if not item_obj.valid():
         raise ItemNotFoundException('')
@@ -420,7 +420,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-    
+
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -430,7 +430,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-    
+
     # 改变土壤
     if user.farm.soil_humidity_min_change_hour > global_config.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
@@ -551,7 +551,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.bad_hour += 1
         else:
             user.farm.perfect_hour = 0
-        
+
         # 根据条件不同，每小时增长的小时不同
         if condition_level == ConditionLevel.PERFECT:
             if flower.level == FlowerLevel.S:
@@ -582,7 +582,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 0.6
             else:
                 user.farm.hour += 1.0
-        
+
         # 根据条件来查看花的状态
         if user.farm.bad_hour > flower.withered_time:
             user.farm.flower_state = FlowerState.withered
@@ -612,12 +612,12 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-    
+
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-    
+
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
@@ -628,11 +628,11 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
             break
         update_farm_condition(user, flower, real_time_weather, start_time)
         user.farm.hour += 1
-        
+
         check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
         if user.farm.flower_state == FlowerState.withered:
             break
-        
+
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
@@ -883,3 +883,32 @@ def analysis_time(message: str) -> int:
         return second
     except ValueError:
         return 0
+
+
+####################################################################################################
+def lock_user(qq: int):
+    """
+    锁定QQ
+    """
+    flower_dao.lock(flower_dao.redis_user_lock_prefix + str(qq))
+
+
+def unlock_user(qq: int):
+    """
+    解锁QQ
+    """
+    flower_dao.unlock(flower_dao.redis_user_lock_prefix + str(qq))
+
+
+def lock_username(username: str):
+    """
+    锁定用户名
+    """
+    flower_dao.lock(flower_dao.redis_username_lock_prefix + username)
+
+
+def unlock_username(username: str):
+    """
+    解锁用户名
+    """
+    flower_dao.unlock(flower_dao.redis_username_lock_prefix + username)
