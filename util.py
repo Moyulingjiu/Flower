@@ -857,6 +857,21 @@ def init_user_farm(user: User, city: City) -> None:
 
 
 ####################################################################################################
+__system_data: SystemData = SystemData()  # 系统数据
+__last_update_system_data: datetime = datetime.now() - timedelta(days=1)  # 上一次更新系统数据的时间
+
+
+def get_system_data() -> SystemData:
+    """
+    获取系统数据
+    """
+    global __last_update_system_data, __system_data
+    now: datetime = datetime.now()
+    # 如果数据超出十分钟了那么更新数据
+    if (now - __last_update_system_data).seconds > global_config.ten_minute_second:
+        __system_data = flower_dao.select_system_data()
+    return __system_data
+
 
 def analysis_time(message: str) -> int:
     """

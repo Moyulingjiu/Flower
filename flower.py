@@ -35,6 +35,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 result.context_reply_image) != 0) and context_handler.block_transmission:
             return result
         util.unlock_user(qq)
+        system_data: SystemData = util.get_system_data()
 
         if len(at_list) == 0:
             # 数据查询部分
@@ -270,7 +271,6 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 new_username = message[6:].strip()
                 if len(new_username) == 0 or '_' in new_username:
                     raise TypeException('格式错误！格式“设置花店昵称 【新的昵称】”')
-                system_data: SystemData = flower_dao.select_system_data()
                 for word in system_data.username_screen_words:
                     if word in new_username:
                         raise TypeException('名字中含有违禁词或敏感词汇')
@@ -346,7 +346,7 @@ class AdminHandler:
 
     @classmethod
     def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         if message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
@@ -521,7 +521,7 @@ class AdminHandler:
                 reply = ''
                 index = 0
                 page_size = 20
-                system_data: SystemData = flower_dao.select_system_data()
+                system_data: SystemData = util.get_system_data()
                 for word in system_data.username_screen_words:
                     index += 1
                     if page * page_size <= index - 1 < (page + 1) * page_size:
@@ -814,7 +814,7 @@ class AdminHandler:
     @classmethod
     def append_username_screen_word(cls, screen_word: str) -> bool:
         # 对于系统数据是没有加锁的（因为管理员操作缓慢，系统设计只有一个管理员）
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         if screen_word not in system_data.username_screen_words:
             system_data.username_screen_words.append(screen_word)
             flower_dao.update_system_data(system_data)
@@ -824,7 +824,7 @@ class AdminHandler:
     @classmethod
     def remove_username_screen_word(cls, screen_word: str) -> bool:
         # 对于系统数据是没有加锁的（因为管理员操作缓慢，系统设计只有一个管理员）
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         if screen_word in system_data.username_screen_words:
             system_data.username_screen_words.remove(screen_word)
             flower_dao.update_system_data(system_data)
@@ -893,7 +893,7 @@ class ContextHandler:
         :param at_list: 艾特列表
         :return: 结果
         """
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         self.block_transmission = True
         origin_list, context_list = flower_dao.get_context(qq)
         del_context_list: List = []
@@ -1519,7 +1519,7 @@ class FlowerService:
             res += '（自动获取）'
         res += '\n等级：'
         level = 0
-        system_data = flower_dao.select_system_data()
+        system_data = util.get_system_data()
         for i in range(len(system_data.exp_level)):
             if user.exp >= system_data.exp_level[i]:
                 level = i
@@ -1851,7 +1851,7 @@ class FlowerService:
         :param username: 用户名
         :return: 结果
         """
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
         today: datetime = datetime.today()
@@ -2138,7 +2138,7 @@ class FlowerService:
 
     @classmethod
     def watering(cls, qq: int, username: str, multiple: int) -> str:
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
 
@@ -2467,7 +2467,7 @@ class DrawCard:
         :return:
         """
         util.lock_user(qq)
-        system_data: SystemData = flower_dao.select_system_data()
+        system_data: SystemData = util.get_system_data()
         try:
             user: User = util.get_user(qq, username)
             if user.draw_card_number <= 0:
