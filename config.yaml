@@ -1,5 +1,6 @@
-host: '0.0.0.0'
+host: "0.0.0.0"
 port: 8000
+center: "localhost:9000"
 
 mongo_connection: "mongodb://root:123456@localhost:27017/"
 redis_host: "localhost"
