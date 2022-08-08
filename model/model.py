@@ -1168,6 +1168,26 @@ class SystemData:
             username_screen_words = []
         self.username_screen_words = username_screen_words
 
+        # 土壤改变的小时数（超过此小时，土壤将会转变）
+        self.soil_change_hour = 8
+
+        # 铲除花所需要花费的金币数
+        self.remove_farm_flower_cost_gold: int = 500
+
+        # 每次浇水所花费的金币
+        self.watering_cost_gold: int = 50
+
+        # 土壤的湿度、营养上下限
+        self.soil_max_humidity: float = 100.0
+        self.soil_min_humidity: float = 0.0
+        self.soil_max_nutrition: float = 50.0
+        self.soil_min_nutrition: float = 0.0
+
+        # 每日抽卡上限
+        self.draw_card_max_number: int = 5
+        self.draw_card_probability_unit: int = 10000  # 概率单位为万分之一
+        self.draw_card_probability: List[int] = [5000, 2000, 1000, 100, 10]
+
     def get_id(self) -> str:
         return self._id
 

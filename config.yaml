@@ -7,22 +7,3 @@ redis_port: "6379"
 redis_background_db: 2
 redis_db: 1
 redis_password: ""
-
-# 土壤改变的小时数（超过此小时，土壤将会转变）
-soil_change_hour: 8
-
-# 铲除花所需要花费的金币数
-remove_farm_flower_cost_gold: 500
-
-# 浇水每百分之一湿度的金币
-watering_cost_gold: 50
-
-# 每日抽卡上限
-draw_card_max_number: 5
-draw_card_probability_unit: 10000  # 概率单位为万分之一
-draw_card_probability:
-  - 5000
-  - 2000
-  - 1000
-  - 100
-  - 10

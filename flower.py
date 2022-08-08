@@ -346,6 +346,7 @@ class AdminHandler:
 
     @classmethod
     def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
+        system_data: SystemData = flower_dao.select_system_data()
         if message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
@@ -394,10 +395,10 @@ class AdminHandler:
             data: str = message[4:].strip()
             try:
                 humidity: float = float(data)
-                if humidity > global_config.soil_max_humidity or humidity < global_config.soil_min_humidity:
+                if humidity > system_data.soil_max_humidity or humidity < system_data.soil_min_humidity:
                     raise TypeException('格式错误！湿度范围为%.2f~%.2f' % (
-                        global_config.soil_min_humidity,
-                        global_config.soil_max_humidity
+                        system_data.soil_min_humidity,
+                        system_data.soil_max_humidity
                     ))
                 update_number: int = 0
                 if len(at_list) == 0:
@@ -416,10 +417,10 @@ class AdminHandler:
             data: str = message[4:].strip()
             try:
                 nutrition: float = float(data)
-                if nutrition > global_config.soil_max_nutrition or nutrition < global_config.soil_min_nutrition:
+                if nutrition > system_data.soil_max_nutrition or nutrition < system_data.soil_min_nutrition:
                     raise TypeException('格式错误！营养范围为%.2f~%.2f' % (
-                        global_config.soil_min_nutrition,
-                        global_config.soil_max_nutrition
+                        system_data.soil_min_nutrition,
+                        system_data.soil_max_nutrition
                     ))
                 update_number: int = 0
                 if len(at_list) == 0:
@@ -892,6 +893,7 @@ class ContextHandler:
         :param at_list: 艾特列表
         :return: 结果
         """
+        system_data: SystemData = flower_dao.select_system_data()
         self.block_transmission = True
         origin_list, context_list = flower_dao.get_context(qq)
         del_context_list: List = []
@@ -1006,16 +1008,16 @@ class ContextHandler:
                     reply = user.username + '，已取消铲除花'
                     result.context_reply_text.append(reply)
                     continue
-                if user.gold < global_config.remove_farm_flower_cost_gold:
+                if user.gold < system_data.remove_farm_flower_cost_gold:
                     reply = user.username + '，金币不足' + '%.2f' % (
-                            global_config.remove_farm_flower_cost_gold / 100) + '枚'
+                            system_data.remove_farm_flower_cost_gold / 100) + '枚'
                     result.context_reply_text.append(reply)
                     continue
-                user.gold -= global_config.remove_farm_flower_cost_gold
+                user.gold -= system_data.remove_farm_flower_cost_gold
                 user.farm.flower_id = ''
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，成功花费' + '%.2f' % (
-                        global_config.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
+                        system_data.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
                 result.context_reply_text.append(reply)
             # 选择的回调
             elif isinstance(context, ChooseContext):
@@ -1849,6 +1851,7 @@ class FlowerService:
         :param username: 用户名
         :return: 结果
         """
+        system_data: SystemData = flower_dao.select_system_data()
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
         today: datetime = datetime.today()
@@ -1864,8 +1867,8 @@ class FlowerService:
         gold = random.randint(100, 500)
         user.gold += gold
         # 只对于不足次数的补足，有可能有活动之类的额外增加了每日的抽卡次数
-        if user.draw_card_number < global_config.draw_card_max_number:
-            user.draw_card_number = global_config.draw_card_max_number
+        if user.draw_card_number < system_data.draw_card_max_number:
+            user.draw_card_number = system_data.draw_card_max_number
         user.update(user.qq)
         res = user.username + '，签到成功！'
         res += '\n获得金币：' + '%.2f' % (gold / 100)
@@ -2135,6 +2138,7 @@ class FlowerService:
 
     @classmethod
     def watering(cls, qq: int, username: str, multiple: int) -> str:
+        system_data: SystemData = flower_dao.select_system_data()
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
 
@@ -2152,15 +2156,15 @@ class FlowerService:
         elif watering_pot.level == 4:
             humidity_change = 0.1 * multiple
             user.farm.humidity += humidity_change
-        cost_gold: int = global_config.watering_cost_gold * multiple
+        cost_gold: int = system_data.watering_cost_gold * multiple
         # 设置湿度的上限
-        if user.farm.humidity > global_config.soil_max_humidity:
-            humidity_change -= user.farm.humidity - global_config.soil_max_humidity
-            user.farm.humidity = global_config.soil_max_humidity
+        if user.farm.humidity > system_data.soil_max_humidity:
+            humidity_change -= user.farm.humidity - system_data.soil_max_humidity
+            user.farm.humidity = system_data.soil_max_humidity
         # 金币消耗
         if user.gold < cost_gold:
             return user.username + '，浇水失败！金币不足！\n每浇水一次，需要金币%.2f' % (
-                    global_config.watering_cost_gold / 100)
+                    system_data.watering_cost_gold / 100)
         user.gold -= cost_gold
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
@@ -2463,16 +2467,17 @@ class DrawCard:
         :return:
         """
         util.lock_user(qq)
+        system_data: SystemData = flower_dao.select_system_data()
         try:
             user: User = util.get_user(qq, username)
             if user.draw_card_number <= 0:
                 return ''
-            rand: int = random.randint(0, global_config.draw_card_probability_unit)
+            rand: int = random.randint(0, system_data.draw_card_probability_unit)
             # 对于当天次数大于5次的，多余的部分按照第1个物品的概率去抽取，剩余的按照0、1、2、3、4依次类推
-            draw_probability_index: int = global_config.draw_card_max_number - user.draw_card_number
+            draw_probability_index: int = system_data.draw_card_max_number - user.draw_card_number
             if draw_probability_index < 0:
                 draw_probability_index = 0
-            if rand < global_config.draw_card_probability[draw_probability_index]:
+            if rand < system_data.draw_card_probability[draw_probability_index]:
                 # todo: 抽到物品（这部分需要在物品表完善之后完成）
                 return '抽到物品'
             return ''
