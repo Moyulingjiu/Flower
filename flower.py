@@ -4,6 +4,8 @@ import random
 from datetime import timedelta, datetime
 from typing import Dict, List, Tuple
 
+from bson import ObjectId
+
 import global_config
 # 引入所有组件
 import flower_dao
@@ -13,6 +15,7 @@ from flower_exceptions import *
 from global_config import logger
 from model import *
 from util import UserRight, async_function
+import world_handler
 
 
 def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
@@ -313,9 +316,16 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         
         # 管理员操作
         if util.get_user_right(qq) == UserRight.ADMIN:
+            get_reply: bool = False
             reply: str = AdminHandler.handle(message, qq, username, at_list)
             if reply != '':
+                get_reply = True
                 result.reply_text.append(reply)
+            reply: str = WorldControlHandler.handle(message, qq, username, at_list)
+            if reply != '':
+                get_reply = True
+                result.reply_text.append(reply)
+            if get_reply:
                 return result
     except UserNotRegisteredException:
         return Result.init(reply_text='您还未初始化花店账号，请输入“初始化花店”进行初始化')
@@ -335,6 +345,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     except TypeError as e:
         logger.error(e)
         return Result.init()
+    except ResourceNotFound as e:
+        return Result.init(reply_text=e.message)
     finally:
         util.unlock_user(qq)
     return Result.init()
@@ -873,6 +885,36 @@ class AdminHandler:
             return False
         finally:
             util.unlock_user(qq)
+
+
+class WorldControlHandler:
+    """
+    世界控制入口
+    """
+    
+    @classmethod
+    def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
+        system_data: SystemData = util.get_system_data()
+        if message == '创建人物':
+            person: Person = world_handler.random_person()
+            return str(person)
+        elif message[:4] == '世界地区':
+            data = message[4:].strip()
+            world_area: WorldArea = flower_dao.select_world_area_by_name(data)
+            if not world_area.valid() and ObjectId.is_valid(data):
+                world_area: WorldArea = flower_dao.select_world_area(data)
+            if not world_area.valid():
+                raise ResourceNotFound('不存在世界地区“%s”，既不是id也不是名字' % data)
+            return str(world_area)
+        elif message[:4] == '世界地形':
+            data = message[4:].strip()
+            world_terrain: WorldTerrain = flower_dao.select_world_terrain_by_name(data)
+            if not world_terrain.valid() and ObjectId.is_valid(data):
+                world_terrain: WorldTerrain = flower_dao.select_world_terrain(data)
+            if not world_terrain.valid():
+                raise ResourceNotFound('不存在世界地形“%s”，既不是id也不是名字' % data)
+            return str(world_terrain)
+        return ''
 
 
 class ContextHandler:
@@ -2489,4 +2531,4 @@ class DrawCard:
 
 
 if __name__ == '__main__':
-    pass
+    print(len('62ed40f65155e2bf88ec3957'))

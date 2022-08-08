@@ -4,7 +4,7 @@ __all__ = [
     "MyException", "ConfigException", "UserNotRegisteredException", "ItemNegativeNumberException",
     "ItemNotFoundException", "ItemNotEnoughException", "WareHouseSizeNotEnoughException",
     "ResBeLockedException", "AtListNullException", "TypeException", "PageOutOfRangeException",
-    "FunctionArgsException", "UseFailException"
+    "FunctionArgsException", "UseFailException", "ResourceNotFound"
 ]
 
 
@@ -115,6 +115,15 @@ class FunctionArgsException(MyException):
 class UseFailException(MyException):
     """
     使用错误
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
+class ResourceNotFound(MyException):
+    """
+    资源未找到
     """
 
     def __init__(self, message):
