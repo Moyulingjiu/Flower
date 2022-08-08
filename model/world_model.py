@@ -180,6 +180,14 @@ class Person(EntityClass):
         self.rational_or_sensual = rational_or_sensual  # 理智/感性：（0~100）：影响处事方式，一个理智的国王不会因为孩子被绑架而发动战争，一个感性的会。
         self.hedonic_or_computation = hedonic_or_computation  # 享乐/计较：（0~100）：影响是否会超前消费，是否会存钱。
         self.selfish_or_generous = selfish_or_generous  # 自私/大方：（0~100）：影响其对自己的喜爱程度，是否会给朋友、孩子、父母花钱。
+        
+    def __str__(self):
+        reply = 'id:%s' % self.get_id()
+        reply += '\n名字：%s' % self.name
+        reply += '\n年龄：%d' % ((datetime.now() - self.born_time).total_seconds() // (24 * 3600))
+        reply += '\n性别：%s，性取向：%s' % (self.gender.show(), self.sexual_orientation.show())
+        reply += '\n父亲：%s，母亲：%s' % (self.father_id, self.mother_id)
+        reply += '\n出生地：%s，现在所在地：%s' % (self.born_area_id, self.world_area_id)
 
 
 ####################################################################################################
