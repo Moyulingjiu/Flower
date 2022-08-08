@@ -2,8 +2,15 @@
 """
 股市的模型
 """
+from datetime import datetime
 from enum import Enum
+from typing import List
+
 from model.base_model import *
+
+__all__ = [
+    "TradeType", "TradeRecords", "FlowerPrice"
+]
 
 
 class TradeType(Enum):

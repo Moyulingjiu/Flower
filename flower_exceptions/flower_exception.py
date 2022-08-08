@@ -1,4 +1,13 @@
 # coding=utf-8
+
+__all__ = [
+    "MyException", "ConfigException", "UserNotRegisteredException", "ItemNegativeNumberException",
+    "ItemNotFoundException", "ItemNotEnoughException", "WareHouseSizeNotEnoughException",
+    "ResBeLockedException", "AtListNullException", "TypeException", "PageOutOfRangeException",
+    "FunctionArgsException", "UseFailException"
+]
+
+
 class MyException(Exception):
     def __init__(self, message):
         self.message = message
