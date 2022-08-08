@@ -8,13 +8,14 @@ import logging.handlers
 import os
 import sys
 from datetime import datetime
-from typing import List
+
 import yaml
 
 from flower_exceptions import ConfigException
 
 host: str = '0.0.0.0'
 port: int = 8000
+center: str = '127.0.0.1:9000'  # 中心服务器地址
 
 # MongoDB服务器地址
 mongo_connection: str = 'mongodb://root:123456@localhost:27017/'
@@ -39,26 +40,6 @@ half_day_second: int = hour_second * 12
 week_second: int = day_second * 7
 month_second: int = day_second * 30
 year_second: int = day_second * 365
-
-# 土壤改变的小时数（超过此小时，土壤将会转变）
-soil_change_hour = 8
-
-# 铲除花所需要花费的金币数
-remove_farm_flower_cost_gold: int = 500
-
-# 每次浇水所花费的金币
-watering_cost_gold: int = 50
-
-# 土壤的湿度、营养上下限
-soil_max_humidity: float = 100.0
-soil_min_humidity: float = 0.0
-soil_max_nutrition: float = 50.0
-soil_min_nutrition: float = 0.0
-
-# 每日抽卡上限
-draw_card_max_number: int = 5
-draw_card_probability_unit: int = 10000  # 概率单位为万分之一
-draw_card_probability: List[int] = [5000, 2000, 1000, 100, 10]
 
 
 class FlowerLog:
@@ -133,11 +114,8 @@ def load_config(config_path: str = 'config.yaml'):
     """
     加载配置文件
     """
-    global host, port
+    global host, port, center
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
-    global soil_change_hour, remove_farm_flower_cost_gold, watering_cost_gold, draw_card_max_number
-    global draw_card_probability_unit, draw_card_probability
-    global soil_min_humidity, soil_max_humidity, soil_min_nutrition, soil_max_nutrition
     
     with open(config_path, 'r', encoding='utf8') as f:
         config_yaml = yaml.safe_load(f.read())
@@ -145,6 +123,8 @@ def load_config(config_path: str = 'config.yaml'):
             host = config_yaml['host']
         if 'port' in config_yaml:
             port = config_yaml['port']
+        if 'center' in config_yaml:
+            center = config_yaml['center']
         
         if 'mongo_connection' in config_yaml:
             mongo_connection = config_yaml['mongo_connection']
@@ -158,44 +138,21 @@ def load_config(config_path: str = 'config.yaml'):
             redis_db = config_yaml['redis_db']
         if 'redis_password' in config_yaml:
             redis_password = config_yaml['redis_password']
-        
-        if 'soil_change_hour' in config_yaml:
-            soil_change_hour = config_yaml['soil_change_hour']
-        if 'remove_farm_flower_cost_gold' in config_yaml:
-            remove_farm_flower_cost_gold = config_yaml['remove_farm_flower_cost_gold']
-        if 'watering_cost_gold' in config_yaml:
-            watering_cost_gold = config_yaml['watering_cost_gold']
-
-        if 'soil_min_humidity' in config_yaml:
-            soil_min_humidity = config_yaml['soil_min_humidity']
-        if 'soil_max_humidity' in config_yaml:
-            soil_max_humidity = config_yaml['soil_max_humidity']
-        if 'soil_min_nutrition' in config_yaml:
-            soil_min_nutrition = config_yaml['soil_min_nutrition']
-        if 'soil_max_nutrition' in config_yaml:
-            soil_max_nutrition = config_yaml['soil_max_nutrition']
-        
-        if 'draw_card_max_number' in config_yaml:
-            draw_card_max_number = config_yaml['draw_card_max_number']
-        if 'draw_card_probability_unit' in config_yaml:
-            draw_card_probability_unit = config_yaml['draw_card_probability_unit']
-        if 'draw_card_probability' in config_yaml:
-            draw_card_probability = config_yaml['draw_card_probability']
 
 
 def check_config():
     """
     检查配置信息是否正确
     """
+    global host, port, center
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
-    global soil_change_hour, remove_farm_flower_cost_gold, watering_cost_gold, draw_card_max_number
-    global draw_card_probability_unit, draw_card_probability
-    global soil_min_humidity, soil_max_humidity, soil_min_nutrition, soil_max_nutrition
     
     if not isinstance(host, str):
         raise ConfigException('host 配置错误')
     if not isinstance(port, int) or port < 0 or port > 65535:
         raise ConfigException('port 配置错误')
+    if not isinstance(center, str):
+        raise ConfigException('center 配置错误')
     
     if not isinstance(mongo_connection, str):
         raise ConfigException('mongo_connection 配置错误')
@@ -209,35 +166,6 @@ def check_config():
         raise ConfigException('redis_background_db 配置错误')
     if not isinstance(redis_password, str):
         raise ConfigException('redis_password 配置错误')
-    
-    if not isinstance(soil_change_hour, int):
-        raise ConfigException('soil_change_hour 配置错误')
-    if not isinstance(remove_farm_flower_cost_gold, int):
-        raise ConfigException('remove_farm_flower_cost_gold 配置错误')
-    if not isinstance(watering_cost_gold, int):
-        raise ConfigException('watering_cost_gold 配置错误')
-    
-    if not isinstance(soil_min_humidity, float):
-        raise ConfigException('soil_min_humidity 配置错误')
-    if not isinstance(soil_max_humidity, float):
-        raise ConfigException('soil_max_humidity 配置错误')
-    if soil_min_humidity >= soil_max_humidity:
-        raise ConfigException('soil_min_humidity 不能大于等于 soil_max_humidity')
-    if not isinstance(soil_min_nutrition, float):
-        raise ConfigException('soil_min_nutrition 配置错误')
-    if not isinstance(soil_max_nutrition, float):
-        raise ConfigException('soil_max_nutrition 配置错误')
-    if soil_min_nutrition >= soil_max_nutrition:
-        raise ConfigException('soil_min_nutrition 不能大于等于 soil_max_nutrition')
-    
-    if not isinstance(draw_card_max_number, int):
-        raise ConfigException('draw_card_max_number 配置错误')
-    if not isinstance(draw_card_probability_unit, int):
-        raise ConfigException('draw_card_probability_unit 配置错误')
-    if not isinstance(draw_card_probability, list):
-        raise ConfigException('draw_card_probability_unit 配置错误')
-    if len(draw_card_probability) == 0 or not isinstance(draw_card_probability[0], int):
-        raise ConfigException('draw_card_probability_unit 配置错误')
 
 
 argv = sys.argv[1:]
