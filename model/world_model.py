@@ -127,7 +127,7 @@ class Person(EntityClass):
     def __init__(self, name: str = '', gender: Gender = Gender.male, sexual_orientation: Gender = Gender.female,
                  spouse_id: str = '', predecessor: List[Tuple[str, datetime]] = None, relationships: List[str] = None,
                  children: List[str] = None, father_id: str = '', mother_id: str = '',
-                 die: bool = False, die_time: datetime = datetime.now(),
+                 die: bool = False, die_time: datetime = datetime.now(), max_age: int = 0,
                  world_area_id: str = '', born_area_id: str = '', born_time: datetime = datetime.now(),
                  gold: int = 0, disease: Disease = Disease.none, profession: Profession = Profession.none,
                  wisdom: int = 0, leadership: int = 0, force: int = 0, affinity: int = 0, ambition: int = 0,
@@ -156,6 +156,7 @@ class Person(EntityClass):
         self.world_area_id = world_area_id  # 当前所在地
         self.born_area_id = born_area_id  # 出生地
         self.born_time = born_time  # 出生时间（现实中每一天是其一年）
+        self.max_age = max_age  # 最大年龄
 
         self.gold = gold  # 金币
         self.disease = disease  # 疾病

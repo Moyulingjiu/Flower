@@ -15,6 +15,7 @@ from flower_exceptions import ConfigException
 
 host: str = '0.0.0.0'
 port: int = 8000
+center: str = '127.0.0.1:9000'  # 中心服务器地址
 
 # MongoDB服务器地址
 mongo_connection: str = 'mongodb://root:123456@localhost:27017/'
@@ -113,7 +114,7 @@ def load_config(config_path: str = 'config.yaml'):
     """
     加载配置文件
     """
-    global host, port
+    global host, port, center
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
     
     with open(config_path, 'r', encoding='utf8') as f:
@@ -122,6 +123,8 @@ def load_config(config_path: str = 'config.yaml'):
             host = config_yaml['host']
         if 'port' in config_yaml:
             port = config_yaml['port']
+        if 'center' in config_yaml:
+            center = config_yaml['center']
         
         if 'mongo_connection' in config_yaml:
             mongo_connection = config_yaml['mongo_connection']
@@ -141,12 +144,15 @@ def check_config():
     """
     检查配置信息是否正确
     """
+    global host, port, center
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
     
     if not isinstance(host, str):
         raise ConfigException('host 配置错误')
     if not isinstance(port, int) or port < 0 or port > 65535:
         raise ConfigException('port 配置错误')
+    if not isinstance(center, str):
+        raise ConfigException('center 配置错误')
     
     if not isinstance(mongo_connection, str):
         raise ConfigException('mongo_connection 配置错误')
