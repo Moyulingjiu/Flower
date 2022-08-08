@@ -410,6 +410,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     :param soil: 土壤
     :return:
     """
+    system_data: SystemData = get_system_data()
     # 计算不符合条件的时间
     if user.farm.humidity < soil.min_change_humidity:
         user.farm.soil_humidity_min_change_hour += 1
@@ -432,16 +433,16 @@ def update_farm_soil(user: User, soil: Soil) -> None:
         user.farm.soil_nutrition_min_change_hour = 0
 
     # 改变土壤
-    if user.farm.soil_humidity_min_change_hour > global_config.soil_change_hour:
+    if user.farm.soil_humidity_min_change_hour > system_data.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.min_change_humidity_soil_id)
-    elif user.farm.soil_humidity_max_change_hour > global_config.soil_change_hour:
+    elif user.farm.soil_humidity_max_change_hour > system_data.soil_change_hour:
         if len(soil.max_change_humidity_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_humidity_soil_id)
-    if user.farm.soil_nutrition_min_change_hour > global_config.soil_change_hour:
+    if user.farm.soil_nutrition_min_change_hour > system_data.soil_change_hour:
         if len(soil.min_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.min_change_nutrition_soil_id)
-    elif user.farm.soil_nutrition_max_change_hour > global_config.soil_change_hour:
+    elif user.farm.soil_nutrition_max_change_hour > system_data.soil_change_hour:
         if len(soil.max_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
 
@@ -477,6 +478,7 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     :param check_time: 检查时间
     :return:
     """
+    system_data: SystemData = get_system_data()
     now_temperature = ((12.0 - abs(check_time.hour - 12)) / 12.0) * (
             weather.max_temperature - weather.min_temperature) + weather.min_temperature
     # 因为天气而改变的温度与湿度
@@ -503,14 +505,14 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     user.farm.humidity -= flower.water_absorption
     user.farm.nutrition -= flower.nutrition_absorption
     # 限制湿度与营养的上下限
-    if user.farm.humidity < global_config.soil_min_humidity:
-        user.farm.humidity = global_config.soil_min_humidity
-    elif user.farm.humidity > global_config.soil_max_humidity:
-        user.farm.humidity = global_config.soil_max_humidity
-    if user.farm.nutrition < global_config.soil_min_nutrition:
-        user.farm.nutrition = global_config.soil_min_nutrition
-    elif user.farm.nutrition > global_config.soil_max_nutrition:
-        user.farm.nutrition = global_config.soil_max_nutrition
+    if user.farm.humidity < system_data.soil_min_humidity:
+        user.farm.humidity = system_data.soil_min_humidity
+    elif user.farm.humidity > system_data.soil_max_humidity:
+        user.farm.humidity = system_data.soil_max_humidity
+    if user.farm.nutrition < system_data.soil_min_nutrition:
+        user.farm.nutrition = system_data.soil_min_nutrition
+    elif user.farm.nutrition > system_data.soil_max_nutrition:
+        user.farm.nutrition = system_data.soil_max_nutrition
 
 
 def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: int, mature_time: int,
@@ -870,6 +872,7 @@ def get_system_data() -> SystemData:
     # 如果数据超出十分钟了那么更新数据
     if (now - __last_update_system_data).seconds > global_config.ten_minute_second:
         __system_data = flower_dao.select_system_data()
+        __last_update_system_data = now
     return __system_data
 
 
