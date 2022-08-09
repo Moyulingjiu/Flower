@@ -67,6 +67,7 @@ redis_kingdom_prefix = redis_global_prefix + 'kingdom_'  # 国家redis前缀
 redis_person_prefix = redis_global_prefix + 'person_'  # npc redis前缀
 redis_relationship_prefix = redis_global_prefix + 'relationship_'  # 关系redis前缀
 redis_all_person_prefix = redis_global_prefix + 'all_person_'  # npc redis前缀
+redis_all_world_area = redis_global_prefix + 'all_world_area'  # 所有地区的redis前缀
 
 redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
 redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
@@ -950,6 +951,26 @@ def select_world_area(_id: str) -> WorldArea:
         return world_area
 
 
+def select_all_world_area() -> List[WorldArea]:
+    """
+    查询所有地区
+    :return: 世界地区 的 数组
+    """
+    redis_ans = redis_db.get(redis_all_world_area)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_area.find({"is_delete": 0})
+        world_area_list: List[WorldArea] = []
+        for world_area_result in result:
+            world_area: WorldArea = WorldArea()
+            dict_to_class(world_area_result, world_area)
+            world_area_list.append(world_area)
+        redis_db.set(redis_all_world_area, serialization(world_area_list),
+                     ex=get_long_random_expire())
+        return world_area_list
+
+
 def select_world_area_by_name(name: str) -> WorldArea:
     """
     根据名字查询世界地区
@@ -1081,7 +1102,7 @@ def select_all_person(page: int, page_size: int = 30) -> List[str]:
     if redis_ans is not None:
         return deserialize(redis_ans)
     else:
-        result = mongo_person.find({"is_delete": 0})
+        result = mongo_person.find({"is_delete": 0}).limit(page_size).skip(page * page_size)
         person_id_list: List[str] = []
         for person_result in result:
             person_id_list.append(str(person_result['_id']))

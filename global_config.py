@@ -31,6 +31,8 @@ redis_password = ''
 global_lock: bool = False
 get_all_weather: bool = False
 
+object_id_length: int = 24  # mongodb的object id的长度
+
 # 时间
 minute_second: int = 60
 ten_minute_second: int = 10 * 60
