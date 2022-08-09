@@ -2060,13 +2060,13 @@ class FlowerService:
         item_list: List[DecorateItem] = []
 
         # 初始获取初始种子
-        seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
+        seed_list = ['杂草种子', '野草种子', '野花种子', '小黄花种子', '小红花种子']
         for seed in seed_list:
             item.item_name = seed
             item.number = 5
             item_list.append(copy.deepcopy(item))
         # 领取化肥
-        item.item_name = '初级化肥'
+        item.item_name = '标准肥料'
         item.number = 5
         item_list.append(copy.deepcopy(item))
         # 新手道具
