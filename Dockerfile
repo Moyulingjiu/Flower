@@ -3,8 +3,8 @@ FROM python:latest
 #创建/app目录
 RUN mkdir /app
 
-#将项目文件内的requirements.txt拷贝到/app
-COPY ./requirements.txt /app
+#将项目文件内的所有目录拷贝到/app
+COPY ./ /app
 
 #切换到/app目录
 WORKDIR /app
