@@ -37,6 +37,7 @@ mongo_world_area = mongo_db['world_area']  # 世界地区
 mongo_kingdom = mongo_db['kingdom']  # 世界地区
 mongo_relationship = mongo_db['relationship']  # 世界地区
 mongo_person = mongo_db['person']  # npc
+mongo_user_person = mongo_db['user_person']  # 玩家每天刷新的npc
 
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
 
@@ -68,6 +69,7 @@ redis_person_prefix = redis_global_prefix + 'person_'  # npc redis前缀
 redis_relationship_prefix = redis_global_prefix + 'relationship_'  # 关系redis前缀
 redis_all_person_prefix = redis_global_prefix + 'all_person_'  # npc redis前缀
 redis_all_world_area = redis_global_prefix + 'all_world_area'  # 所有地区的redis前缀
+redis_user_person_prefix = redis_global_prefix + 'user_person_'  # 用户-npc关系
 
 redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
 redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
@@ -789,7 +791,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-        
+
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
@@ -1130,12 +1132,46 @@ def select_person(_id: str) -> Person:
 
 def insert_person(person: Person) -> str:
     """
-    插入地形
+    插入npc
     :param person: npc
     :return: id
     """
     result = mongo_person.insert_one(class_to_dict(person))
     redis_db.delete(redis_person_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_user_person_by_qq(qq: int, select_time: datetime = datetime.now()) -> List[UserPerson]:
+    """
+    查询用户-npc关联关系
+    """
+    redis_ans = redis_db.get(redis_user_person_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        today: datetime = datetime(select_time.year, select_time.month, select_time.day)
+        tomorrow: datetime = today + timedelta(days=1)
+        result = mongo_user_person.find(
+            {"qq": qq, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0})
+        user_person_list: List[UserPerson] = []
+        for user_person_result in result:
+            user_person: UserPerson = UserPerson()
+            dict_to_class(user_person_result, user_person)
+            user_person_list.append(user_person)
+        redis_db.set(redis_user_person_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'),
+                     serialization(user_person_list), ex=global_config.day_second)
+        return user_person_list
+
+
+def insert_user_person(user_person: UserPerson) -> str:
+    """
+    插入玩家-npc关联
+    :param user_person: npc
+    :return: id
+    """
+    now: datetime = datetime.now()
+    result = mongo_user_person.insert_one(class_to_dict(user_person))
+    redis_db.delete(redis_user_person_prefix + str(user_person.qq) + '_' + now.strftime('%Y_%m_%d'))
     return str(result.inserted_id)
 
 
