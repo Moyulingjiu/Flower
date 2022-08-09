@@ -167,6 +167,8 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return dict_to_class(d, DecorateDog())
     elif d['class_type'] == 'DecorateCat':
         return dict_to_class(d, DecorateCat())
+    elif d['class_type'] == 'Commodity':
+        return dict_to_class(d, Commodity())
     return None
 
 

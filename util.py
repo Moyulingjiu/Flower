@@ -5,7 +5,6 @@
 import asyncio
 import copy
 import random
-import time
 from datetime import datetime, timedelta
 from enum import Enum
 from threading import Thread
@@ -13,10 +12,10 @@ from typing import List, Tuple
 
 import flower_dao
 import global_config
-from global_config import logger
-from flower_exceptions import *
-from model import *
 import weather_getter
+from flower_exceptions import *
+from global_config import logger
+from model import *
 
 
 def async_function(f):
