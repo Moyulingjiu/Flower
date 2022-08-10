@@ -975,7 +975,7 @@ class AdminHandler:
                 reply += '\n阶段：枯萎'
             total_hour: int = flower.seed_time + flower.grow_time
             reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / total_hour)
-            reply += '\n成长小时数：%d/%d' % (user.farm.hour, total_hour)
+            reply += '\n成长小时数：%.1f/%d' % (user.farm.hour, total_hour)
             reply += '\n完美小时数：%d/%d' % (user.farm.perfect_hour, flower.prefect_time)
             reply += '\n糟糕小时数：%d/%d' % (user.farm.bad_hour, flower.withered_time)
         else:

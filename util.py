@@ -665,7 +665,6 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
 
         update_farm_condition(user, flower, real_time_weather, start_time, soil)
         if user.farm.flower_state != FlowerState.withered:
-            user.farm.hour += 1
             check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
 
         start_time += timedelta(hours=1)
