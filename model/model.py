@@ -1,11 +1,10 @@
 # coding=utf-8
-import copy
-
-from model.base_model import *
 
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Dict
+
+from model.base_model import *
 
 __all__ = [
     "Region", "Terrain", "Climate", "Soil", "City", "Conditions", "Condition", "ConditionLevel",
@@ -1155,9 +1154,12 @@ class User(EntityClass):
         self.born_city_id = born_city_id  # 出生城市id
         self.city_id = city_id  # 当前城市id
 
-    def get_total_buff(self) -> DecorateBuff:
+    def get_total_buff(self, cal_datetime: datetime) -> DecorateBuff:
         total_buff: DecorateBuff = DecorateBuff()
         for buff in self.buff:
+            # 对于在某一时间过期的buff不作处理
+            if buff.expired_time < cal_datetime:
+                continue
             if buff.lock_soil:
                 total_buff.lock_soil = True
             if buff.lock_humidity:

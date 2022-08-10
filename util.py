@@ -44,8 +44,6 @@ def get_user(qq: int, username: str = '') -> User:
         raise UserNotRegisteredException('用户' + str(qq) + '未注册')
     if user.auto_get_name and username != '':
         user.username = username
-    # 计算buff
-    user.buff = [buff for buff in user.buff if not buff.expired()]
     # 计算耐久度
     calculation_farm_equipment(user)
     # 计算信箱
@@ -426,11 +424,12 @@ def get_farm_information(qq: int, username: str) -> Tuple[User, City, Soil, Clim
     return user, city, soil, climate, weather, flower
 
 
-def update_farm_soil(user: User, soil: Soil) -> Soil:
+def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     """
     更新农场的土壤
     :param user: 用户
     :param soil: 土壤
+    :param cal_datetime: 计算的时间
     :return:
     """
     system_data: SystemData = get_system_data()
@@ -456,7 +455,7 @@ def update_farm_soil(user: User, soil: Soil) -> Soil:
         user.farm.soil_nutrition_min_change_hour = 0
 
     # 改变土壤（如果被buff锁定了，那么就无法改变）
-    total_buff: DecorateBuff = user.get_total_buff()
+    total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if not total_buff.lock_soil:
         if user.farm.soil_humidity_min_change_hour > system_data.soil_change_hour:
             if len(soil.min_change_humidity_soil_id) > 0:
@@ -499,7 +498,7 @@ def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
             user.farm.flower_state = FlowerState.withered
 
 
-def update_farm_condition(user: User, flower: Flower, weather: Weather, check_time: datetime, soil: Soil) -> None:
+def update_farm_condition(user: User, flower: Flower, weather: Weather, check_time: datetime, soil: Soil, cal_datetime: datetime) -> None:
     """
     更新农场的条件
     :param user: 用户
@@ -507,6 +506,7 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     :param weather: 天气
     :param check_time: 检查时间
     :param soil: 土壤
+    :param cal_datetime: 计算的时间
     :return:
     """
     system_data: SystemData = get_system_data()
@@ -540,7 +540,7 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
         user.farm.humidity -= flower.water_absorption
         user.farm.nutrition -= flower.nutrition_absorption
     # 增加buff所带来的水分与营养影响
-    total_buff: DecorateBuff = user.get_total_buff()
+    total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     user.farm.humidity += total_buff.change_humidity
     user.farm.nutrition += total_buff.change_nutrition
     user.farm.temperature += total_buff.change_temperature
@@ -572,7 +572,7 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
 
 
 def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: int, mature_time: int,
-                         overripe_time: int):
+                         overripe_time: int, cal_datetime: datetime):
     """
     检查农场的环境，修改花的状态
     :param user: 用户
@@ -581,9 +581,10 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     :param grow_time: seed_time——grow_time幼苗
     :param mature_time: grow_time——mature_time成熟
     :param overripe_time: mature_time——overripe_time过熟
+    :param cal_datetime: 计算的时间
     :return:
     """
-    total_buff: DecorateBuff = user.get_total_buff()
+    total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if user.farm.hour <= overripe_time * 2:
         # 计算条件
         if user.farm.hour <= seed_time:
@@ -682,19 +683,20 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time <= now:
-        soil = update_farm_soil(user, soil)
+        soil = update_farm_soil(user, soil, start_time)
         check_farm_soil_climate_condition(user, flower)
 
-        update_farm_condition(user, flower, real_time_weather, start_time, soil)
+        update_farm_condition(user, flower, real_time_weather, start_time, soil, start_time)
         if user.farm.flower_state != FlowerState.withered:
-            check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
+            check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time, start_time)
 
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
             if real_time_weather.city_id != city.get_id():
                 real_time_weather = weather
-
+    user.buff = [buff for buff in user.buff if buff.expired_time >= start_time]
+    
 
 def add_nutrition(farm: Farm, nutrition: float) -> float:
     """

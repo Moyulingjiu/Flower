@@ -2182,18 +2182,19 @@ class FlowerService:
         """
         user: User = util.get_user(qq, username)
         reply: str = '%s，你的BUFF如下：' % user.username
-        if len(user.buff) == 0:
+        buff_list: List[DecorateBuff] = [buff for buff in user.buff if not buff.expired()]
+        if len(buff_list) == 0:
             reply += '\n没有任何buff呢~'
             return reply
         index = -1
-        for buff in user.buff:
+        for buff in buff_list:
             index += 1
             if index < page * page_size:
                 continue
             elif index > (page + 1) * page_size:
                 break
             reply += '\n' + str(buff)
-        total = len(user.buff)
+        total = len(buff_list)
         if total > page_size:
             total_page = total // page_size
             if total % page_size > 0:
