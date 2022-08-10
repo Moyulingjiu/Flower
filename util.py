@@ -437,15 +437,19 @@ def update_farm_soil(user: User, soil: Soil) -> None:
     if user.farm.soil_humidity_min_change_hour > system_data.soil_change_hour:
         if len(soil.min_change_humidity_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.min_change_humidity_soil_id)
+            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
     elif user.farm.soil_humidity_max_change_hour > system_data.soil_change_hour:
         if len(soil.max_change_humidity_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_humidity_soil_id)
+            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
     if user.farm.soil_nutrition_min_change_hour > system_data.soil_change_hour:
         if len(soil.min_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.min_change_nutrition_soil_id)
+            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
     elif user.farm.soil_nutrition_max_change_hour > system_data.soil_change_hour:
         if len(soil.max_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
+            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
 
 
 def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
@@ -470,7 +474,7 @@ def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
             user.farm.flower_state = FlowerState.withered
 
 
-def update_farm_condition(user: User, flower: Flower, weather: Weather, check_time: datetime) -> None:
+def update_farm_condition(user: User, flower: Flower, weather: Weather, check_time: datetime, soil: Soil) -> None:
     """
     更新农场的条件
     :param user: 用户
@@ -505,6 +509,15 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     # 花吸收的水分与营养
     user.farm.humidity -= flower.water_absorption
     user.farm.nutrition -= flower.nutrition_absorption
+    # 限制湿度与营养的土壤上下限
+    if user.farm.humidity < soil.min_humidity:
+        user.farm.humidity = soil.min_humidity
+    elif user.farm.humidity > soil.max_humidity:
+        user.farm.humidity = soil.max_humidity
+    if user.farm.nutrition < soil.min_nutrition:
+        user.farm.nutrition = soil.min_nutrition
+    elif user.farm.nutrition > soil.max_nutrition:
+        user.farm.nutrition = soil.max_nutrition
     # 限制湿度与营养的上下限
     if user.farm.humidity < system_data.soil_min_humidity:
         user.farm.humidity = system_data.soil_min_humidity
@@ -629,7 +642,7 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         check_farm_soil_climate_condition(user, flower)
         if user.farm.flower_state == FlowerState.withered:
             break
-        update_farm_condition(user, flower, real_time_weather, start_time)
+        update_farm_condition(user, flower, real_time_weather, start_time, soil)
         user.farm.hour += 1
         
         check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)

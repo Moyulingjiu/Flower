@@ -2192,18 +2192,19 @@ class FlowerService:
 
         humidity_change: float = 0.0
         watering_pot: DecorateItem = user.farm.watering_pot
-        if watering_pot.level == 1:
-            humidity_change = 5.0 * multiple
-            user.farm.humidity += humidity_change
-        elif watering_pot.level == 2:
-            humidity_change = 2.5 * multiple
-            user.farm.humidity += humidity_change
-        elif watering_pot.level == 3:
-            humidity_change = 1.0 * multiple
-            user.farm.humidity += humidity_change
-        elif watering_pot.level == 4:
-            humidity_change = 0.1 * multiple
-            user.farm.humidity += humidity_change
+        if user.farm.watering_pot.max_durability > 0 and user.farm.watering_pot.durability > 0:
+            if watering_pot.level == 1:
+                humidity_change = 5.0 * multiple
+                user.farm.humidity += humidity_change
+            elif watering_pot.level == 2:
+                humidity_change = 2.5 * multiple
+                user.farm.humidity += humidity_change
+            elif watering_pot.level == 3:
+                humidity_change = 1.0 * multiple
+                user.farm.humidity += humidity_change
+            elif watering_pot.level == 4:
+                humidity_change = 0.1 * multiple
+                user.farm.humidity += humidity_change
         cost_gold: int = system_data.watering_cost_gold * multiple
         # 设置湿度的上限
         if user.farm.humidity > system_data.soil_max_humidity:
@@ -2324,6 +2325,7 @@ class FlowerService:
                     if user.farm.thermometer.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.thermometer])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.thermometer = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2334,6 +2336,7 @@ class FlowerService:
                     if user.farm.soil_monitoring_station.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.soil_monitoring_station])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.soil_monitoring_station = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2344,6 +2347,7 @@ class FlowerService:
                     if user.farm.watering_pot.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.watering_pot])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.watering_pot = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2354,6 +2358,7 @@ class FlowerService:
                     if user.farm.weather_station.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.weather_station])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.weather_station = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2364,6 +2369,7 @@ class FlowerService:
                     if user.farm.mailbox.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.mailbox])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.mailbox = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2374,6 +2380,7 @@ class FlowerService:
                     if user.farm.greenhouse.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.greenhouse])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.greenhouse = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2384,6 +2391,7 @@ class FlowerService:
                     if user.farm.warehouse.item_name != '':
                         util.insert_items(user.warehouse, [user.farm.warehouse])
                     item.update = datetime.now()
+                    item.durability -= 1
                     user.farm.warehouse = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
@@ -2407,7 +2415,7 @@ class FlowerService:
                     user.gold += gold
                     return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '大金卡':
-                    gold = random.randint(50 * item.number, 100001 * item.number)
+                    gold = random.randint(50 * item.number, 50001 * item.number)
                     user.gold += gold
                     return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '金砖卡':
