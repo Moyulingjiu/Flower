@@ -24,11 +24,11 @@ def async_function(f):
     :param f: 函数
     :return: 包装之后的函数
     """
-
+    
     def wrapper(*args, **kwargs):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
-
+    
     return wrapper
 
 
@@ -215,7 +215,7 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
-
+    
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
     if not item_obj.valid():
         raise ItemNotFoundException('')
@@ -443,7 +443,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-
+    
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -453,7 +453,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-
+    
     # 改变土壤（如果被buff锁定了，那么就无法改变）
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if not total_buff.lock_soil:
@@ -498,7 +498,8 @@ def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
             user.farm.flower_state = FlowerState.withered
 
 
-def update_farm_condition(user: User, flower: Flower, weather: Weather, check_time: datetime, soil: Soil, cal_datetime: datetime) -> None:
+def update_farm_condition(user: User, flower: Flower, weather: Weather, check_time: datetime, soil: Soil,
+                          cal_datetime: datetime) -> None:
     """
     更新农场的条件
     :param user: 用户
@@ -611,7 +612,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.bad_hour += 1 * (1.0 + total_buff.bad_hour_coefficient)
         else:
             user.farm.perfect_hour = 0
-
+        
         # 根据条件不同，每小时增长的小时不同
         if condition_level == ConditionLevel.PERFECT:
             if flower.level == FlowerLevel.S:
@@ -642,7 +643,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 0.6 * (1.0 + total_buff.hour_coefficient)
             else:
                 user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
-
+        
         # 根据条件来查看花的状态
         if user.farm.bad_hour > flower.withered_time:
             user.farm.flower_state = FlowerState.withered
@@ -673,30 +674,30 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-
+    
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-
+    
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time <= now:
         soil = update_farm_soil(user, soil, start_time)
         check_farm_soil_climate_condition(user, flower)
-
+        
         update_farm_condition(user, flower, real_time_weather, start_time, soil, start_time)
         if user.farm.flower_state != FlowerState.withered:
             check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time, start_time)
-
+        
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
             if real_time_weather.city_id != city.get_id():
                 real_time_weather = weather
     user.buff = [buff for buff in user.buff if buff.expired_time >= start_time]
-    
+
 
 def add_nutrition(farm: Farm, nutrition: float) -> float:
     """
@@ -736,11 +737,35 @@ def add_humidity(farm: Farm, humidity: float) -> float:
 
 ####################################################################################################
 
+def get_update_right() -> None:
+    """
+    尝试获取更新数据的权限
+    :return:
+    """
+    try:
+        lock_the_world()
+        global_config.get_right_update_data = True
+    except ResBeLockedException:
+        return
+    
+
+def release_update_right() -> None:
+    """
+    释放更新数据的权限
+    :return:
+    """
+    if not global_config.get_right_update_data:
+        return
+    unlock_the_world()
+
+
 def get_all_weather() -> None:
     """
     获取所有城市的天气
     :return: none
     """
+    if not global_config.get_right_update_data:
+        return
     logger.info('开始获取所有城市的天气')
     city_list: List[City] = flower_dao.select_all_city()
     index = 0
@@ -760,6 +785,51 @@ def get_all_weather() -> None:
     logger.info('天气获取结果，总计城市：%d，有效城市：%d，获取失败：%d' % (total, index, fail_number))
     # 解除获取获取天气的锁
     global_config.get_all_weather = False
+
+
+def update_all_user() -> None:
+    """
+    更新所有用户
+    :return: none
+    """
+    if not global_config.get_right_update_data:
+        return
+    logger.info('开始更新所有用户数据')
+    total_user_number: int = flower_dao.select_all_user_number()
+    page_size: int = 20
+    page: int = -1
+    while total_user_number > 0:
+        total_user_number -= page_size
+        page += 1
+        user_list: List[User] = flower_dao.select_all_user(page=page, page_size=page_size)
+        for user in user_list:
+            logger.info('更新用户<%s>(%d)的农场' % (user.username, user.qq))
+            city: City = flower_dao.select_city_by_id(user.city_id)
+            soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+            weather: Weather = get_weather(city)
+            flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
+            update_farm(user, city, soil, weather, flower)
+    logger.info('更新用户数据完成')
+
+
+def lock_the_world() -> None:
+    """
+    锁住整个游戏
+    :return:
+    """
+    flower_dao.lock(flower_dao.redis_global_game_lock)
+
+
+def unlock_the_world() -> None:
+    """
+    解锁整个游戏
+    :return:
+    """
+    flower_dao.unlock(flower_dao.redis_global_game_lock)
+
+
+def get_global_lock() -> bool:
+    return flower_dao.be_locked(flower_dao.redis_global_game_lock)
 
 
 ####################################################################################################

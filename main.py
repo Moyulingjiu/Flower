@@ -48,16 +48,28 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def start_event():
-    # 每天凌晨3、4点更新天气
-    scheduler.add_job(util.get_all_weather, 'cron', day_of_week='0-6', hour=3, minute=0,
+    # 每天凌晨3点20分锁定游戏
+    scheduler.add_job(util.get_update_right, 'cron', day_of_week='0-6', hour=3, minute=20,
+                      second=0, timezone='Asia/Shanghai', args=[], id="lock_world",
+                      replace_existing=True)
+    # 每天凌晨3、4点半更新天气
+    scheduler.add_job(util.get_all_weather, 'cron', day_of_week='0-6', hour=3, minute=30,
                       second=0, timezone='Asia/Shanghai', args=[], id="get_all_weather_regularly",
                       replace_existing=True)
-    scheduler.add_job(util.get_all_weather, 'cron', day_of_week='0-6', hour=4, minute=0,
+    scheduler.add_job(util.get_all_weather, 'cron', day_of_week='0-6', hour=4, minute=30,
                       second=0, timezone='Asia/Shanghai', args=[], id="get_all_weather_regularly2",
                       replace_existing=True)
-    # 每天凌晨3天更新世界
-    scheduler.add_job(update_world, 'cron', day_of_week='0-6', hour=3, minute=0,
+    # 每天凌晨3天半更新世界
+    scheduler.add_job(update_world, 'cron', day_of_week='0-6', hour=3, minute=30,
                       second=0, timezone='Asia/Shanghai', args=[], id="update_world",
+                      replace_existing=True)
+    # 每天凌晨4点更新用户
+    scheduler.add_job(util.update_all_user, 'cron', day_of_week='0-6', hour=4, minute=0,
+                      second=0, timezone='Asia/Shanghai', args=[], id="update_all_user",
+                      replace_existing=True)
+    # 每天凌晨5点0锁定游戏
+    scheduler.add_job(util.release_update_right, 'cron', day_of_week='0-6', hour=5, minute=0,
+                      second=0, timezone='Asia/Shanghai', args=[], id="unlock_world",
                       replace_existing=True)
     scheduler.start()
     logger.info('背景任务已启动')
@@ -96,7 +108,7 @@ async def draw_card(message: Message):
     :return: 抽卡结果
     """
     # 全局加锁不进行响应
-    if global_config.global_lock:
+    if util.get_global_lock():
         return Response(code=0, message="success", data=Result.init())
     reply: str = flower.DrawCard.draw_card(message.qq, message.username)
     if reply == '':
@@ -114,7 +126,7 @@ async def add_flower(message: Message):
     :return: 结果
     """
     # 全局加锁不进行响应
-    if global_config.global_lock:
+    if util.get_global_lock():
         return Response(code=0, message="success", data=Result.init())
     # 进行花店的操作逻辑
     result: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,

@@ -49,6 +49,7 @@ redis_pool = ConnectionPool(host=global_config.redis_host, port=global_config.re
 redis_db = StrictRedis(connection_pool=redis_pool)
 
 redis_global_prefix = 'flower_'  # redis全局前缀
+redis_global_game_lock = redis_global_prefix + 'global_game_lock'  # 游戏锁前缀
 redis_system_data_prefix = redis_global_prefix + 'system_data'  # 系统数据前缀（有且仅有一个）
 redis_announcement_prefix = redis_global_prefix + 'announcement'  # 公告数据前缀（有且仅有一个，为一个列表，表示当前有效的公告）
 redis_region_prefix = redis_global_prefix + 'region_'  # 地区redis前缀（地区id）
@@ -246,6 +247,15 @@ def lock(key: str, wait_time: int = lock_wait_time, try_interval: int = lock_try
         time.sleep(try_interval / 1000)
         wait_time -= try_interval
     raise ResBeLockedException('资源被锁定')
+
+
+def be_locked(key: str) -> bool:
+    """
+    是否有被锁定
+    :param key: key
+    :return:
+    """
+    return redis_db.get(key) is not None
 
 
 def unlock(key: str) -> int:
@@ -570,6 +580,15 @@ def select_user_by_qq(qq: int) -> User:
         return user
 
 
+def select_all_user_number() -> int:
+    """
+    获取用户的数量
+    :return:
+    """
+    number = mongo_user.count_documents({"is_delete": 0})
+    return int(number)
+
+
 def select_all_user(page: int = 0, page_size: int = 20) -> List[User]:
     """
     查找全部user
@@ -795,7 +814,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-
+        
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()

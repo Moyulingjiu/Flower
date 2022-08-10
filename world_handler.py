@@ -6,6 +6,7 @@ import random
 from typing import List
 
 import flower_dao
+import global_config
 from global_config import logger
 from model import *
 
@@ -15,6 +16,8 @@ def update_world():
     更新世界
     :return:
     """
+    if not global_config.get_right_update_data:
+        return
     logger.info('开始更新世界')
 
 

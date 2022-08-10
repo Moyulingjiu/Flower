@@ -28,7 +28,7 @@ redis_db = 1
 redis_password = ''
 
 # 全局锁
-global_lock: bool = False
+get_right_update_data: bool = False
 get_all_weather: bool = False
 
 object_id_length: int = 24  # mongodb的object id的长度
