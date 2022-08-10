@@ -789,16 +789,18 @@ class AdminHandler:
             util.lock_user(qq)
             system_data: SystemData = util.get_system_data()
             user: User = util.get_user(qq, '')
-            if humidity > system_data.soil_min_humidity:
-                humidity = system_data.soil_min_humidity
-            elif humidity < system_data.soil_max_humidity:
-                humidity = system_data.soil_max_humidity
-            if nutrition > system_data.soil_min_nutrition:
-                nutrition = system_data.soil_min_nutrition
-            elif nutrition < system_data.soil_max_nutrition:
-                nutrition = system_data.soil_max_nutrition
-            user.farm.humidity = humidity
-            user.farm.nutrition = nutrition
+            if humidity != -1.0:
+                if humidity > system_data.soil_min_humidity:
+                    humidity = system_data.soil_min_humidity
+                elif humidity < system_data.soil_max_humidity:
+                    humidity = system_data.soil_max_humidity
+                user.farm.humidity = humidity
+            if nutrition != -1.0:
+                if nutrition > system_data.soil_min_nutrition:
+                    nutrition = system_data.soil_min_nutrition
+                elif nutrition < system_data.soil_max_nutrition:
+                    nutrition = system_data.soil_max_nutrition
+                user.farm.nutrition = nutrition
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
