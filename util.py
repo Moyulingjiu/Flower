@@ -44,6 +44,8 @@ def get_user(qq: int, username: str = '') -> User:
         raise UserNotRegisteredException('用户' + str(qq) + '未注册')
     if user.auto_get_name and username != '':
         user.username = username
+    # 计算buff
+    user.buff = [buff for buff in user.buff if not buff.expired()]
     # 计算耐久度
     calculation_farm_equipment(user)
     # 计算信箱
@@ -453,23 +455,25 @@ def update_farm_soil(user: User, soil: Soil) -> Soil:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
 
-    # 改变土壤
-    if user.farm.soil_humidity_min_change_hour > system_data.soil_change_hour:
-        if len(soil.min_change_humidity_soil_id) > 0:
-            user.farm.soil_id = random.choice(soil.min_change_humidity_soil_id)
-            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
-    elif user.farm.soil_humidity_max_change_hour > system_data.soil_change_hour:
-        if len(soil.max_change_humidity_soil_id) > 0:
-            user.farm.soil_id = random.choice(soil.max_change_humidity_soil_id)
-            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
-    if user.farm.soil_nutrition_min_change_hour > system_data.soil_change_hour:
-        if len(soil.min_change_nutrition_soil_id) > 0:
-            user.farm.soil_id = random.choice(soil.min_change_nutrition_soil_id)
-            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
-    elif user.farm.soil_nutrition_max_change_hour > system_data.soil_change_hour:
-        if len(soil.max_change_nutrition_soil_id) > 0:
-            user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
-            soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+    # 改变土壤（如果被buff锁定了，那么就无法改变）
+    total_buff: DecorateBuff = user.get_total_buff()
+    if not total_buff.lock_soil:
+        if user.farm.soil_humidity_min_change_hour > system_data.soil_change_hour:
+            if len(soil.min_change_humidity_soil_id) > 0:
+                user.farm.soil_id = random.choice(soil.min_change_humidity_soil_id)
+                soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+        elif user.farm.soil_humidity_max_change_hour > system_data.soil_change_hour:
+            if len(soil.max_change_humidity_soil_id) > 0:
+                user.farm.soil_id = random.choice(soil.max_change_humidity_soil_id)
+                soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+        if user.farm.soil_nutrition_min_change_hour > system_data.soil_change_hour:
+            if len(soil.min_change_nutrition_soil_id) > 0:
+                user.farm.soil_id = random.choice(soil.min_change_nutrition_soil_id)
+                soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+        elif user.farm.soil_nutrition_max_change_hour > system_data.soil_change_hour:
+            if len(soil.max_change_nutrition_soil_id) > 0:
+                user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
+                soil = flower_dao.select_soil_by_id(user.farm.soil_id)
     return soil
 
 
@@ -502,11 +506,15 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     :param flower: 花
     :param weather: 天气
     :param check_time: 检查时间
+    :param soil: 土壤
     :return:
     """
     system_data: SystemData = get_system_data()
     now_temperature = ((12.0 - abs(check_time.hour - 12)) / 12.0) * (
             weather.max_temperature - weather.min_temperature) + weather.min_temperature
+    origin_temperature: float = user.farm.temperature
+    origin_humidity: float = user.farm.humidity
+    origin_nutrition: float = user.farm.nutrition
     # 因为天气而改变的温度与湿度
     if user.farm.greenhouse.durability > 0 or user.farm.greenhouse.max_durability == 0:
         if user.farm.greenhouse.level == 4:
@@ -531,6 +539,18 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     if user.farm.flower_state != FlowerState.withered:
         user.farm.humidity -= flower.water_absorption
         user.farm.nutrition -= flower.nutrition_absorption
+    # 增加buff所带来的水分与营养影响
+    total_buff: DecorateBuff = user.get_total_buff()
+    user.farm.humidity += total_buff.change_humidity
+    user.farm.nutrition += total_buff.change_nutrition
+    user.farm.temperature += total_buff.change_temperature
+    # 如果buff有锁则不改变湿度等条件
+    if total_buff.lock_humidity:
+        user.farm.humidity = origin_humidity
+    if total_buff.lock_nutrition:
+        user.farm.nutrition = origin_nutrition
+    if total_buff.lock_temperature:
+        user.farm.temperature = origin_temperature
     # 限制湿度与营养的土壤上下限
     if user.farm.humidity < soil.min_humidity:
         user.farm.humidity = soil.min_humidity
@@ -563,6 +583,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     :param overripe_time: mature_time——overripe_time过熟
     :return:
     """
+    total_buff: DecorateBuff = user.get_total_buff()
     if user.farm.hour <= overripe_time * 2:
         # 计算条件
         if user.farm.hour <= seed_time:
@@ -583,43 +604,43 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                                                                                           user.farm.nutrition)
         # 根据条件不同来计算完美时间和糟糕的时间
         if condition_level == ConditionLevel.PERFECT:
-            user.farm.perfect_hour += 1
+            user.farm.perfect_hour += 1 * (1.0 + total_buff.perfect_coefficient)
         elif condition_level == ConditionLevel.BAD:
             user.farm.perfect_hour = 0
-            user.farm.bad_hour += 1
+            user.farm.bad_hour += 1 * (1.0 + total_buff.bad_hour_coefficient)
         else:
             user.farm.perfect_hour = 0
 
         # 根据条件不同，每小时增长的小时不同
         if condition_level == ConditionLevel.PERFECT:
             if flower.level == FlowerLevel.S:
-                user.farm.hour += 1.2
+                user.farm.hour += 1.2 * (1.0 + total_buff.hour_coefficient)
             elif flower.level == FlowerLevel.A:
-                user.farm.hour += 1.6
+                user.farm.hour += 1.6 * (1.0 + total_buff.hour_coefficient)
             elif flower.level == FlowerLevel.B:
-                user.farm.hour += 1.8
+                user.farm.hour += 1.8 * (1.0 + total_buff.hour_coefficient)
             elif flower.level == FlowerLevel.C:
-                user.farm.hour += 2.0
+                user.farm.hour += 2.0 * (1.0 + total_buff.hour_coefficient)
             else:
-                user.farm.hour += 1.0
+                user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
         elif condition_level == ConditionLevel.SUITABLE:
-            user.farm.hour += 1
+            user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
         if condition_level == ConditionLevel.NORMAL:
             if flower.level == FlowerLevel.S:
-                user.farm.hour += 0.5
+                user.farm.hour += 0.5 * (1.0 + total_buff.hour_coefficient)
             else:
-                user.farm.hour += 0.8
+                user.farm.hour += 0.8 * (1.0 + total_buff.hour_coefficient)
         else:
             if flower.level == FlowerLevel.S:
-                user.farm.hour += 0.3
+                user.farm.hour += 0.3 * (1.0 + total_buff.hour_coefficient)
             elif flower.level == FlowerLevel.A:
-                user.farm.hour += 0.4
+                user.farm.hour += 0.4 * (1.0 + total_buff.hour_coefficient)
             elif flower.level == FlowerLevel.B:
-                user.farm.hour += 0.5
+                user.farm.hour += 0.5 * (1.0 + total_buff.hour_coefficient)
             elif flower.level == FlowerLevel.C:
-                user.farm.hour += 0.6
+                user.farm.hour += 0.6 * (1.0 + total_buff.hour_coefficient)
             else:
-                user.farm.hour += 1.0
+                user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
 
         # 根据条件来查看花的状态
         if user.farm.bad_hour > flower.withered_time:

@@ -1155,6 +1155,25 @@ class User(EntityClass):
         self.born_city_id = born_city_id  # 出生城市id
         self.city_id = city_id  # 当前城市id
 
+    def get_total_buff(self) -> DecorateBuff:
+        total_buff: DecorateBuff = DecorateBuff()
+        for buff in self.buff:
+            if buff.lock_soil:
+                total_buff.lock_soil = True
+            if buff.lock_humidity:
+                total_buff.lock_humidity = True
+            if buff.lock_nutrition:
+                total_buff.lock_nutrition = True
+            if buff.lock_temperature:
+                total_buff.lock_temperature = True
+            total_buff.change_humidity += buff.change_humidity
+            total_buff.change_temperature += buff.change_temperature
+            total_buff.change_nutrition += buff.change_nutrition
+            total_buff.perfect_coefficient += buff.perfect_coefficient
+            total_buff.hour_coefficient += buff.hour_coefficient
+            total_buff.bad_hour_coefficient += buff.bad_hour_coefficient
+        return total_buff
+
 
 class Commodity(InnerClass):
     """
