@@ -424,7 +424,7 @@ def get_farm_information(qq: int, username: str) -> Tuple[User, City, Soil, Clim
     return user, city, soil, climate, weather, flower
 
 
-def update_farm_soil(user: User, soil: Soil) -> None:
+def update_farm_soil(user: User, soil: Soil) -> Soil:
     """
     更新农场的土壤
     :param user: 用户
@@ -470,6 +470,7 @@ def update_farm_soil(user: User, soil: Soil) -> None:
         if len(soil.max_change_nutrition_soil_id) > 0:
             user.farm.soil_id = random.choice(soil.max_change_nutrition_soil_id)
             soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+    return soil
 
 
 def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
@@ -527,8 +528,9 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
         user.farm.temperature += 0.8 * (now_temperature - user.farm.temperature)
         user.farm.humidity -= 1.0 * (1 - weather.humidity / 100)
     # 花吸收的水分与营养
-    user.farm.humidity -= flower.water_absorption
-    user.farm.nutrition -= flower.nutrition_absorption
+    if user.farm.flower_state != FlowerState.withered:
+        user.farm.humidity -= flower.water_absorption
+        user.farm.nutrition -= flower.nutrition_absorption
     # 限制湿度与营养的土壤上下限
     if user.farm.humidity < soil.min_humidity:
         user.farm.humidity = soil.min_humidity
@@ -658,16 +660,13 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time < now:
-        update_farm_soil(user, soil)
+        soil = update_farm_soil(user, soil)
         check_farm_soil_climate_condition(user, flower)
-        if user.farm.flower_state == FlowerState.withered:
-            break
-        update_farm_condition(user, flower, real_time_weather, start_time, soil)
-        user.farm.hour += 1
 
-        check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
-        if user.farm.flower_state == FlowerState.withered:
-            break
+        update_farm_condition(user, flower, real_time_weather, start_time, soil)
+        if user.farm.flower_state != FlowerState.withered:
+            user.farm.hour += 1
+            check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time)
 
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
