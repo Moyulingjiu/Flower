@@ -758,6 +758,8 @@ def calculation_warehouse(user: User):
         user.warehouse.max_size = 80
     elif user.farm.warehouse.level == 4:
         user.warehouse.max_size = 120
+    elif user.farm.warehouse.level == 5:
+        user.warehouse.max_size = 200
     else:
         user.warehouse.max_size = 20
 
