@@ -999,13 +999,13 @@ class AdminHandler:
             grow_time: int = seed_time + flower.grow_time
             mature_time: int = grow_time + flower.mature_time
             overripe_time: int = mature_time + flower.overripe_time
-            if user.farm.hour <= seed_time:
+            if user.farm.hour < seed_time:
                 reply += '\n阶段：种子'
-            elif user.farm.hour <= grow_time:
+            elif user.farm.hour < grow_time:
                 reply += '\n阶段：幼苗'
-            elif user.farm.hour <= mature_time:
+            elif user.farm.hour < mature_time:
                 reply += '\n阶段：成熟'
-            elif user.farm.hour <= overripe_time:
+            elif user.farm.hour < overripe_time:
                 reply += '\n阶段：过熟'
             else:
                 reply += '\n阶段：枯萎'
@@ -2015,13 +2015,13 @@ class FlowerService:
             grow_time: int = seed_time + flower.grow_time
             mature_time: int = grow_time + flower.mature_time
             overripe_time: int = mature_time + flower.overripe_time
-            if user.farm.hour <= seed_time:
+            if user.farm.hour < seed_time:
                 reply += '\n阶段：种子'
-            elif user.farm.hour <= grow_time:
+            elif user.farm.hour < grow_time:
                 reply += '\n阶段：幼苗'
-            elif user.farm.hour <= mature_time:
+            elif user.farm.hour < mature_time:
                 reply += '\n阶段：成熟'
-            elif user.farm.hour <= overripe_time:
+            elif user.farm.hour < overripe_time:
                 reply += '\n阶段：过熟'
             else:
                 reply += '\n阶段：枯萎'
@@ -2930,9 +2930,9 @@ class FlowerService:
             grow_time: int = seed_time + flower.grow_time
             mature_time: int = grow_time + flower.mature_time
             overripe_time: int = mature_time + flower.overripe_time
-            if user.farm.hour <= grow_time:
+            if user.farm.hour < grow_time:
                 return user.username + '，你的花还未成熟。'
-            elif user.farm.hour <= overripe_time:
+            elif user.farm.hour < overripe_time:
                 item: DecorateItem = DecorateItem()
                 item_obj: Item = flower_dao.select_item_by_name(flower.name)
                 if item_obj.name == '':
@@ -2958,17 +2958,48 @@ class FlowerService:
                     # 成就管理
                     good_at_flower: str = '擅长' + flower.name
                     flower_master: str = flower.name + '大师'
-                    if good_at_flower in user.achievement:
-                        user_achievement: DecorateAchievement = user.achievement[good_at_flower]
+                    if good_at_flower not in user.achievement:
+                        user.achievement[good_at_flower] = DecorateAchievement()
+                        user.achievement[good_at_flower].value = 0
+                        user.achievement[good_at_flower].level = 0
+                    user_achievement: DecorateAchievement = user.achievement[good_at_flower]
+                    user_achievement.value += number
+                    achievement: Achievement = flower_dao.select_achievement_by_name(good_at_flower)
+                    if user_achievement.level < len(achievement.value_list):
+                        if user_achievement.value > achievement.value_list[user_achievement.level]:
+                            if isinstance(achievement.award_list[user_achievement.level], int):
+                                util.send_mail(
+                                    user,
+                                    '成就%s升级' % good_at_flower,
+                                    '恭喜你！成就成功升级。这是我们为你准备的礼品',
+                                    [],
+                                    achievement.award_list[user_achievement.level]
+                                )
+                            elif isinstance(achievement.award_list[user_achievement.level], list):
+                                util.send_mail(
+                                    user,
+                                    '成就%s升级' % good_at_flower,
+                                    '恭喜你！成就成功升级。这是我们为你准备的礼品',
+                                    achievement.award_list[user_achievement.level],
+                                    0
+                                )
+                            user_achievement.achievement_time = datetime.now()
+                            user_achievement.level += 1
+                    if user.farm.flower_state == FlowerState.perfect:
+                        if flower_master not in user.achievement:
+                            user.achievement[flower_master] = DecorateAchievement()
+                            user.achievement[flower_master].value = 0
+                            user.achievement[flower_master].level = 0
+                        user_achievement: DecorateAchievement = user.achievement[flower_master]
                         user_achievement.value += number
-                        achievement: Achievement = flower_dao.select_achievement_by_name(good_at_flower)
+                        achievement: Achievement = flower_dao.select_achievement_by_name(flower_master)
                         if user_achievement.level < len(achievement.value_list):
                             if user_achievement.value > achievement.value_list[user_achievement.level]:
                                 if isinstance(achievement.award_list[user_achievement.level], int):
                                     util.send_mail(
                                         user,
                                         '成就%s升级' % good_at_flower,
-                                        '恭喜你！成就成功升级。这是我们为你准备的礼品',
+                                        '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
                                         [],
                                         achievement.award_list[user_achievement.level]
                                     )
@@ -2976,35 +3007,11 @@ class FlowerService:
                                     util.send_mail(
                                         user,
                                         '成就%s升级' % good_at_flower,
-                                        '恭喜你！成就成功升级。这是我们为你准备的礼品',
+                                        '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
                                         achievement.award_list[user_achievement.level],
                                         0
                                     )
                                 user_achievement.level += 1
-                    if user.farm.flower_state == FlowerState.perfect:
-                        if flower_master in user.achievement:
-                            user_achievement: DecorateAchievement = user.achievement[flower_master]
-                            user_achievement.value += number
-                            achievement: Achievement = flower_dao.select_achievement_by_name(flower_master)
-                            if user_achievement.level < len(achievement.value_list):
-                                if user_achievement.value > achievement.value_list[user_achievement.level]:
-                                    if isinstance(achievement.award_list[user_achievement.level], int):
-                                        util.send_mail(
-                                            user,
-                                            '成就%s升级' % good_at_flower,
-                                            '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
-                                            [],
-                                            achievement.award_list[user_achievement.level]
-                                        )
-                                    elif isinstance(achievement.award_list[user_achievement.level], list):
-                                        util.send_mail(
-                                            user,
-                                            '成就%s升级' % good_at_flower,
-                                            '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
-                                            achievement.award_list[user_achievement.level],
-                                            0
-                                        )
-                                    user_achievement.level += 1
                     # 更新user
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，收获成功，获得%s-%sx%d' % (

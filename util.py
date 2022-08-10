@@ -588,15 +588,15 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if user.farm.hour <= overripe_time * 2:
         # 计算条件
-        if user.farm.hour <= seed_time:
+        if user.farm.hour < seed_time:
             condition_level: ConditionLevel = flower.seed_condition.get_condition_level(user.farm.temperature,
                                                                                         user.farm.humidity,
                                                                                         user.farm.nutrition)
-        elif user.farm.hour <= grow_time:
+        elif user.farm.hour < grow_time:
             condition_level: ConditionLevel = flower.grow_condition.get_condition_level(user.farm.temperature,
                                                                                         user.farm.humidity,
                                                                                         user.farm.nutrition)
-        elif user.farm.hour <= mature_time:
+        elif user.farm.hour < mature_time:
             condition_level: ConditionLevel = flower.mature_condition.get_condition_level(user.farm.temperature,
                                                                                           user.farm.humidity,
                                                                                           user.farm.nutrition)
