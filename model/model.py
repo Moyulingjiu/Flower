@@ -934,13 +934,14 @@ class Buff(EntityClass):
     """
 
     def __init__(self, name: str = '', lock_humidity: bool = False, lock_nutrition: bool = False,
-                 lock_soil: bool = False, lock_temperature: bool = False,
+                 lock_soil: bool = False, lock_temperature: bool = False, description: str = '',
                  change_humidity: float = 0.0, change_nutrition: float = 0.0, change_temperature: float = 0.0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
 
         self.name = name  # buff名字
+        self.description = description  # 描述
         self.lock_humidity = lock_humidity  # 是否锁定湿度
         self.lock_nutrition = lock_nutrition  # 是否锁定营养
         self.lock_temperature = lock_temperature  # 是否锁定温度
@@ -981,7 +982,7 @@ class DecorateBuff(InnerClass):
     def generate(self, buff: Buff):
         """
         将buff的数据填入自己
-        :param buff: buff
+        :param buff: buff.txt
         :return:
         """
         self.name = buff.name

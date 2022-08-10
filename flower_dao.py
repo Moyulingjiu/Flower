@@ -32,7 +32,7 @@ mongo_item = mongo_db['item']  # 物品
 mongo_weather = mongo_db['weather']  # 天气
 mongo_mail = mongo_db['mail']  # 信件
 mongo_achievement = mongo_db['achievement']  # 成就
-mongo_buff = mongo_db['achievement']  # buff
+mongo_buff = mongo_db['buff']  # buff
 
 mongo_world_terrain = mongo_db['world_terrain']  # 世界地形
 mongo_world_area = mongo_db['world_area']  # 世界地区
@@ -1196,6 +1196,23 @@ def select_buff(_id: str) -> Buff:
         return buff
 
 
+def select_buff_by_name(name: str) -> Buff:
+    """
+    根据name查询buff
+    :param name: name
+    :return: buff
+    """
+    redis_ans = redis_db.get(redis_buff_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_buff.find_one({"name": name})
+        buff: Buff = Buff()
+        dict_to_class(result, buff)
+        redis_db.set(redis_buff_prefix + name, serialization(buff), ex=get_long_random_expire())
+        return buff
+
+
 def insert_buff(buff: Buff) -> str:
     """
     插入buff
@@ -1221,6 +1238,23 @@ def select_achievement(_id: str) -> Achievement:
         achievement: Achievement = Achievement()
         dict_to_class(result, achievement)
         redis_db.set(redis_achievement_prefix + _id, serialization(achievement), ex=get_long_random_expire())
+        return achievement
+
+
+def select_achievement_by_name(name: str) -> Achievement:
+    """
+    根据name查询成就
+    :param name: name
+    :return: 成就
+    """
+    redis_ans = redis_db.get(redis_achievement_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_achievement.find_one({"name": name})
+        achievement: Achievement = Achievement()
+        dict_to_class(result, achievement)
+        redis_db.set(redis_achievement_prefix + name, serialization(achievement), ex=get_long_random_expire())
         return achievement
 
 
