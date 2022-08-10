@@ -15,6 +15,7 @@ COPY ./ /app
 #切换到/app目录
 WORKDIR /app
 #使用豆瓣源https://pypi.douban.com/simple安装项目的python依赖
-RUN pip install -r requirements.txt -i https://pypi.douban.com/simple
+RUN pip3 install -r requirements.txt -i https://pypi.douban.com/simple
 EXPOSE 8000
-ENTRYPOINT ["uvicorn","main:app","--host","0.0.0.0","--port","8000","--reload"]
+# 你也可以采用uvicorn的方式启动，我们更推荐采用uvicorn的方式启动
+ENTRYPOINT ["python3","main.py"]
