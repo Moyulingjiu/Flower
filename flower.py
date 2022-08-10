@@ -2804,6 +2804,22 @@ class FlowerService:
                     exp: int = 2 * item.number
                     user.exp += exp
                     return user.username + '，经验值+%d' % exp
+                elif item.item_name == '缓控释肥' or item.item_name == '烈度缓释肥' or item.item_name == '微量缓释肥':
+                    buff: Buff = flower_dao.select_buff_by_name('文鳐')
+                    if buff.valid():
+                        decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
+                        decorate_buff.change_nutrition = item.nutrition
+                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second)
+                        user.buff.append(decorate_buff)
+                        return user.username + '，获得buff：%s' % str(decorate_buff)
+                elif item.item_name == '涓涓细流' or item.item_name == '湍湍江润' or item.item_name == '薄薄雾拥':
+                    buff: Buff = flower_dao.select_buff_by_name('天吴')
+                    if buff.valid():
+                        decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
+                        decorate_buff.change_humidity = item.humidity
+                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second)
+                        user.buff.append(decorate_buff)
+                        return user.username + '，获得buff：%s' % str(decorate_buff)
             raise UseFailException(user.username + '，该物品不可以使用')
         except ItemNotFoundException:
             return user.username + '，没有该物品'
