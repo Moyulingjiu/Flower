@@ -31,6 +31,8 @@ mongo_user = mongo_db['user']  # 用户
 mongo_item = mongo_db['item']  # 物品
 mongo_weather = mongo_db['weather']  # 天气
 mongo_mail = mongo_db['mail']  # 信件
+mongo_achievement = mongo_db['achievement']  # 成就
+mongo_buff = mongo_db['achievement']  # buff
 
 mongo_world_terrain = mongo_db['world_terrain']  # 世界地形
 mongo_world_area = mongo_db['world_area']  # 世界地区
@@ -61,6 +63,8 @@ redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品i
 redis_weather_prefix = redis_global_prefix + 'weather_'  # 天气redis前缀（城市id+日期）
 redis_mail_prefix = redis_global_prefix + 'mail_'  # 信件redis前缀（信件id）
 redis_mails_prefix = redis_global_prefix + 'mails'  # 正在投递中的mail
+redis_buff_prefix = redis_global_prefix + 'buff_'  # BUFF
+redis_achievement_prefix = redis_global_prefix + 'achievement_'  # 成就
 
 redis_world_terrain_prefix = redis_global_prefix + 'world_terrain_'  # 世界地形redis前缀
 redis_world_area_prefix = redis_global_prefix + 'world_area_'  # 世界地区redis前缀
@@ -1172,6 +1176,62 @@ def insert_user_person(user_person: UserPerson) -> str:
     now: datetime = datetime.now()
     result = mongo_user_person.insert_one(class_to_dict(user_person))
     redis_db.delete(redis_user_person_prefix + str(user_person.qq) + '_' + now.strftime('%Y_%m_%d'))
+    return str(result.inserted_id)
+
+
+def select_buff(_id: str) -> Buff:
+    """
+    根据id查询buff
+    :param _id: id
+    :return: buff
+    """
+    redis_ans = redis_db.get(redis_buff_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_buff.find_one({"_id": ObjectId(_id)})
+        buff: Buff = Buff()
+        dict_to_class(result, buff)
+        redis_db.set(redis_buff_prefix + _id, serialization(buff), ex=get_long_random_expire())
+        return buff
+
+
+def insert_buff(buff: Buff) -> str:
+    """
+    插入buff
+    :param buff: buff
+    :return: id
+    """
+    result = mongo_buff.insert_one(class_to_dict(buff))
+    redis_db.delete(redis_buff_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_achievement(_id: str) -> Achievement:
+    """
+    根据id查询成就
+    :param _id: id
+    :return: 成就
+    """
+    redis_ans = redis_db.get(redis_achievement_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_achievement.find_one({"_id": ObjectId(_id)})
+        achievement: Achievement = Achievement()
+        dict_to_class(result, achievement)
+        redis_db.set(redis_achievement_prefix + _id, serialization(achievement), ex=get_long_random_expire())
+        return achievement
+
+
+def insert_achievement(achievement: Achievement) -> str:
+    """
+    插入成就
+    :param achievement: 成就
+    :return: id
+    """
+    result = mongo_achievement.insert_one(class_to_dict(achievement))
+    redis_db.delete(redis_achievement_prefix + str(result.inserted_id))
     return str(result.inserted_id)
 
 

@@ -419,6 +419,23 @@ class AdminHandler:
                 return '成功给予' + item.item_name + '给' + str(update_number) + '人'
             else:
                 return '未能给予任何人' + item.item_name
+        elif message[:4] == '修改温度':
+            data: str = message[4:].strip()
+            try:
+                temperature: float = float(data)
+                update_number: int = 0
+                if len(at_list) == 0:
+                    if cls.edit_temperature(qq, qq, temperature=temperature):
+                        update_number += 1
+                else:
+                    for target_qq in at_list:
+                        if cls.edit_temperature(target_qq, qq, temperature=temperature):
+                            update_number += 1
+                if update_number > 0:
+                    return '成功修改' + str(update_number) + '人'
+                return '未能修改任何人的温度'
+            except ValueError:
+                raise TypeException('格式错误！，格式“@xxx 修改湿度 【湿度】”。湿度为任意小数。')
         elif message[:4] == '修改湿度':
             data: str = message[4:].strip()
             try:
@@ -752,15 +769,36 @@ class AdminHandler:
             util.unlock_user(qq)
 
     @classmethod
+    def edit_temperature(cls, qq: int, operator_id: int, temperature: float):
+        try:
+            util.lock_user(qq)
+            user: User = util.get_user(qq, '')
+            user.farm.temperature = temperature
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            util.unlock_user(qq)
+
+    @classmethod
     def edit_humidity_nutrition(cls, qq: int, operator_id: int, humidity: float = -1.0,
                                 nutrition: float = -1.0) -> bool:
         try:
             util.lock_user(qq)
+            system_data: SystemData = util.get_system_data()
             user: User = util.get_user(qq, '')
-            if humidity >= 0.0:
-                user.farm.humidity = humidity
-            if nutrition >= 0.0:
-                user.farm.nutrition = nutrition
+            if humidity > system_data.soil_min_humidity:
+                humidity = system_data.soil_min_humidity
+            elif humidity < system_data.soil_max_humidity:
+                humidity = system_data.soil_max_humidity
+            if nutrition > system_data.soil_min_nutrition:
+                nutrition = system_data.soil_min_nutrition
+            elif nutrition < system_data.soil_max_nutrition:
+                nutrition = system_data.soil_max_nutrition
+            user.farm.humidity = humidity
+            user.farm.nutrition = nutrition
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
