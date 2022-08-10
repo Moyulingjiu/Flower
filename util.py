@@ -276,6 +276,8 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             item.item_type = item_obj.item_type
             item.max_stack = item_obj.max_stack  # 最大叠加数量
             item.max_durability = item_obj.max_durability  # 最大耐久度
+            if item.durability < 0:
+                item.durability = item_obj.max_durability
             item.rot_second = item_obj.rot_second  # 腐烂的秒数
             item.humidity = item_obj.humidity  # 湿度
             item.nutrition = item_obj.nutrition  # 营养

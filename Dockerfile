@@ -9,8 +9,8 @@ RUN ln -snf /usr/share/zoneinfo/$TimeZone /etc/localtime && echo $TimeZone > /et
 #创建/app目录
 RUN mkdir /app
 
-#将项目文件内的所有目录拷贝到/app
-COPY ./ /app
+#将项目文件内的requirements拷贝到/app
+COPY ./requirements.txt /app/
 
 #切换到/app目录
 WORKDIR /app
@@ -18,4 +18,4 @@ WORKDIR /app
 RUN pip3 install -r requirements.txt -i https://pypi.douban.com/simple
 EXPOSE 8000
 # 你也可以采用uvicorn的方式启动，我们更推荐采用uvicorn的方式启动
-ENTRYPOINT ["python3","main.py"]
+ENTRYPOINT ["uvicorn","main:app","--host","0.0.0.0","--port","8000","--reload"]

@@ -2072,6 +2072,7 @@ class FlowerService:
         # 新手道具
         item.item_name = '新手水壶'
         item.number = 1
+        item.durability = -1
         item_list.append(copy.deepcopy(item))
         item.item_name = '随机旅行卡'
         item.number = 1
