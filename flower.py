@@ -231,7 +231,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                     args = {
                                         'qq': qq,
                                         'username': username,
-                                        'item': item
+                                        'item': copy.deepcopy(item)
                                     }
                                     choices[str(index)] = Choice(args=args, callback=FlowerService.throw_item)
                                     similar_items_name.append(warehouse_item)
