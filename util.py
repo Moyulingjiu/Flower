@@ -666,7 +666,8 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     """
     now: datetime = datetime.now()
     start_time: datetime = user.farm.last_check_time + timedelta(hours=1)
-    user.farm.last_check_time = now
+    if user.farm.last_check_time + timedelta(seconds=global_config.hour_second) <= start_time:
+        user.farm.last_check_time = now
     if user.farm.flower_id == '':
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
@@ -680,7 +681,7 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
-    while start_time < now:
+    while start_time <= now:
         soil = update_farm_soil(user, soil)
         check_farm_soil_climate_condition(user, flower)
 

@@ -991,6 +991,7 @@ class AdminHandler:
             reply += '\n成长小时数：%.1f/%d' % (user.farm.hour, total_hour)
             reply += '\n完美小时数：%d/%d' % (user.farm.perfect_hour, flower.prefect_time)
             reply += '\n糟糕小时数：%d/%d' % (user.farm.bad_hour, flower.withered_time)
+            reply += '\n上一次计算时间：%s' % user.farm.last_check_time.strftime('%Y-%m-%d %H:%M:%S')
         else:
             reply += '无'
         reply += '\n天气：' + weather.weather_type
@@ -1603,7 +1604,7 @@ class ContextHandler:
                     context.step += 1
                     flower_dao.insert_context(qq, context)
                     reply = '当前Buff：%s\n' \
-                            '持续秒数（从确认时开始算）：%d' \
+                            '持续秒数（从确认时开始算）：%d\n' \
                             '是否要修改基础效果？（“是”表示是，其余表示否，“取消”表示取消）\n' \
                             '注：部分buff可能本身具有特殊效果' % (str(context.buff), seconds)
                     result.context_reply_text.append(reply)
