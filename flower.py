@@ -154,7 +154,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 result.reply_text.append(reply)
                 return result
             elif message[:2] == '使用':
-                data = message[2:]
+                data = message[2:].strip()
                 try:
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
@@ -200,7 +200,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 except ItemNotFoundException:
                     raise TypeException('该物品不存在！')
             elif message[:2] == '丢弃':
-                data = message[2:]
+                data = message[2:].strip()
                 try:
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
@@ -2658,4 +2658,4 @@ class DrawCard:
 
 
 if __name__ == '__main__':
-    print(len('62ed40f65155e2bf88ec3957'))
+    pass
