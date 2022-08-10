@@ -175,6 +175,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                     item.flower_quality = warehouse_item.flower_quality
                                     item.durability = warehouse_item.durability
                                     item.hour = warehouse_item.hour
+                                    item.create = warehouse_item.create
+                                    item.update = warehouse_item.update
+                                    item.rot_second = warehouse_item.rot_second
+                                    item.max_durability = warehouse_item.max_durability
                                     args = {
                                         'qq': qq,
                                         'username': username,
@@ -219,10 +223,15 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                     reply += '\n%d.' % index + warehouse_item.show_without_number()
                                     item.flower_quality = warehouse_item.flower_quality
                                     item.durability = warehouse_item.durability
+                                    item.hour = warehouse_item.hour
+                                    item.create = warehouse_item.create
+                                    item.update = warehouse_item.update
+                                    item.rot_second = warehouse_item.rot_second
+                                    item.max_durability = warehouse_item.max_durability
                                     args = {
                                         'qq': qq,
                                         'username': username,
-                                        'item': copy.deepcopy(item)
+                                        'item': item
                                     }
                                     choices[str(index)] = Choice(args=args, callback=FlowerService.throw_item)
                                     similar_items_name.append(warehouse_item)

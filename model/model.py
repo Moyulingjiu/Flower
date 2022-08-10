@@ -552,15 +552,6 @@ class DecorateItem(InnerClass):
             ans = ans[:ans.rindex('x')]
         return ans
 
-    def copy_item(self):
-        item: DecorateItem = DecorateItem()
-        for key in self.__dict__:
-            if not isinstance(item.__dict__[key], object):
-                item.__dict__[key] = self.__dict__[key]
-            else:
-                item.__dict__[key] = copy.deepcopy(self.__dict__[key])
-        return item
-
     def __str__(self):
         if self.item_id == '' and self.item_name == '' and self.item_id is not None and self.item_name is not None:
             return '无'
