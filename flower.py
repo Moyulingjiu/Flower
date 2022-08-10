@@ -615,6 +615,13 @@ class AdminHandler:
                 return FlowerService.view_user_farm(at_list[0], '')
             except UserNotRegisteredException:
                 return '对方未注册'
+        elif message == '调试花店农场':
+            if len(at_list) > 1:
+                raise TypeException('格式错误，格式“@xxx 调试花店农场”，艾特省略查看自己，最多艾特一人')
+            target_qq: int = qq
+            if len(at_list) == 1:
+                target_qq = at_list[0]
+            return cls.debug_user_farm(target_qq)
         elif message == '花店农场设备':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 查看花店农场设备”，必须并且只能艾特一人')
@@ -889,6 +896,88 @@ class AdminHandler:
             return False
         finally:
             util.unlock_user(qq)
+
+    @classmethod
+    def debug_user_farm(cls, qq: int) -> str:
+        """
+        查看用户农场
+        :param qq: QQ
+        :return:
+        """
+        util.lock_user(qq)
+        user, city, soil, climate, weather, flower = util.get_farm_information(qq, '')
+        now_temperature = util.get_now_temperature(weather)
+        util.update_farm(user, city, soil, weather, flower)
+        flower_dao.update_user_by_qq(user)
+        util.unlock_user(qq)
+
+        reply = user.username + '的农场：'
+        reply += '\n种植的花：'
+        if user.farm.flower_id != '':
+            reply += flower.name
+            reply += '\n花的状态：' + FlowerState.view_name(user.farm.flower_state)
+
+            seed_time: int = flower.seed_time
+            grow_time: int = seed_time + flower.grow_time
+            mature_time: int = grow_time + flower.mature_time
+            overripe_time: int = mature_time + flower.overripe_time
+            if user.farm.hour <= seed_time:
+                reply += '\n阶段：种子'
+            elif user.farm.hour <= grow_time:
+                reply += '\n阶段：幼苗'
+            elif user.farm.hour <= mature_time:
+                reply += '\n阶段：成熟'
+            elif user.farm.hour <= overripe_time:
+                reply += '\n阶段：过熟'
+            else:
+                reply += '\n阶段：枯萎'
+            total_hour: int = flower.seed_time + flower.grow_time
+            reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / total_hour)
+            reply += '\n成长小时数：%d/%d' % (user.farm.hour, total_hour)
+            reply += '\n完美小时数：%d/%d' % (user.farm.perfect_hour, flower.prefect_time)
+            reply += '\n糟糕小时数：%d/%d' % (user.farm.bad_hour, flower.withered_time)
+        else:
+            reply += '无'
+        reply += '\n天气：' + weather.weather_type
+        reply += '\n气温：%.2f' % user.farm.temperature
+        if user.farm.temperature > now_temperature:
+            reply += '（↓）'
+        elif user.farm.temperature < now_temperature:
+            reply += '（↑）'
+        else:
+            reply += '（=）'
+        reply += '\n土壤湿度：%.2f' % user.farm.humidity
+        reply += '\n土壤营养：%.2f' % user.farm.nutrition
+
+        reply += '\n马：'
+        if user.farm.horse.name != '':
+            reply += user.farm.horse.name
+            reply += '（%d/%d岁）' % (
+                (datetime.now() - user.farm.horse.born_time).total_seconds() * 2 // global_config.day_second,
+                user.farm.horse.max_age
+            )
+        else:
+            reply += '暂无'
+        reply += '\n狗：'
+        if user.farm.dog.name != '':
+            reply += user.farm.dog.name
+            reply += '（%d/%d岁）' % (
+                (datetime.now() - user.farm.dog.born_time).total_seconds() * 2 // global_config.day_second,
+                user.farm.dog.max_age
+            )
+        else:
+            reply += '暂无'
+        reply += '\n猫：'
+        if user.farm.cat.name != '':
+            reply += user.farm.cat.name
+            reply += '（%d/%d岁）' % (
+                (datetime.now() - user.farm.cat.born_time).total_seconds() * 2 // global_config.day_second,
+                user.farm.cat.max_age
+            )
+        else:
+            reply += '暂无'
+
+        return reply
 
 
 class WorldControlHandler:
@@ -1602,6 +1691,7 @@ class FlowerService:
         reply += '\n浇水壶：' + str(user.farm.watering_pot)
         reply += '\n信箱：' + str(user.farm.mailbox)
         reply += '\n温室：' + str(user.farm.greenhouse)
+        reply += '\n仓库：' + str(user.farm.warehouse)
         return reply
 
     @classmethod
@@ -1657,16 +1747,28 @@ class FlowerService:
         reply += '\n马：'
         if user.farm.horse.name != '':
             reply += user.farm.horse.name
+            reply += '（%d/%d岁）' % (
+                (datetime.now() - user.farm.horse.born_time).total_seconds() * 2 // global_config.day_second,
+                user.farm.horse.max_age
+            )
         else:
             reply += '暂无'
         reply += '\n狗：'
         if user.farm.dog.name != '':
             reply += user.farm.dog.name
+            reply += '（%d/%d岁）' % (
+                (datetime.now() - user.farm.dog.born_time).total_seconds() * 2 // global_config.day_second,
+                user.farm.dog.max_age
+            )
         else:
             reply += '暂无'
         reply += '\n猫：'
         if user.farm.cat.name != '':
             reply += user.farm.cat.name
+            reply += '（%d/%d岁）' % (
+                (datetime.now() - user.farm.cat.born_time).total_seconds() * 2 // global_config.day_second,
+                user.farm.cat.max_age
+            )
         else:
             reply += '暂无'
 
@@ -2508,9 +2610,11 @@ class FlowerService:
                     util.insert_items(user.warehouse, [item])
                     user.farm.flower_id = ''
                     flower_dao.update_user_by_qq(user)
-                    return user.username + '，收获成功，获得%s-%sx%d' % (flower.name,
-                                                                       FlowerQuality.view_name(item.flower_quality),
-                                                                       number)
+                    return user.username + '，收获成功，获得%s-%sx%d' % (
+                        flower.name,
+                        FlowerQuality.view_name(item.flower_quality),
+                        number
+                    )
                 except WareHouseSizeNotEnoughException:
                     return user.username + '，收获失败，仓库空间不足。'
             else:

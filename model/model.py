@@ -704,7 +704,8 @@ class DecorateHorse(InnerClass):
     """
     
     def __init__(self, name: str = '', speed: float = 0.0, strength: float = 0.0, playful: float = 0.0,
-                 description: str = '', last_race: datetime = datetime.now(), max_age: int = 0, age: int = 0):
+                 description: str = '', last_race: datetime = datetime.now(), max_age: int = 0,
+                 born_time: datetime = datetime.now()):
         super().__init__('DecorateHorse')
         
         self.name = name  # 马的名字
@@ -714,7 +715,7 @@ class DecorateHorse(InnerClass):
         self.description = description  # 描述
         self.last_race = last_race  # 上一次比赛的时间（会影响体力的恢复情况）
         self.max_age = max_age  # 最大年龄
-        self.age = age  # 年龄
+        self.born_time = born_time  # 出生日期
 
 
 class Dog(EntityClass):
@@ -742,7 +743,8 @@ class DecorateDog(InnerClass):
     """
     
     def __init__(self, name: str = '', force: float = 0.0, affinity: float = 0.0, favorability: float = 0.0,
-                 strength: float = 0.0, description: str = '', max_age: int = 0, age: int = 0):
+                 strength: float = 0.0, description: str = '', max_age: int = 0,
+                 born_time: datetime = datetime.now()):
         super().__init__('DecorateDog')
         
         self.name = name  # 名字
@@ -752,7 +754,7 @@ class DecorateDog(InnerClass):
         self.strength = strength  # 体力（影响是否能捉到小偷）
         self.description = description  # 描述
         self.max_age = max_age  # 最大年龄
-        self.age = age  # 年龄
+        self.born_time = born_time  # 出生日期
 
 
 class Cat(EntityClass):
@@ -779,7 +781,8 @@ class DecorateCat(InnerClass):
     """
     
     def __init__(self, name: str = '', affinity: float = 0.0, favorability: float = 0.0, playful: float = 0.0,
-                 description: str = '', max_age: int = 0, age: int = 0):
+                 description: str = '', max_age: int = 0,
+                 born_time: datetime = datetime.now()):
         super().__init__('DecorateCat')
         
         self.name = name  # 名字
@@ -788,7 +791,7 @@ class DecorateCat(InnerClass):
         self.playful = playful  # 贪玩
         self.description = description  # 描述
         self.max_age = max_age  # 最大年龄
-        self.age = age  # 年龄
+        self.born_time = born_time  # 出生日期
 
 
 class FlowerState(Enum):

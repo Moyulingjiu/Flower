@@ -738,7 +738,8 @@ def calculation_mailbox(user: User):
         user.mailbox.max_size = 7
     elif user.farm.mailbox.level == 4:
         user.mailbox.max_size = 10
-    user.mailbox.max_size = 0
+    else:
+        user.mailbox.max_size = 0
 
 
 def calculation_warehouse(user: User):
@@ -757,7 +758,8 @@ def calculation_warehouse(user: User):
         user.warehouse.max_size = 80
     elif user.farm.warehouse.level == 4:
         user.warehouse.max_size = 120
-    user.warehouse.max_size = 20
+    else:
+        user.warehouse.max_size = 20
 
 
 def calculation_farm_equipment(user: User):
