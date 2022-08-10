@@ -43,16 +43,39 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         
         if len(at_list) == 0:
             # 数据查询部分
-            if message[:4] == '查询城市' and message[4:].strip() != '':
-                reply = FlowerService.query_city(message[4:].strip())
+            if message[:4] == '查询城市':
+                name: str = message[4:].strip()
+                if len(name) == 0:
+                    raise TypeException('格式错误！格式“查询城市 名字”')
+                reply = FlowerService.query_city(name)
                 result.reply_text.append(reply)
                 return result
-            elif message[:4] == '查询土壤' and message[4:].strip() != '':
-                reply = FlowerService.query_soil(message[4:].strip())
+            elif message[:4] == '查询土壤':
+                name: str = message[4:].strip()
+                if len(name) == 0:
+                    raise TypeException('格式错误！格式“查询土壤 名字”')
+                reply = FlowerService.query_soil(name)
                 result.reply_text.append(reply)
                 return result
-            elif message[:3] == '查询花' and message[3:].strip() != '':
-                reply = FlowerService.query_flower(message[3:].strip())
+            elif message[:3] == '查询花':
+                name: str = message[3:].strip()
+                if len(name) == 0:
+                    raise TypeException('格式错误！格式“查询花 名字”')
+                reply = FlowerService.query_flower(name)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '查询成就':
+                name: str = message[4:].strip()
+                if len(name) == 0:
+                    raise TypeException('格式错误！格式“查询成就 名字”')
+                reply = FlowerService.view_achievement(name)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4].lower() == '查询buff':
+                name: str = message[6:].strip()
+                if len(name) == 0:
+                    raise TypeException('格式错误！格式“查询buff 名字”')
+                reply = FlowerService.view_buff(name)
                 result.reply_text.append(reply)
                 return result
             elif message == '花店数据':
@@ -109,7 +132,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                         page: int = int(data) - 1
                     else:
                         page: int = 0
-                    reply = FlowerService.view_achievement(qq, username, page)
+                    reply = FlowerService.view_user_achievement(qq, username, page)
                     result.reply_text.append(reply)
                     return result
                 except ValueError:
@@ -121,7 +144,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                         page: int = int(data) - 1
                     else:
                         page: int = 0
-                    reply = FlowerService.view_buff(qq, username, page)
+                    reply = FlowerService.view_user_buff(qq, username, page)
                     result.reply_text.append(reply)
                     return result
                 except ValueError:
@@ -688,7 +711,7 @@ class AdminHandler:
                     page: int = int(data) - 1
                 else:
                     page: int = 0
-                return FlowerService.view_achievement(at_list[0], '', page)
+                return FlowerService.view_user_achievement(at_list[0], '', page)
             except ValueError:
                 raise '格式错误！格式“@xxx 花店成就 【页码】”页码可省略。'
             except UserNotRegisteredException:
@@ -702,7 +725,7 @@ class AdminHandler:
                     page: int = int(data) - 1
                 else:
                     page: int = 0
-                return FlowerService.view_buff(at_list[0], '', page)
+                return FlowerService.view_user_buff(at_list[0], '', page)
             except ValueError:
                 raise '格式错误！格式“@xxx 花店buff 【页码】”页码可省略。'
             except UserNotRegisteredException:
@@ -2122,6 +2145,30 @@ class FlowerService:
         return reply
     
     @classmethod
+    def view_achievement(cls, achievement_name: str) -> str:
+        """
+        查询成就
+        :param achievement_name: 成就名
+        :return:
+        """
+        achievement: Achievement = flower_dao.select_achievement_by_name(achievement_name)
+        if not achievement.valid():
+            return '成就“%s”不存在' % achievement_name
+        return str(achievement)
+
+    @classmethod
+    def view_buff(cls, buff_name: str) -> str:
+        """
+        查询成就
+        :param buff_name: buff名
+        :return:
+        """
+        buff: Buff = flower_dao.select_buff_by_name(buff_name)
+        if not buff.valid():
+            return 'BUFF“%s”不存在' % buff_name
+        return str(buff)
+    
+    @classmethod
     def delete_mail(cls, qq: int, username: str, mail_index: int = 0) -> str:
         """
         删除信件
@@ -2194,7 +2241,7 @@ class FlowerService:
             util.unlock_user(qq)
     
     @classmethod
-    def view_buff(cls, qq: int, username: str, page: int = 0, page_size: int = 20):
+    def view_user_buff(cls, qq: int, username: str, page: int = 0, page_size: int = 20):
         """
         查看成就
         :param qq:
@@ -2226,7 +2273,7 @@ class FlowerService:
         return reply
     
     @classmethod
-    def view_achievement(cls, qq: int, username: str, page: int = 0, page_size: int = 20) -> str:
+    def view_user_achievement(cls, qq: int, username: str, page: int = 0, page_size: int = 20) -> str:
         """
         查看成就
         :param qq:

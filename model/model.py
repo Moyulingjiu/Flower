@@ -953,6 +953,32 @@ class Buff(EntityClass):
         self.perfect_coefficient = perfect_coefficient  # 完美小时的系数
         self.hour_coefficient = hour_coefficient  # 生长小时的系数
         self.bad_hour_coefficient = bad_hour_coefficient  # 糟糕小时的系数
+    
+    def __str__(self):
+        reply: str = 'BUFF：' + str(self.name)
+        reply += '\n描述：' + self.description
+        effect: str = ''
+        if self.lock_humidity:
+            effect += '、锁定湿度'
+        if self.lock_nutrition:
+            effect += '、锁定营养'
+        if self.lock_temperature:
+            effect += '、锁定温度'
+        if self.lock_soil:
+            effect += '、锁定土壤'
+        if self.change_humidity != 0.0:
+            effect += '、湿度%.2f' % self.change_humidity
+        if self.change_nutrition != 0.0:
+            effect += '、营养%.2f' % self.change_nutrition
+        if self.change_temperature != 0.0:
+            effect += '、温度%.2f' % self.change_temperature
+        if effect == '':
+            effect = '无效果/特殊效果'
+        reply += '\n' + effect
+        return reply
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class DecorateBuff(InnerClass):
@@ -999,7 +1025,7 @@ class DecorateBuff(InnerClass):
         if self.change_temperature != 0.0:
             reply += '、温度%.2f' % self.change_temperature
         if reply == '':
-            return '无效果'
+            effect = '无效果/特殊效果'
         return reply[1:]
     
     def __str__(self):
@@ -1047,6 +1073,15 @@ class Achievement(EntityClass):
             award_list = []
         self.award_list = award_list  # 奖励列表（可以是一组物品，也可以是金币）
         self.description = description  # 描述
+    
+    def __str__(self):
+        reply = '成就名：' + self.name
+        reply += '\n描述：' + self.description
+        reply += '\n最大等级：%d' % len(self.value_list)
+        return reply
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class DecorateAchievement(InnerClass):
