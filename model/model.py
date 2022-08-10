@@ -344,7 +344,7 @@ class ItemType(Enum):
         elif item_type == cls.flower:
             return '花'
         elif item_type == cls.fertilizer:
-            return '化肥'
+            return '营养液'
         elif item_type == cls.accelerate:
             return '加速卡'
         elif item_type == cls.props:

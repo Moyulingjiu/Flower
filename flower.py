@@ -2314,7 +2314,9 @@ class FlowerService:
             elif item.item_type == ItemType.fertilizer:
                 nutrition: float = item.nutrition * item.number
                 nutrition = util.add_nutrition(user.farm, nutrition)
-                return user.username + '，成功增加营养%.2f' % nutrition
+                humidity: float = item.humidity * item.number
+                humidity = util.add_humidity(user.farm, humidity)
+                return user.username + '，成功增加营养%.2f，湿度%.2f' % (nutrition, humidity)
             # 温度计
             elif item.item_type == ItemType.thermometer:
                 if item.number == 1:
@@ -2399,35 +2401,43 @@ class FlowerService:
                     context: TravelContext = TravelContext()
                     flower_dao.insert_context(qq, context)
                     return user.username + '，请输入一个城市名前往，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
-                elif item.item_name == '小金币卡':
+                elif item.item_name == '小金卡':
                     gold = random.randint(50 * item.number, 501 * item.number)
                     user.gold += gold
                     return user.username + '，获得%.2f金币' % (gold / 100)
-                elif item.item_name == '大金币卡':
-                    gold = random.randint(50 * item.number, 1000001 * item.number)
+                elif item.item_name == '大金卡':
+                    gold = random.randint(50 * item.number, 100001 * item.number)
                     user.gold += gold
                     return user.username + '，获得%.2f金币' % (gold / 100)
-                elif item.item_name == '铲除卡':
+                elif item.item_name == '金砖卡':
+                    gold = random.randint(50 * item.number, 500001 * item.number)
+                    user.gold += gold
+                    return user.username + '，获得%.2f金币' % (gold / 100)
+                elif item.item_name == '铲铲卡':
                     if user.farm.flower_id == '':
                         raise UseFailException(user.username + '，你的农场没有花')
                     user.farm.flower_id = ''
-                    return user.username + '，获得%.2f金币' % int(user.gold / 100)
-                elif item.item_name == '升温卡':
+                    return user.username + '，成功铲除花'
+                elif item.item_name == '暖风卡':
                     temperature = item.temperature * item.number
                     user.farm.temperature += temperature
                     return user.username + '，温度+%.2f℃' % temperature
-                elif item.item_name == '降温卡':
+                elif item.item_name == '寒风卡':
                     temperature = item.temperature * item.number
                     user.farm.temperature += temperature
                     return user.username + '，温度%.2f℃' % temperature
-                elif item.item_name == '小施肥卡' or item.item_name == '大施肥卡':
+                elif item.item_name == '小肥料卡' or item.item_name == '大肥料卡':
                     nutrition: float = item.nutrition * item.number
                     nutrition = util.add_nutrition(user.farm, nutrition)
                     return user.username + '，营养+%.2f' % nutrition
-                elif item.item_name == '小浇水卡' or item.item_name == '大浇水卡':
+                elif item.item_name == '涓流卡' or item.item_name == '湍流卡':
                     humidity: float = item.humidity * item.number
                     humidity = util.add_humidity(user.farm, humidity)
                     return user.username + '，湿度+%.2f' % humidity
+                elif item.item_name == '经验卡':
+                    exp: int = 2 * item.number
+                    user.exp += exp
+                    return user.username + '，经验值+%d' % exp
             raise UseFailException(user.username + '，该物品不可以使用')
         except ItemNotFoundException:
             return user.username + '，没有该物品'
