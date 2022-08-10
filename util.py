@@ -695,7 +695,7 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
             if real_time_weather.city_id != city.get_id():
                 real_time_weather = weather
     user.buff = [buff for buff in user.buff if buff.expired_time >= start_time]
-    user.farm.last_check_time = start_time
+    user.farm.last_check_time = start_time - timedelta(hours=1)
 
 
 def add_nutrition(farm: Farm, nutrition: float) -> float:
@@ -1096,3 +1096,18 @@ def unlock_username(username: str):
     解锁用户名
     """
     flower_dao.unlock(flower_dao.redis_username_lock_prefix + username)
+
+
+####################################################################################################
+def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem]):
+    mail: Mail = Mail()
+    mail.from_qq = 0
+    mail.username = '系统'
+    mail.target_qq = user.qq
+    mail.title = title
+    mail.text = text
+    mail.appendix = appendix
+    mail.arrived = True
+    mail.status = '由系统直接送达'
+    mail_id: str = flower_dao.insert_mail(mail)
+    user.mailbox.mail_list.append(mail_id)

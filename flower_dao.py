@@ -526,6 +526,15 @@ def insert_flower(flower: Flower) -> str:
     return str(result.inserted_id)
 
 
+def select_all_flower_number() -> int:
+    """
+    获取花的数量
+    :return:
+    """
+    number = mongo_flower.count_documents({"is_delete": 0})
+    return int(number)
+
+
 def select_flower_by_id(_id: str) -> Flower:
     """
     根据id获取花卉
