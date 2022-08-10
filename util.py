@@ -172,10 +172,10 @@ def show_gold(gold: int) -> str:
         if number > 0:
             res += '%d亿' % number
             gold %= 100000000 * 100
-        number = gold // (1000 * 100)
+        number = gold // (10000 * 100)
         if number > 0:
             res += '%d万' % number
-            gold %= 100000000 * 100
+            gold %= 10000 * 100
         if gold > 0:
             res += '%.2f' % (gold / 100)
         return res
