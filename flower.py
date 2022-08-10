@@ -71,7 +71,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_achievement(name)
                 result.reply_text.append(reply)
                 return result
-            elif message[:4].lower() == '查询buff':
+            elif message[:6].lower() == '查询buff':
                 name: str = message[6:].strip()
                 if len(name) == 0:
                     raise TypeException('格式错误！格式“查询buff 名字”')

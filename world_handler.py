@@ -19,6 +19,13 @@ def update_world():
     if not global_config.get_right_update_data:
         return
     logger.info('开始更新世界')
+    
+    
+def random_generate_world():
+    """
+    随机生成世界
+    :return:
+    """
 
 
 def random_person() -> Person:
