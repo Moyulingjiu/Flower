@@ -162,6 +162,25 @@ def show_conditions(conditions: Conditions) -> str:
     return res
 
 
+def show_gold(gold: int) -> str:
+    if gold < 10000 * 100:
+        return '%.2f' % (gold / 100)
+    else:
+        res = ''
+        gold = gold
+        number = gold // (100000000 * 100)
+        if number > 0:
+            res += '%d亿' % number
+            gold %= 100000000 * 100
+        number = gold // (1000 * 100)
+        if number > 0:
+            res += '%d万' % number
+            gold %= 100000000 * 100
+        if gold > 0:
+            res += '%.2f' % (gold / 100)
+        return res
+
+
 ####################################################################################################
 
 def analysis_item(data: str) -> DecorateItem:

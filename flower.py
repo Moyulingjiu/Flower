@@ -1663,7 +1663,7 @@ class FlowerService:
         res += '\n角色性别：' + user.gender.show()
         res += '\n出生地：' + born_city.city_name
         res += '\n所在城市：' + city.city_name
-        res += '\n金币：' + '%.2f' % (user.gold / 100)
+        res += '\n金币：' + util.show_gold(user.gold)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         return res
 
