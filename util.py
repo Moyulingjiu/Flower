@@ -668,8 +668,6 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     """
     now: datetime = datetime.now()
     start_time: datetime = user.farm.last_check_time + timedelta(hours=1)
-    if user.farm.last_check_time + timedelta(seconds=global_config.hour_second) <= start_time:
-        user.farm.last_check_time = now
     if user.farm.flower_id == '':
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
@@ -697,6 +695,7 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
             if real_time_weather.city_id != city.get_id():
                 real_time_weather = weather
     user.buff = [buff for buff in user.buff if buff.expired_time >= start_time]
+    user.farm.last_check_time = start_time
 
 
 def add_nutrition(farm: Farm, nutrition: float) -> float:
@@ -747,7 +746,7 @@ def get_update_right() -> None:
         global_config.get_right_update_data = True
     except ResBeLockedException:
         return
-    
+
 
 def release_update_right() -> None:
     """
