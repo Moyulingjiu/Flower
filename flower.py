@@ -1383,13 +1383,14 @@ class ContextHandler:
                     reply = '很好！你可以输入以下内容：\n' \
                             '1.“追加附件 物品 数量 【小时数/品质/耐久】”来追加物品\n' \
                             '2.“删除附件 序号”来删除一个附件\n' \
-                            '2.“追加收件人 QQ号”来追加一个收件人\n' \
-                            '3.“删除收件人 QQ号”来删除一个收件人\n' \
-                            '4.“发送给所有人”来发送信件给所有人\n' \
-                            '5.“取消发送给所有人”来取消发送信件给所有人\n' \
-                            '6.“预览信件”来预览整个信件\n' \
-                            '7.“确认”发送信件，注意必须要有一个收件人！\n' \
-                            '8.“取消”来取消发送'
+                            '3.“修改金币 数量”来修改附件附赠的金币\n' \
+                            '4.“追加收件人 QQ号”来追加一个收件人\n' \
+                            '5.“删除收件人 QQ号”来删除一个收件人\n' \
+                            '6.“发送给所有人”来发送信件给所有人\n' \
+                            '7.取消发送给所有人”来取消发送信件给所有人\n' \
+                            '8.“预览信件”来预览整个信件\n' \
+                            '9.“确认”发送信件，注意必须要有一个收件人！\n' \
+                            '10.“取消”来取消发送'
                     result.context_reply_text.append(reply)
                 elif context.step == 3:
                     if message == '确认':
@@ -1438,8 +1439,12 @@ class ContextHandler:
                         reply += context.text
                         reply += '\n------\n'
                         reply += '来自：%s' % context.username
-                        if len(context.appendix) > 0:
+                        if len(context.appendix) > 0 and context.gold > 0:
+                            reply += '\n附件：' + util.show_items(context.appendix) + '、金币（%.2f）' % (context.gold / 100)
+                        elif len(context.appendix) > 0:
                             reply += '\n附件：' + util.show_items(context.appendix)
+                        elif context.gold > 0:
+                            reply += '\n附件：金币（%.2f）' % (context.gold / 100)
                         reply += '\n收件人：'
                         if context.send_all_user:
                             reply += '所有人'
@@ -1526,6 +1531,18 @@ class ContextHandler:
                             result.context_reply_text.append(reply)
                         except ValueError:
                             reply = '格式错误！格式“删除附件 【附件序号】”'
+                            result.context_reply_text.append(reply)
+                            continue
+                    elif message[:4] == '修改金币':
+                        try:
+                            gold: int = int(float(message[4:].strip()) * 100)
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.gold = gold
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改金币为：%.2f' % (gold / 100)
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改金币 数量”'
                             result.context_reply_text.append(reply)
                             continue
                 elif context.step == 4:
@@ -2094,8 +2111,12 @@ class FlowerService:
             # todo: 接入npc
             mail_username = 'npc'
         reply += '来自：%s，日期：%s' % (mail_username, mail.create_time.strftime('%Y-%m-%d %H:%M:%S'))
-        if len(mail.appendix) > 0:
+        if len(mail.appendix) > 0 and mail.gold > 0:
+            reply += '\n附件：' + util.show_items(mail.appendix) + '、金币（%.2f）' % (mail.gold / 100)
+        elif len(mail.appendix) > 0:
             reply += '\n附件：' + util.show_items(mail.appendix)
+        elif mail.gold > 0:
+            reply += '\n附件：金币（%.2f）' % (mail.gold / 100)
         if mail.received:
             reply += '（已领取附件）'
         return reply
@@ -2157,10 +2178,12 @@ class FlowerService:
             if mail.received:
                 return user.username + '，你已经领取过该附件了。'
             util.insert_items(user.warehouse, copy.deepcopy(mail.appendix))
+            user.gold += mail.gold
             mail.received = True
             flower_dao.update_mail(mail)
             flower_dao.update_user_by_qq(user)
-            return user.username + '，领取成功，信件“%s”的附件%s' % (mail.title, util.show_items(mail.appendix))
+            return user.username + '，领取成功，信件“%s”的附件%s，附赠金币%.2f' % (
+                mail.title, util.show_items(mail.appendix), mail.gold / 100)
         except WareHouseSizeNotEnoughException:
             return user.username + '，领取失败，仓库空间不足！'
         except ItemNegativeNumberException:
@@ -2881,9 +2904,61 @@ class FlowerService:
                 if user.farm.flower_state == FlowerState.perfect and user.farm.hour <= mature_time:
                     item.flower_quality = FlowerQuality.perfect
                 try:
+                    # 将花插入背包
                     number = item.number
                     util.insert_items(user.warehouse, [item])
                     user.farm.flower_id = ''
+                    # 成就管理
+                    good_at_flower: str = '擅长' + flower.name
+                    flower_master: str = flower.name + '大师'
+                    if good_at_flower in user.achievement:
+                        user_achievement: DecorateAchievement = user.achievement[good_at_flower]
+                        user_achievement.value += number
+                        achievement: Achievement = flower_dao.select_achievement_by_name(good_at_flower)
+                        if user_achievement.level < len(achievement.value_list):
+                            if user_achievement.value > achievement.value_list[user_achievement.level]:
+                                if isinstance(achievement.award_list[user_achievement.level], int):
+                                    util.send_mail(
+                                        user,
+                                        '成就%s升级' % good_at_flower,
+                                        '恭喜你！成就成功升级。这是我们为你准备的礼品',
+                                        [],
+                                        achievement.award_list[user_achievement.level]
+                                    )
+                                elif isinstance(achievement.award_list[user_achievement.level], list):
+                                    util.send_mail(
+                                        user,
+                                        '成就%s升级' % good_at_flower,
+                                        '恭喜你！成就成功升级。这是我们为你准备的礼品',
+                                        achievement.award_list[user_achievement.level],
+                                        0
+                                    )
+                                user_achievement.level += 1
+                    if user.farm.flower_state == FlowerState.perfect:
+                        if flower_master in user.achievement:
+                            user_achievement: DecorateAchievement = user.achievement[flower_master]
+                            user_achievement.value += number
+                            achievement: Achievement = flower_dao.select_achievement_by_name(flower_master)
+                            if user_achievement.level < len(achievement.value_list):
+                                if user_achievement.value > achievement.value_list[user_achievement.level]:
+                                    if isinstance(achievement.award_list[user_achievement.level], int):
+                                        util.send_mail(
+                                            user,
+                                            '成就%s升级' % good_at_flower,
+                                            '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
+                                            [],
+                                            achievement.award_list[user_achievement.level]
+                                        )
+                                    elif isinstance(achievement.award_list[user_achievement.level], list):
+                                        util.send_mail(
+                                            user,
+                                            '成就%s升级' % good_at_flower,
+                                            '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
+                                            achievement.award_list[user_achievement.level],
+                                            0
+                                        )
+                                    user_achievement.level += 1
+                    # 更新user
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，收获成功，获得%s-%sx%d' % (
                         flower.name,

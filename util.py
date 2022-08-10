@@ -1099,14 +1099,15 @@ def unlock_username(username: str):
 
 
 ####################################################################################################
-def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem]):
+def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem], gold: int):
     mail: Mail = Mail()
     mail.from_qq = 0
     mail.username = '系统'
     mail.target_qq = user.qq
     mail.title = title
-    mail.text = text
+    mail.text = text + '\n（系统邮件可以无视邮箱最大上限送达）'
     mail.appendix = appendix
+    mail.gold = gold
     mail.arrived = True
     mail.status = '由系统直接送达'
     mail_id: str = flower_dao.insert_mail(mail)

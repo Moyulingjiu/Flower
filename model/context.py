@@ -133,7 +133,7 @@ class AdminSendMailContext(BaseContext):
     """
 
     def __init__(self, title: str = '', text: str = '', appendix: List[DecorateItem] = None, username: str = '',
-                 addressee: List[int] = None, send_all_user: bool = False):
+                 addressee: List[int] = None, send_all_user: bool = False, gold: int = 0):
         super().__init__(3, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
         self.title = title  # 标题
         self.text = text  # 正文
@@ -145,6 +145,7 @@ class AdminSendMailContext(BaseContext):
             addressee = []
         self.addressee = addressee  # 收件人QQ号
         self.send_all_user = send_all_user  # 是否发送给所有人
+        self.gold = gold  # 附赠的金币
 
 
 class ClearMailBoxContext(BaseContext):

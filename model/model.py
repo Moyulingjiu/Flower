@@ -895,7 +895,7 @@ class Mail(EntityClass):
     
     def __init__(self, role_id: str = '', from_qq: int = 0, target_qq: int = 0, title: str = '', text: str = '',
                  appendix: List[DecorateItem] = None, place_id: str = '', arrived: bool = False, status: str = '',
-                 received: bool = False, username: str = '',
+                 received: bool = False, username: str = '', gold: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -908,6 +908,7 @@ class Mail(EntityClass):
         if not isinstance(appendix, list):
             appendix = []
         self.appendix = appendix  # 附件
+        self.gold = gold  # 随信赠送的金币
         self.received = received  # 是否已经领取了附件
         self.place_id = place_id  # 地点id（当前所在的地点）
         self.arrived = arrived  # 是否已到达（无论是损坏还是咋样都应该到达或者没有送到）
