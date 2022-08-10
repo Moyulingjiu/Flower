@@ -3,12 +3,12 @@ import datetime
 from typing import Dict, List
 
 from flower_exceptions import FunctionArgsException
-from model import City, DecorateItem
+from model import City, DecorateItem, DecorateBuff
 
 __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
-    "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext"
+    "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuff"
 ]
 
 
@@ -164,3 +164,17 @@ class DeleteMailContext(BaseContext):
     def __init__(self, index: int):
         super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
         self.index = index
+
+
+class GiveBuff(BaseContext):
+    """
+    给予buff
+    """
+
+    def __init__(self, target_qq: List[int] = None, buff: DecorateBuff = DecorateBuff(), expire_seconds: int = 0):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        if target_qq is None:
+            target_qq = []
+        self.target_qq = target_qq
+        self.buff = buff
+        self.expire_seconds = expire_seconds

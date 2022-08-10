@@ -954,6 +954,7 @@ def analysis_time(message: str) -> int:
     :param message: 原始消息（x天y小时z分钟s秒）
     :return: 秒数
     """
+    message = message.strip()
     try:
         second: int = 0
         if '天' in message:

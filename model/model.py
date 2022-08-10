@@ -936,6 +936,7 @@ class Buff(EntityClass):
     def __init__(self, name: str = '', lock_humidity: bool = False, lock_nutrition: bool = False,
                  lock_soil: bool = False, lock_temperature: bool = False, description: str = '',
                  change_humidity: float = 0.0, change_nutrition: float = 0.0, change_temperature: float = 0.0,
+                 perfect_coefficient: float = 0.0, hour_coefficient: float = 0.0, bad_hour_coefficient: float = 0.0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -948,7 +949,10 @@ class Buff(EntityClass):
         self.lock_soil = lock_soil  # 是否锁定土壤，不让转变
         self.change_humidity = change_humidity  # 每小时改变的湿度
         self.change_nutrition = change_nutrition  # 每小时改变的营养
-        self.change_temperature = change_temperature  # 每小时改变的营养
+        self.change_temperature = change_temperature  # 每小时改变的温度
+        self.perfect_coefficient = perfect_coefficient  # 完美小时的系数
+        self.hour_coefficient = hour_coefficient  # 生长小时的系数
+        self.bad_hour_coefficient = bad_hour_coefficient  # 糟糕小时的系数
 
 
 class DecorateBuff(InnerClass):
@@ -959,6 +963,7 @@ class DecorateBuff(InnerClass):
     def __init__(self, name: str = '', lock_humidity: bool = False, lock_nutrition: bool = False,
                  lock_soil: bool = False, lock_temperature: bool = False,
                  change_humidity: float = 0.0, change_nutrition: float = 0.0, change_temperature: float = 0.0,
+                 perfect_coefficient: float = 0.0, hour_coefficient: float = 0.0, bad_hour_coefficient: float = 0.0,
                  expired_time: datetime = datetime.now()):
         super().__init__('DecorateBuff')
 
@@ -969,12 +974,36 @@ class DecorateBuff(InnerClass):
         self.lock_soil = lock_soil  # 是否锁定土壤，不让转变
         self.change_humidity = change_humidity  # 每小时改变的湿度
         self.change_nutrition = change_nutrition  # 每小时改变的营养
-        self.change_temperature = change_temperature  # 每小时改变的营养
+        self.change_temperature = change_temperature  # 每小时改变的温度
+        self.change_temperature = change_temperature  # 每小时改变的温度
+        self.perfect_coefficient = perfect_coefficient  # 完美小时的系数
+        self.hour_coefficient = hour_coefficient  # 生长小时的系数
+        self.bad_hour_coefficient = bad_hour_coefficient  # 糟糕小时的系数
 
         self.expired_time = expired_time  # 过期时间
 
+    def show_effect(self) -> str:
+        reply: str = ''
+        if self.lock_humidity:
+            reply += '、锁定湿度'
+        if self.lock_nutrition:
+            reply += '、锁定营养'
+        if self.lock_temperature:
+            reply += '、锁定温度'
+        if self.lock_soil:
+            reply += '、锁定土壤'
+        if self.change_humidity != 0.0:
+            reply += '、湿度%.2f' % self.change_humidity
+        if self.change_nutrition != 0.0:
+            reply += '、营养%.2f' % self.change_nutrition
+        if self.change_temperature != 0.0:
+            reply += '、温度%.2f' % self.change_temperature
+        if reply == '':
+            return '无效果'
+        return reply[1:]
+
     def __str__(self):
-        return self.name + '（到期时间：%d）' % self.expired_time.strftime('%Y-%m-%d %H:%M:%S')
+        return self.name + '（到期时间：%s）：%s' % (self.expired_time.strftime('%Y-%m-%d %H:%M:%S'), self.show_effect())
 
     def __repr__(self):
         return self.__str__()
@@ -993,6 +1022,7 @@ class DecorateBuff(InnerClass):
         self.change_humidity = buff.change_humidity
         self.change_nutrition = buff.change_nutrition
         self.change_temperature = buff.change_temperature
+        return self
 
     def expired(self, now: datetime = datetime.now()):
         return self.expired_time < now
@@ -1048,7 +1078,7 @@ class DecorateAchievement(InnerClass):
         return 'O'
 
     def __str__(self):
-        return '%s%s（%s）' % (
+        return '%s%s（获取于%s）' % (
             self.name,
             self.show_level(self.level),
             self.achievement_time.strftime('%Y-%m-%d %H:%M:%S')

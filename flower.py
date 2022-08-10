@@ -345,7 +345,12 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     except ResBeLockedException:
         logger.warning('用户被锁定%s<%d>@%s<%d>' % (username, qq, bot_name, bot_qq))
         return Result.init(
-            reply_text='操作超时，请稍后再试\n出现的原因可能有：\n1.您的操作过于频繁，请稍后再试\n2.账号风险行为，耐心等待两小时重置\n3.网络波动')
+            reply_text='操作超时，请稍后再试\n'
+                       '出现的原因可能有：\n'
+                       '1.您的操作过于频繁，请稍后再试\n'
+                       '2.账号风险行为，耐心等待两小时重置\n'
+                       '3.网络波动'
+        )
     except AtListNullException as e:
         return Result.init(reply_text=e.message)
     except TypeException as e:
@@ -725,6 +730,14 @@ class AdminHandler:
             announcement_context: AnnouncementContext = AnnouncementContext()
             flower_dao.insert_context(qq, announcement_context)
             return '请问公告的正文是什么，只可以包含文字信息！'
+        elif message == '给予buff':
+            context: GiveBuff = GiveBuff()
+            if len(at_list) > 0:
+                context.target_qq = at_list
+            else:
+                context.target_qq.append(qq)
+            flower_dao.insert_context(qq, context)
+            return '请问buff名字是什么？（输入“取消”来取消）'
         return ''
 
     @classmethod
@@ -1559,6 +1572,206 @@ class ContextHandler:
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，成功清空信箱'
                 result.context_reply_text.append(reply)
+            # 给予buff
+            elif isinstance(context, GiveBuff):
+                if message == '取消':
+                    del_context_list.append(origin_list[index])
+                    reply = '已为您取消发送公告'
+                    result.context_reply_text.append(reply)
+                    continue
+                if context.step == 0:
+                    name: str = message.strip()
+                    buff: Buff = flower_dao.select_buff_by_name(name)
+                    if not buff.valid():
+                        reply = '不存在“%s”' % name
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.buff = DecorateBuff().generate(buff)
+                    context.step += 1
+                    flower_dao.insert_context(qq, context)
+                    reply = '请问持续时长是多久？（x天x小时x分钟x秒，不用的单位可以省略）'
+                    result.context_reply_text.append(reply)
+                elif context.step == 1:
+                    seconds: int = util.analysis_time(message)
+                    if seconds <= 0:
+                        reply = '时间格式不正确！格式“x天x小时x分钟x秒”。输入“取消”可以取消'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.expire_seconds = seconds
+                    context.step += 1
+                    flower_dao.insert_context(qq, context)
+                    reply = '当前Buff：%s\n' \
+                            '持续秒数（从确认时开始算）：%d' \
+                            '是否要修改基础效果？（“是”表示是，其余表示否，“取消”表示取消）\n' \
+                            '注：部分buff可能本身具有特殊效果' % (str(context.buff), seconds)
+                    result.context_reply_text.append(reply)
+                elif context.step == 2:
+                    if message == '是':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step = 3
+                        flower_dao.insert_context(qq, context)
+                        reply = '1.“锁定/解锁湿度”\n' \
+                                '2.“锁定/解锁营养”\n' \
+                                '3.“锁定/解锁温度”\n' \
+                                '4.“锁定/解锁土壤”\n' \
+                                '5.“修改湿度 【数值】”\n' \
+                                '6.“修改营养 【数值】”\n' \
+                                '7.“修改温度 【数值】”\n' \
+                                '8.“修改完美时长增幅 【数值】”\n' \
+                                '9.“修改生长时长增幅 【数值】”\n' \
+                                '10.“修改糟糕时长增幅 【数值】”\n' \
+                                '11.“确认”，将buff给予出去\n' \
+                                '12.“预览”，预览当前buff\n' \
+                                '13.“取消”，取消发送'
+                        result.context_reply_text.append(reply)
+                        continue
+                    context.buff.expired_time = datetime.now() + timedelta(seconds=context.expire_seconds)
+                    for target_qq in context.target_qq:
+                        if target_qq != qq:
+                            util.lock_user(target_qq)
+                        target_user: User = util.get_user(target_qq)
+                        target_user.buff.append(context.buff)
+                        flower_dao.update_user_by_qq(target_user)
+                        if target_qq != qq:
+                            util.unlock_user(target_qq)
+                    del_context_list.append(origin_list[index])
+                    reply = '给予成功！'
+                    result.context_reply_text.append(reply)
+                elif context.step == 3:
+                    if message == '确认':
+                        context.buff.expired_time = datetime.now() + timedelta(seconds=context.expire_seconds)
+                        for target_qq in context.target_qq:
+                            if target_qq != qq:
+                                util.lock_user(target_qq)
+                            target_user: User = util.get_user(target_qq)
+                            target_user.buff.append(context.buff)
+                            flower_dao.update_user_by_qq(target_user)
+                            if target_qq != qq:
+                                util.unlock_user(target_qq)
+                        del_context_list.append(origin_list[index])
+                        reply = '给予成功！'
+                        result.context_reply_text.append(reply)
+                    elif message == '预览':
+                        reply = '当前Buff：%s\n' \
+                                '持续秒数（从确认时开始算）：%d' % (str(context.buff), context.expire_seconds)
+                        result.context_reply_text.append(reply)
+                    elif message == '锁定湿度':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_humidity = True
+                        flower_dao.insert_context(qq, context)
+                        reply = '锁定成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '解锁湿度':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_humidity = False
+                        flower_dao.insert_context(qq, context)
+                        reply = '解锁成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '锁定温度':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_temperature = True
+                        flower_dao.insert_context(qq, context)
+                        reply = '锁定成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '解锁温度':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_temperature = False
+                        flower_dao.insert_context(qq, context)
+                        reply = '解锁成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '锁定营养':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_nutrition = True
+                        flower_dao.insert_context(qq, context)
+                        reply = '锁定成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '解锁营养':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_nutrition = False
+                        flower_dao.insert_context(qq, context)
+                        reply = '解锁成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '锁定土壤':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_soil = True
+                        flower_dao.insert_context(qq, context)
+                        reply = '锁定成功'
+                        result.context_reply_text.append(reply)
+                    elif message == '解锁土壤':
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.buff.lock_soil = False
+                        flower_dao.insert_context(qq, context)
+                        reply = '解锁成功'
+                        result.context_reply_text.append(reply)
+                    elif message[:4] == '修改湿度':
+                        try:
+                            value: float = float(message[4:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.buff.change_humidity = value
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改成功'
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改湿度 【数值】”'
+                            result.context_reply_text.append(reply)
+                    elif message[:4] == '修改温度':
+                        try:
+                            value: float = float(message[4:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.buff.change_temperature = value
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改成功'
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改温度 【数值】”'
+                            result.context_reply_text.append(reply)
+                    elif message[:4] == '修改营养':
+                        try:
+                            value: float = float(message[4:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.buff.change_nutrition = value
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改成功'
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改营养 【数值】”'
+                            result.context_reply_text.append(reply)
+                    elif message[:8] == '修改完美时长增幅':
+                        try:
+                            value: float = float(message[8:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.buff.perfect_coefficient = value
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改成功'
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改完美时长增幅 【数值】”'
+                            result.context_reply_text.append(reply)
+                    elif message[:8] == '修改生长时长增幅':
+                        try:
+                            value: float = float(message[8:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.buff.hour_coefficient = value
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改成功'
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改生长时长增幅 【数值】”'
+                            result.context_reply_text.append(reply)
+                    elif message[:8] == '修改糟糕时长增幅':
+                        try:
+                            value: float = float(message[8:].strip())
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.buff.bad_hour_coefficient = value
+                            flower_dao.insert_context(qq, context)
+                            reply = '修改成功'
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“修改糟糕时长增幅 【数值】”'
+                            result.context_reply_text.append(reply)
+
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
