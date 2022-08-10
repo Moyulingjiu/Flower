@@ -388,6 +388,8 @@ class AdminHandler:
             data: str = message[4:].strip()
             try:
                 item: DecorateItem = util.analysis_item(data)
+                item.create = datetime.now()
+                item.update = datetime.now()
                 if item.number < 1:
                     raise TypeException(
                         '格式错误，格式“@xxx 给予物品 【物品名字】 【数量】 （【小时】/【耐久度】/【花的品质】）”。数量需要大于0')
@@ -725,7 +727,7 @@ class AdminHandler:
         util.lock_user(qq)
         try:
             user: User = util.get_user(qq, '')
-            util.insert_items(user.warehouse, [item])
+            util.insert_items(user.warehouse, [copy.deepcopy(item)])
             user.update(str(operator_id))
             flower_dao.update_user_by_qq(user)
             return True
