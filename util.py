@@ -620,7 +620,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             elif flower.level == FlowerLevel.C:
                 user.farm.hour += 2.0 * (1.0 + total_buff.hour_coefficient)
             else:
-                user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
+                user.farm.hour += 2.0 * (1.0 + total_buff.hour_coefficient)
         elif condition_level == ConditionLevel.SUITABLE:
             user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
         elif condition_level == ConditionLevel.NORMAL:
@@ -638,7 +638,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             elif flower.level == FlowerLevel.C:
                 user.farm.hour += 0.6 * (1.0 + total_buff.hour_coefficient)
             else:
-                user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
+                user.farm.hour += 0.7 * (1.0 + total_buff.hour_coefficient)
 
         # 根据条件来查看花的状态
         if user.farm.bad_hour >= flower.withered_time:
@@ -940,7 +940,7 @@ def show_temperature(user: User) -> str:
                 return '冷'
             if temperature < 5:
                 return '寒冷'
-            return '适宜'
+            return '适中'
     if temperature > 30:
         return '热'
     if temperature < 10:
@@ -971,12 +971,12 @@ def show_humidity(user: User) -> str:
                 return '干燥'
             if humidity < 20:
                 return '极其干燥'
-            return '适宜'
+            return '适中'
     if humidity > 66:
         return '湿润'
     if humidity < 33:
         return '干燥'
-    return '适宜'
+    return '适中'
 
 
 def show_nutrition(user: User) -> str:
@@ -1002,12 +1002,12 @@ def show_nutrition(user: User) -> str:
                 return '营养匮乏'
             if nutrition < 10:
                 return '营养极其匮乏'
-            return '适宜'
+            return '适中'
     if nutrition > 32:
         return '营养丰富'
     if nutrition < 17:
         return '营养匮乏'
-    return '适宜'
+    return '适中'
 
 
 def init_user_farm(user: User, city: City) -> None:
@@ -1118,5 +1118,38 @@ def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem], g
 
 
 ####################################################################################################
-def give_achievement(user: User, achievement_name: str, value: int = 1):
-    pass
+def give_achievement(user: User, achievement_name: str, value: int = 1) -> None:
+    """
+    给予成就
+    """
+    achievement: Achievement = flower_dao.select_achievement_by_name(achievement_name)
+    if not achievement.valid():
+        logger.error('未能找到成就：%s' % achievement_name)
+        return
+    if achievement_name not in user.achievement:
+        user.achievement[achievement_name] = DecorateAchievement()
+        user.achievement[achievement_name].name = achievement_name
+        user.achievement[achievement_name].value = 0
+        user.achievement[achievement_name].level = 0
+    user_achievement: DecorateAchievement = user.achievement[achievement_name]
+    user_achievement.value += value
+    if user_achievement.level < len(achievement.value_list):
+        if user_achievement.value > achievement.value_list[user_achievement.level]:
+            if isinstance(achievement.award_list[user_achievement.level], int):
+                send_mail(
+                    user,
+                    '成就%s升级' % achievement_name,
+                    '恭喜你！成就“%s”升级。这是我们为你准备的礼品' % achievement_name,
+                    [],
+                    achievement.award_list[user_achievement.level]
+                )
+            elif isinstance(achievement.award_list[user_achievement.level], list):
+                send_mail(
+                    user,
+                    '成就%s升级' % achievement_name,
+                    '恭喜你！成就“%s”升级。这是我们为你准备的礼品' % achievement_name,
+                    achievement.award_list[user_achievement.level],
+                    0
+                )
+            user_achievement.achievement_time = datetime.now()
+            user_achievement.level += 1

@@ -321,7 +321,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.clear_username(qq, username)
                 result.reply_text.append(reply)
                 return result
-            elif message == '整理仓库':
+            elif message == '整理花店仓库':
                 util.lock_user(qq)
                 user: User = util.get_user(qq, username)
                 util.sort_items(user.warehouse)
@@ -2941,7 +2941,7 @@ class FlowerService:
                     if buff.valid():
                         decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
                         decorate_buff.change_nutrition = item.nutrition
-                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second)
+                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
                 elif item.item_name == '涓涓细流' or item.item_name == '湍湍江润' or item.item_name == '薄薄雾拥':
@@ -2949,7 +2949,7 @@ class FlowerService:
                     if buff.valid():
                         decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
                         decorate_buff.change_humidity = item.humidity
-                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second)
+                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
                 elif item.item_name == '花语卡':
@@ -3060,60 +3060,9 @@ class FlowerService:
                     # 成就管理
                     good_at_flower: str = '擅长' + flower.name
                     flower_master: str = flower.name + '大师'
-                    if good_at_flower not in user.achievement:
-                        user.achievement[good_at_flower] = DecorateAchievement()
-                        user.achievement[good_at_flower].value = 0
-                        user.achievement[good_at_flower].level = 0
-                    user_achievement: DecorateAchievement = user.achievement[good_at_flower]
-                    user_achievement.value += number
-                    achievement: Achievement = flower_dao.select_achievement_by_name(good_at_flower)
-                    if user_achievement.level < len(achievement.value_list):
-                        if user_achievement.value > achievement.value_list[user_achievement.level]:
-                            if isinstance(achievement.award_list[user_achievement.level], int):
-                                util.send_mail(
-                                    user,
-                                    '成就%s升级' % good_at_flower,
-                                    '恭喜你！成就成功升级。这是我们为你准备的礼品',
-                                    [],
-                                    achievement.award_list[user_achievement.level]
-                                )
-                            elif isinstance(achievement.award_list[user_achievement.level], list):
-                                util.send_mail(
-                                    user,
-                                    '成就%s升级' % good_at_flower,
-                                    '恭喜你！成就成功升级。这是我们为你准备的礼品',
-                                    achievement.award_list[user_achievement.level],
-                                    0
-                                )
-                            user_achievement.achievement_time = datetime.now()
-                            user_achievement.level += 1
+                    util.give_achievement(user, good_at_flower, number)
                     if user.farm.flower_state == FlowerState.perfect:
-                        if flower_master not in user.achievement:
-                            user.achievement[flower_master] = DecorateAchievement()
-                            user.achievement[flower_master].value = 0
-                            user.achievement[flower_master].level = 0
-                        user_achievement: DecorateAchievement = user.achievement[flower_master]
-                        user_achievement.value += number
-                        achievement: Achievement = flower_dao.select_achievement_by_name(flower_master)
-                        if user_achievement.level < len(achievement.value_list):
-                            if user_achievement.value > achievement.value_list[user_achievement.level]:
-                                if isinstance(achievement.award_list[user_achievement.level], int):
-                                    util.send_mail(
-                                        user,
-                                        '成就%s升级' % good_at_flower,
-                                        '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
-                                        [],
-                                        achievement.award_list[user_achievement.level]
-                                    )
-                                elif isinstance(achievement.award_list[user_achievement.level], list):
-                                    util.send_mail(
-                                        user,
-                                        '成就%s升级' % good_at_flower,
-                                        '恭喜你！大师不是那么好达成的！这是我们为你准备的礼品',
-                                        achievement.award_list[user_achievement.level],
-                                        0
-                                    )
-                                user_achievement.level += 1
+                        util.give_achievement(user, flower_master, number)
                     # 更新user
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，收获成功，获得%s-%sx%d' % (
