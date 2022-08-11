@@ -19,8 +19,8 @@ def update_world():
     if not global_config.get_right_update_data:
         return
     logger.info('开始更新世界')
-    
-    
+
+
 def random_generate_world():
     """
     随机生成世界
@@ -43,6 +43,11 @@ def random_person() -> Person:
             person.sexual_orientation = Gender.male
         else:
             person.sexual_orientation = Gender.female
+    # 赋予姓名
+    last_name_list: List[PersonLastName] = flower_dao.select_all_person_last_name()
+    person_name: PersonName = flower_dao.select_random_person_name(Gender.male)
+    person.name = random.choice(last_name_list).value + person_name.value
+    
     # 出生地
     area = random.choice(area_list)
     person.born_area_id = area.get_id()

@@ -43,6 +43,9 @@ mongo_user_person = mongo_db['user_person']  # 玩家每天刷新的npc
 
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
 
+mongo_person_last_name = mongo_db['person_last_name']  # npc姓氏
+mongo_person_name = mongo_db['person_name']  # npc名
+
 # Redis
 redis_pool = ConnectionPool(host=global_config.redis_host, port=global_config.redis_port, db=global_config.redis_db,
                             password=global_config.redis_password, decode_responses=True)
@@ -1176,6 +1179,7 @@ def select_person(_id: str) -> Person:
         result = mongo_person.find_one({"_id": ObjectId(_id)})
         person: Person = Person()
         dict_to_class(result, person)
+        person.gender = Gender.get(person.gender)
         redis_db.set(redis_person_prefix + _id, serialization(person), ex=get_long_random_expire())
         return person
 
@@ -1312,6 +1316,64 @@ def insert_achievement(achievement: Achievement) -> str:
     """
     result = mongo_achievement.insert_one(class_to_dict(achievement))
     redis_db.delete(redis_achievement_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+####################################################################################################
+# 姓氏与名字（底层支持）
+
+def select_all_person_last_name() -> List[PersonLastName]:
+    """
+    查询所有姓氏，访问量很小，没必要加缓存
+    :return:
+    """
+    result = mongo_person_last_name.find(class_to_dict({"is_delete": 0}))
+    person_last_name_list: List[PersonLastName] = []
+    for single_result in result:
+        person_last_name: PersonLastName = PersonLastName()
+        dict_to_class(single_result, person_last_name)
+        person_last_name_list.append(person_last_name)
+    return person_last_name_list
+
+
+def insert_person_last_name(person_last_name: PersonLastName) -> str:
+    """
+    插入姓氏
+    :param person_last_name: 姓氏
+    :return: id
+    """
+    result = mongo_person_last_name.insert_one(class_to_dict(person_last_name))
+    return str(result.inserted_id)
+
+
+def select_random_person_name(gender: Gender) -> PersonName:
+    """
+    随机抽取姓名（访问量比较低）
+    :param gender: 性别
+    :return:
+    """
+    if gender == Gender.female:
+        gender_value = 1
+    else:
+        gender_value = 0
+    number: int = mongo_person_name.count_documents({"is_delete": 0, "gender": gender_value})
+    index: int = random.randint(0, number)
+    result = mongo_person_name.find({"is_delete": 0, "gender": gender_value}).skip(index).limit(1)
+    for person_name_result in result:
+        person_name: PersonName = PersonName()
+        dict_to_class(person_name_result, person_name)
+        person_name.gender = Gender.get(person_name.gender)
+        return person_name
+    return PersonName()
+
+
+def insert_person_name(person_name: PersonName) -> str:
+    """
+    插入名
+    :param person_name: 名
+    :return: id
+    """
+    result = mongo_person_name.insert_one(class_to_dict(person_name))
     return str(result.inserted_id)
 
 

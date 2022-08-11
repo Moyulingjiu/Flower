@@ -20,7 +20,7 @@ __all__ = [
     
     "TradeRecords", "FlowerPrice",
     
-    "WorldTerrain", "WorldArea", "Kingdom", "Relationship", "Person", "Trait",
+    "WorldTerrain", "WorldArea", "Kingdom", "Relationship", "Person", "Trait", "PersonName", "PersonLastName",
     
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "ChooseContext", "Choice", "RandomTravelContext", "TravelContext", "AnnouncementContext", "AdminSendMailContext",

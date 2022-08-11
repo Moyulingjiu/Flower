@@ -10,8 +10,47 @@ from model.base_model import *
 
 __all__ = [
     "Disease", "Profession", "Race", "WorldTerrain", "WorldArea", "Kingdom", "Relationship",
-    "Person", "Trait"
+    "Person", "Trait", "PersonName", "PersonLastName"
 ]
+
+
+class PersonLastName(EntityClass):
+    """
+    姓氏
+    """
+    
+    def __init__(self, value: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.value = value  # 姓氏
+    
+    def __str__(self):
+        return self.value
+    
+    def __repr__(self):
+        return self.__str__()
+
+
+class PersonName(EntityClass):
+    """
+    名
+    """
+    
+    def __init__(self, value: str = '', gender: Gender = Gender.male,
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+        
+        self.value = value  # 姓氏
+        self.gender = gender  # 性别
+    
+    def __str__(self):
+        return self.value + '（%s）' % ('男' if self.gender == Gender.male else '女')
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class Disease(Enum):
