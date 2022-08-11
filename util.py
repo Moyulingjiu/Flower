@@ -483,18 +483,12 @@ def check_farm_soil_climate_condition(user: User, flower: Flower) -> None:
     :param flower: 花
     :return:
     """
-    # 如果花与土壤不符合那么直接枯萎
+    # 如果花与土壤不符合那么直接枯萎（对于气候不做判断）
     if len(flower.soil_id) > 0:
         if user.farm.soil_id not in flower.soil_id:
             user.farm.flower_state = FlowerState.withered
     if len(flower.op_soil_id) > 0:
         if user.farm.soil_id in flower.op_soil_id:
-            user.farm.flower_state = FlowerState.withered
-    if len(flower.climate_id) > 0:
-        if user.farm.climate_id not in flower.climate_id:
-            user.farm.flower_state = FlowerState.withered
-    if len(flower.op_climate_id) > 0:
-        if user.farm.climate_id in flower.op_climate_id:
             user.farm.flower_state = FlowerState.withered
 
 
@@ -629,7 +623,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
         elif condition_level == ConditionLevel.SUITABLE:
             user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
-        if condition_level == ConditionLevel.NORMAL:
+        elif condition_level == ConditionLevel.NORMAL:
             if flower.level == FlowerLevel.S:
                 user.farm.hour += 0.5 * (1.0 + total_buff.hour_coefficient)
             else:
