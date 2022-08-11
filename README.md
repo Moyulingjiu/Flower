@@ -27,6 +27,12 @@ python main.py
 python3 main.py
 ```
 
+> 注： 该方法需要在main.py加入以下代码
+> ```python
+> if __name__ == '__main__':
+>     uvicorn.run(app, host=global_config.host, port=global_config.port)
+> ```
+
 其次可以通过`uvicorn`运行
 
 ```bash
