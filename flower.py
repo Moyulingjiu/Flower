@@ -350,8 +350,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 except ValueError:
                     raise TypeException('格式错误！格式“领取附件 【序号】”，领取某一封信的附件')
 
-        # 管理员操作
-        if util.get_user_right(qq) == UserRight.ADMIN:
+        # 管理员（admin、master）操作
+        user_right: UserRight = util.get_user_right(qq)
+        if user_right == UserRight.ADMIN or user_right == UserRight.MASTER:
             get_reply: bool = False
             reply: str = AdminHandler.handle(message, qq, username, at_list)
             if reply != '':
@@ -1517,7 +1518,7 @@ class ContextHandler:
                         reply += '来自：%s' % context.username
                         if len(context.appendix) > 0 and context.gold > 0:
                             reply += '\n附件：' + util.show_items(context.appendix) + '、金币（%.2f）' % (
-                                        context.gold / 100)
+                                    context.gold / 100)
                         elif len(context.appendix) > 0:
                             reply += '\n附件：' + util.show_items(context.appendix)
                         elif context.gold > 0:
@@ -2015,6 +2016,7 @@ class FlowerService:
         res += '\n所在城市：' + city.city_name
         res += '\n金币：' + util.show_gold(user.gold)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
+        res += '\n已在花店%d天' % ((datetime.now() - user.create_time).total_seconds() // global_config.day_second + 1)
         return res
 
     @classmethod

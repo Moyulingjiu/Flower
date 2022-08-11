@@ -361,6 +361,7 @@ class UserRight(Enum):
     """
     用户权限
     """
+    MASTER = 0
     ADMIN = 1
     USER = 2
 
@@ -371,11 +372,14 @@ def get_user_right(qq: int):
     :param qq: qq
     :return: 用户权限
     """
-    # todo: 根据qq获取用户权限（连接远程服务器）
-    # 如果qq号是0表示系统查询，肯定是管理员
-    if qq == 0:
+    system_data: SystemData = get_system_data()
+    if system_data.test_version:
+        return UserRight.MASTER
+    if qq in system_data.mater_right_qq:
+        return UserRight.MASTER
+    if qq in system_data.admin_right_qq:
         return UserRight.ADMIN
-    return UserRight.ADMIN
+    return UserRight.USER
 
 
 ####################################################################################################
@@ -1102,7 +1106,7 @@ def unlock_username(username: str):
 
 
 ####################################################################################################
-def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem], gold: int):
+def send_system_mail(user: User, title: str, text: str, appendix: List[DecorateItem], gold: int):
     mail: Mail = Mail()
     mail.from_qq = 0
     mail.username = '系统'
@@ -1117,8 +1121,18 @@ def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem], g
     user.mailbox.mail_list.append(mail_id)
 
 
-####################################################################################################
-def give_achievement(user: User, achievement_name: str, value: int = 1) -> None:
+def send_award(user: User, title: str, text: str, award: List[DecorateItem] or int):
+    """
+    发送奖品
+    """
+    if isinstance(award, int):
+        send_system_mail(user, title, text, [], award)
+    elif isinstance(award, list):
+        send_system_mail(user, title, text, award, 0)
+
+
+def give_achievement(user: User, achievement_name: str, value: int = 1, cover_old_value: bool = False,
+                     collection: List[str] = None) -> None:
     """
     给予成就
     """
@@ -1131,25 +1145,39 @@ def give_achievement(user: User, achievement_name: str, value: int = 1) -> None:
         user.achievement[achievement_name].name = achievement_name
         user.achievement[achievement_name].value = 0
         user.achievement[achievement_name].level = 0
+        user.achievement[achievement_name].collection = collection
     user_achievement: DecorateAchievement = user.achievement[achievement_name]
-    user_achievement.value += value
+    if cover_old_value:
+        user_achievement.value = value
+    else:
+        user_achievement.value += value
+    # 常规计算类的成就
     if user_achievement.level < len(achievement.value_list):
         if user_achievement.value >= achievement.value_list[user_achievement.level]:
-            if isinstance(achievement.award_list[user_achievement.level], int):
-                send_mail(
-                    user,
-                    '成就%s升级' % achievement_name,
-                    '恭喜你！成就“%s”升级。这是我们为你准备的礼品' % achievement_name,
-                    [],
-                    achievement.award_list[user_achievement.level]
-                )
-            elif isinstance(achievement.award_list[user_achievement.level], list):
-                send_mail(
-                    user,
-                    '成就%s升级' % achievement_name,
-                    '恭喜你！成就“%s”升级。这是我们为你准备的礼品' % achievement_name,
-                    achievement.award_list[user_achievement.level],
-                    0
-                )
+            send_award(
+                user,
+                '获得成就%s' % achievement_name,
+                '恭喜你！获得成就“%s”。这是我们为你准备的礼品。\n%s' % (achievement_name, achievement.description),
+                achievement.award_list[user_achievement.level]
+            )
             user_achievement.achievement_time = datetime.now()
             user_achievement.level += 1
+    # 收集类成就
+    elif len(achievement.collection) != 0 and collection is not None:
+        # 收集类成就需要将收集转为
+        achievement.collection = set(achievement.collection)
+        user_achievement.collection = set(user_achievement.collection)
+        for item in collection:
+            user_achievement.collection.add(item)
+        if user_achievement.collection == achievement.collection and user_achievement.level != 1:
+            send_award(
+                user,
+                '获得成就%s' % achievement_name,
+                '恭喜你！获得收集类成就“%s”。这是我们为你准备的礼品。\n%s' % (achievement_name, achievement.description),
+                achievement.award_list[0]
+            )
+            user_achievement.achievement_time = datetime.now()
+            user_achievement.level = 1
+        else:
+            user_achievement.level = 0
+        user_achievement.collection = list(user_achievement.collection)
