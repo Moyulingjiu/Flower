@@ -194,10 +194,28 @@ def dict_to_class(d: Dict, o) -> object or None:
         if isinstance(d[key], ObjectId):
             o.__dict__[key] = str(d[key])
         elif isinstance(d[key], dict):
+            # 如果是字典类型，需要判断其是否是一个子类类型
             if 'class_type' in d[key]:
                 o.__dict__[key] = dict_to_inner_class(d[key])
             else:
-                o.__dict__[key] = d[key]
+                # 其value值可能是一个子类
+                o.__dict__[key] = {}
+                for dict_key in d[key]:
+                    if isinstance(d[key][dict_key], dict) and 'class_type' in d[key][dict_key]:
+                        o.__dict__[key][dict_key] = dict_to_inner_class(d[key][dict_key])
+                    # 如果value是数组类型，那么需要检测其子类是否有嵌套内部类
+                    elif isinstance(d[key][dict_key], list):
+                        o.__dict__[key][dict_key] = []
+                        if len(d[key][dict_key]) > 0:
+                            if isinstance(d[key][dict_key][0], dict):
+                                for item in d[key][dict_key]:
+                                    inner_o = dict_to_inner_class(item)
+                                    if inner_o is not None:
+                                        o.__dict__[key][dict_key].append(inner_o)
+                            else:
+                                o.__dict__[key][dict_key] = d[key][dict_key]
+                    else:
+                        o.__dict__[key][dict_key] = d[key][dict_key]
         elif isinstance(d[key], list):
             o.__dict__[key] = []
             if len(d[key]) > 0:

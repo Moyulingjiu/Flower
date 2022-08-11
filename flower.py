@@ -3072,6 +3072,8 @@ class FlowerService:
                     )
                 except WareHouseSizeNotEnoughException:
                     return user.username + '，收获失败，仓库空间不足。'
+                except Exception as e:
+                    print(e)
             else:
                 return user.username + '，你的花已枯萎。'
         finally:

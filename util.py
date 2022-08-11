@@ -1134,7 +1134,7 @@ def give_achievement(user: User, achievement_name: str, value: int = 1) -> None:
     user_achievement: DecorateAchievement = user.achievement[achievement_name]
     user_achievement.value += value
     if user_achievement.level < len(achievement.value_list):
-        if user_achievement.value > achievement.value_list[user_achievement.level]:
+        if user_achievement.value >= achievement.value_list[user_achievement.level]:
             if isinstance(achievement.award_list[user_achievement.level], int):
                 send_mail(
                     user,
