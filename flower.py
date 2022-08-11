@@ -388,6 +388,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         return Result.init()
     except ResourceNotFound as e:
         return Result.init(reply_text=e.message)
+    except Exception as e:
+        logger.error(str(e))
     finally:
         util.unlock_user(qq)
     return Result.init()
@@ -2272,7 +2274,7 @@ class FlowerService:
                 return user.username + '，超出范围'
             mail_id = user.mailbox.mail_list[mail_index]
             mail: Mail = flower_dao.select_mail_by_id(mail_id)
-            if len(mail.appendix) == 0:
+            if len(mail.appendix) == 0 and mail.gold == 0:
                 return user.username + '，该信件没有附件可以领取。'
             if mail.received:
                 return user.username + '，你已经领取过该附件了。'
@@ -3072,8 +3074,6 @@ class FlowerService:
                     )
                 except WareHouseSizeNotEnoughException:
                     return user.username + '，收获失败，仓库空间不足。'
-                except Exception as e:
-                    print(e)
             else:
                 return user.username + '，你的花已枯萎。'
         finally:
