@@ -92,7 +92,7 @@ class OriginMail(BaseModel):
     target_qq: int  # 谁收到这封
     title: str  # 标题
     text: str  # 正文
-    appendix: List[DecorateItem]  # 附件
+    appendix: list  # 附件
     gold: int  # 附属黄金
 
 
@@ -154,6 +154,7 @@ async def send_mail(origin_mail: OriginMail):
     mail.target_qq = origin_mail.target_qq
     mail.title = origin_mail.title
     mail.text = origin_mail.text
+    # todo: 对附件的检查
     mail.appendix = origin_mail.appendix
     mail.gold = origin_mail.gold
     mail.arrived = True
