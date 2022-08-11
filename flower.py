@@ -420,7 +420,7 @@ class AdminHandler:
             if update_number > 0:
                 return '成功给予金币给' + str(update_number) + '人'
             else:
-                return '未能给予任何人金币'
+                return '未能给予任何人金币，请检查是否注册'
         elif message[:4] == '给予物品':
             data: str = message[4:].strip()
             try:
@@ -446,7 +446,7 @@ class AdminHandler:
             if update_number > 0:
                 return '成功给予' + item.item_name + '给' + str(update_number) + '人'
             else:
-                return '未能给予任何人' + item.item_name
+                return '未能给予任何人' + item.item_name + '，请检查是否注册'
         elif message[:4] == '修改温度':
             data: str = message[4:].strip()
             try:
@@ -461,7 +461,7 @@ class AdminHandler:
                             update_number += 1
                 if update_number > 0:
                     return '成功修改' + str(update_number) + '人'
-                return '未能修改任何人的温度'
+                return '未能修改任何人的温度，请检查是否注册'
             except ValueError:
                 raise TypeException('格式错误！，格式“@xxx 修改湿度 【湿度】”。湿度为任意小数。')
         elif message[:4] == '修改湿度':
@@ -483,7 +483,7 @@ class AdminHandler:
                             update_number += 1
                 if update_number > 0:
                     return '成功修改' + str(update_number) + '人'
-                return '未能修改任何人的湿度'
+                return '未能修改任何人的湿度，请检查是否注册'
             except ValueError:
                 raise TypeException('格式错误！，格式“@xxx 修改湿度 【湿度】”。湿度为任意小数。')
         elif message[:4] == '修改营养':
@@ -505,7 +505,7 @@ class AdminHandler:
                             update_number += 1
                 if update_number > 0:
                     return '成功修改' + str(update_number) + '人'
-                return '未能修改任何人的营养'
+                return '未能修改任何人的营养，请检查是否注册'
             except ValueError:
                 raise TypeException('格式错误！，格式“@xxx 修改营养 【营养】”。营养为任意小数。')
         elif message[:4] == '修改土壤':
@@ -525,7 +525,7 @@ class AdminHandler:
                         update_number += 1
             if update_number > 0:
                 return '成功修改' + str(update_number) + '人的土壤到' + data
-            return '未能修改任何人的土壤'
+            return '未能修改任何人的土壤，请检查是否注册'
         elif message[:4] == '修改城市':
             data: str = message[4:].strip()
             if len(data) == 0:
@@ -543,7 +543,7 @@ class AdminHandler:
                         update_number += 1
             if update_number > 0:
                 return '成功修改' + str(update_number) + '人的城市到' + data
-            return '未能修改任何人的城市'
+            return '未能修改任何人的城市，请检查是否注册'
         elif message[:4] == '修改气候':
             data: str = message[4:].strip()
             if len(data) == 0:
@@ -561,7 +561,7 @@ class AdminHandler:
                         update_number += 1
             if update_number > 0:
                 return '成功修改' + str(update_number) + '人的农场气候到' + data
-            return '未能修改任何人的农场气候'
+            return '未能修改任何人的农场气候，请检查是否注册'
         elif message == '移除农场的花':
             update_number: int = 0
             if len(at_list) == 0:
@@ -573,7 +573,7 @@ class AdminHandler:
                         update_number += 1
             if update_number > 0:
                 return '成功移除' + str(update_number) + '人农场的花'
-            return '未能移除任何人农场的花'
+            return '未能移除任何人农场的花，请检查是否注册'
         elif message[:10] == '添加花店用户名屏蔽词':
             word: str = message[10:].strip()
             if cls.append_username_screen_word(word):
@@ -761,6 +761,26 @@ class AdminHandler:
                 context.target_qq.append(qq)
             flower_dao.insert_context(qq, context)
             return '请问buff名字是什么？（输入“取消”来取消）'
+        elif message[:8] == '清除花店buff':
+            data = message[8:].strip()
+            if len(data) == 0:
+                index = -1
+            else:
+                try:
+                    index = int(data)
+                except ValueError:
+                    raise TypeException('格式错误！格式“@xxx 清除花店buff 序号”，序号省略表示清除全部')
+            update_number: int = 0
+            if len(at_list) == 0:
+                if cls.remove_user_buff(qq, qq, index):
+                    update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.remove_user_buff(target_qq, qq, index):
+                        update_number += 1
+            if update_number > 0:
+                return '成功清除' + str(update_number) + '人的buff'
+            return '未能清除任何人的buff，请检查是否注册或者序号越界'
         return ''
     
     @classmethod
@@ -1063,6 +1083,31 @@ class AdminHandler:
             reply += '暂无'
         
         return reply
+
+    @classmethod
+    def remove_user_buff(cls, qq: int, operator_id: int, index: int = -1) -> bool:
+        """
+        清除用户buff
+        :param qq: qq
+        :param operator_id: 操作员id
+        :param index: 序号
+        :return: 结果
+        """
+        try:
+            util.lock_user(qq)
+            user: User = util.get_user(qq, '')
+            if index == -1:
+                user.buff = []
+            else:
+                if 0 <= index < len(user.buff):
+                    del user.buff[index]
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            util.unlock_user(qq)
 
 
 class WorldControlHandler:

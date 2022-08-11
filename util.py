@@ -24,11 +24,11 @@ def async_function(f):
     :param f: 函数
     :return: 包装之后的函数
     """
-    
+
     def wrapper(*args, **kwargs):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
-    
+
     return wrapper
 
 
@@ -215,7 +215,7 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
-    
+
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
     if not item_obj.valid():
         raise ItemNotFoundException('')
@@ -443,7 +443,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-    
+
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -453,7 +453,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-    
+
     # 改变土壤（如果被buff锁定了，那么就无法改变）
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if not total_buff.lock_soil:
@@ -587,6 +587,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     """
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     logger.debug('total_buff：%s' % str(total_buff))
+    logger.debug('hour：%d.perfect_hour:%d,bad_hour:%d' % (user.farm.hour, user.farm.perfect_hour, user.farm.bad_hour))
     if user.farm.hour <= overripe_time * 2:
         # 计算条件
         if user.farm.hour < seed_time:
@@ -613,7 +614,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.bad_hour += 1 * (1.0 + total_buff.bad_hour_coefficient)
         else:
             user.farm.perfect_hour = 0
-        
+
         # 根据条件不同，每小时增长的小时不同
         if condition_level == ConditionLevel.PERFECT:
             if flower.level == FlowerLevel.S:
@@ -644,7 +645,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 0.6 * (1.0 + total_buff.hour_coefficient)
             else:
                 user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
-        
+
         # 根据条件来查看花的状态
         if user.farm.bad_hour >= flower.withered_time:
             user.farm.flower_state = FlowerState.withered
@@ -655,6 +656,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     else:
         # 如果已经超过过熟的时间那么一定是枯萎了
         user.farm.flower_state = FlowerState.withered
+    logger.debug('hour：%d.perfect_hour:%d,bad_hour:%d' % (user.farm.hour, user.farm.perfect_hour, user.farm.bad_hour))
 
 
 def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Flower) -> None:
@@ -673,23 +675,23 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-    
+
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-    
+
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time <= now:
         soil = update_farm_soil(user, soil, start_time)
         check_farm_soil_climate_condition(user, flower)
-        
+
         update_farm_condition(user, flower, real_time_weather, start_time, soil, start_time)
         if user.farm.flower_state != FlowerState.withered:
             check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time, start_time)
-        
+
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
@@ -1124,4 +1126,3 @@ def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem], g
 ####################################################################################################
 def give_achievement(user: User, achievement_name: str, value: int = 1):
     pass
-
