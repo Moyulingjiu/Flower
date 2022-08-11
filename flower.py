@@ -946,6 +946,12 @@ class AdminHandler:
             util.lock_user(qq)
             user: User = util.get_user(qq, '')
             user.farm.last_check_time -= timedelta(hours=hour)
+            user.accelerate_buff(seconds=global_config.hour_second * hour)
+            city: City = flower_dao.select_city_by_id(user.city_id)
+            flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
+            soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+            weather: Weather = util.get_weather(city)
+            util.update_farm(user, city, soil, weather, flower)
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
@@ -2738,6 +2744,12 @@ class FlowerService:
                 if item.item_name == '加速卡':
                     hour: int = item.hour * item.number
                     user.farm.last_check_time -= timedelta(hours=hour)
+                    user.accelerate_buff(seconds=global_config.hour_second * hour)
+                    city: City = flower_dao.select_city_by_id(user.city_id)
+                    flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
+                    soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+                    weather: Weather = util.get_weather(city)
+                    util.update_farm(user, city, soil, weather, flower)
                     return user.username + '，成功加速农场%d小时' % hour
                 elif item.item_name == '完美加速卡':
                     hour: int = item.hour * item.number

@@ -545,13 +545,6 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     user.farm.humidity += total_buff.change_humidity
     user.farm.nutrition += total_buff.change_nutrition
     user.farm.temperature += total_buff.change_temperature
-    # 如果buff有锁则不改变湿度等条件
-    if total_buff.lock_humidity:
-        user.farm.humidity = origin_humidity
-    if total_buff.lock_nutrition:
-        user.farm.nutrition = origin_nutrition
-    if total_buff.lock_temperature:
-        user.farm.temperature = origin_temperature
     # 限制湿度与营养的土壤上下限
     if user.farm.humidity < soil.min_humidity:
         user.farm.humidity = soil.min_humidity
@@ -561,6 +554,13 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
         user.farm.nutrition = soil.min_nutrition
     elif user.farm.nutrition > soil.max_nutrition:
         user.farm.nutrition = soil.max_nutrition
+    # 如果buff有锁则不改变湿度等条件
+    if total_buff.lock_humidity:
+        user.farm.humidity = origin_humidity
+    if total_buff.lock_nutrition:
+        user.farm.nutrition = origin_nutrition
+    if total_buff.lock_temperature:
+        user.farm.temperature = origin_temperature
     # 限制湿度与营养的上下限
     if user.farm.humidity < system_data.soil_min_humidity:
         user.farm.humidity = system_data.soil_min_humidity
@@ -586,6 +586,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
     :return:
     """
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
+    logger.debug('total_buff：%s' % str(total_buff))
     if user.farm.hour <= overripe_time * 2:
         # 计算条件
         if user.farm.hour < seed_time:
@@ -645,9 +646,9 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 1.0 * (1.0 + total_buff.hour_coefficient)
         
         # 根据条件来查看花的状态
-        if user.farm.bad_hour > flower.withered_time:
+        if user.farm.bad_hour >= flower.withered_time:
             user.farm.flower_state = FlowerState.withered
-        elif user.farm.perfect_hour > flower.prefect_time > 0:
+        elif user.farm.perfect_hour >= flower.prefect_time > 0:
             user.farm.flower_state = FlowerState.perfect
         else:
             user.farm.flower_state = FlowerState.normal
@@ -1118,3 +1119,9 @@ def send_mail(user: User, title: str, text: str, appendix: List[DecorateItem], g
     mail.status = '由系统直接送达'
     mail_id: str = flower_dao.insert_mail(mail)
     user.mailbox.mail_list.append(mail_id)
+
+
+####################################################################################################
+def give_achievement(user: User, achievement_name: str, value: int = 1):
+    pass
+

@@ -957,24 +957,8 @@ class Buff(EntityClass):
     def __str__(self):
         reply: str = 'BUFF：' + str(self.name)
         reply += '\n描述：' + self.description
-        effect: str = ''
-        if self.lock_humidity:
-            effect += '、锁定湿度'
-        if self.lock_nutrition:
-            effect += '、锁定营养'
-        if self.lock_temperature:
-            effect += '、锁定温度'
-        if self.lock_soil:
-            effect += '、锁定土壤'
-        if self.change_humidity != 0.0:
-            effect += '、湿度%.2f' % self.change_humidity
-        if self.change_nutrition != 0.0:
-            effect += '、营养%.2f' % self.change_nutrition
-        if self.change_temperature != 0.0:
-            effect += '、温度%.2f' % self.change_temperature
-        if effect == '':
-            effect = '无效果/特殊效果'
-        reply += '\n' + effect
+        decorate_buff: DecorateBuff = DecorateBuff().generate(buff=self)
+        reply += '\n效果：' + decorate_buff.show_effect()
         return reply
     
     def __repr__(self):
@@ -1024,8 +1008,14 @@ class DecorateBuff(InnerClass):
             reply += '、营养%.2f' % self.change_nutrition
         if self.change_temperature != 0.0:
             reply += '、温度%.2f' % self.change_temperature
+        if self.perfect_coefficient != 0.0:
+            reply += '、完美时长增幅%.2f' % self.perfect_coefficient
+        if self.hour_coefficient != 0.0:
+            reply += '、生长时长增幅%.2f' % self.hour_coefficient
+        if self.bad_hour_coefficient != 0.0:
+            reply += '、糟糕时长增幅%.2f' % self.bad_hour_coefficient
         if reply == '':
-            effect = '无效果/特殊效果'
+            return '无效果/特殊效果'
         return reply[1:]
     
     def __str__(self):
@@ -1224,6 +1214,14 @@ class User(EntityClass):
             total_buff.hour_coefficient += buff.hour_coefficient
             total_buff.bad_hour_coefficient += buff.bad_hour_coefficient
         return total_buff
+
+    def accelerate_buff(self, seconds: int = 0):
+        """
+        加速buff
+        :param seconds: 加速时间
+        """
+        for buff in self.buff:
+            buff.expired_time -= timedelta(seconds=seconds)
 
 
 class Commodity(InnerClass):
