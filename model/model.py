@@ -1275,6 +1275,7 @@ class SystemData:
                  explorer_seed_pool: Dict[str, int] = None, explorer_item_pool: Dict[str, int] = None,
                  architect_item_pool: Dict[str, int] = None,
                  mater_right_qq: List[int] = None, admin_right_qq: List[int] = None, test_version: bool = False,
+                 white_token_list: List[str] = None,
                  is_delete: int = 0, _id: str or None = None):
         self._id = _id
         self.is_delete = is_delete
@@ -1334,6 +1335,10 @@ class SystemData:
             admin_right_qq = []
         self.admin_right_qq = admin_right_qq  # 拥有admin权限的QQ
         self.test_version = test_version  # 是否在测试版本（如果在测试版本，那么所有人都拥有master权限）
+        
+        if white_token_list is None:
+            white_token_list = []
+        self.white_token_list = white_token_list  # 允许访问的token白名单
 
     def get_id(self) -> str:
         return self._id

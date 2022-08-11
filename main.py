@@ -14,6 +14,7 @@ import global_config  # global_config必须放到第一位来，进行配置的�
 import flower
 import flower_dao
 import util
+from flower_exceptions import UserNotRegisteredException, ResBeLockedException
 from global_config import logger
 from model import *
 from world_handler import update_world
@@ -85,10 +86,20 @@ class Message(BaseModel):
     at_list: List[int]
 
 
+class OriginMail(BaseModel):
+    token: str  # 验证身份
+    username: str  # 寄件人，可能会用名义去送（而不会实名）
+    target_qq: int  # 谁收到这封
+    title: str  # 标题
+    text: str  # 正文
+    appendix: List[DecorateItem]  # 附件
+    gold: int  # 附属黄金
+
+
 class Response(BaseModel):
     code: int
     message: str
-    data: Result
+    data: Result or None
 
 
 @app.get("/calibration")
@@ -115,7 +126,43 @@ async def draw_card(message: Message):
         return Result.init()
     logger.info(
         '玩家<%s>(%d)@机器人<%s>(%d)：抽卡，%s' % (message.username, message.qq, message.bot_name, message.bot_qq, reply))
-    return Result.init(reply_text=reply)
+    return Response(code=0, message="success", data=Result.init(reply_text=reply))
+
+
+@app.post('/mail')
+async def send_mail(origin_mail: OriginMail):
+    """
+    发送信件（用于与其他系统进行合作协同）
+    :param origin_mail: 信件
+    :return:
+    """
+    system_data: SystemData = util.get_system_data()
+    if origin_mail.token not in system_data.white_token_list:
+        return Response(code=403, message='forbidden', data=None)
+    try:
+        util.lock_user(origin_mail.target_qq)
+        user: User = util.get_user(origin_mail.target_qq, '')
+    except UserNotRegisteredException as e:
+        util.unlock_user(origin_mail.target_qq)
+        return Response(code=404, message='not found', data=None)
+    except ResBeLockedException:
+        return Response(code=408, message='time out', data=None)
+    
+    mail: Mail = Mail()
+    mail.from_qq = 0
+    mail.username = origin_mail.username
+    mail.target_qq = origin_mail.target_qq
+    mail.title = origin_mail.title
+    mail.text = origin_mail.text
+    mail.appendix = origin_mail.appendix
+    mail.gold = origin_mail.gold
+    mail.arrived = True
+    mail.status = '由系统直接送达'
+    mail_id: str = flower_dao.insert_mail(mail)
+    user.mailbox.mail_list.append(mail_id)
+    flower_dao.update_user_by_qq(user)
+    util.unlock_user(origin_mail.target_qq)
+    return Response(code=0, message="success", data=None)
 
 
 @app.post("/flower")
