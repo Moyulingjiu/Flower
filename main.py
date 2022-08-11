@@ -154,7 +154,3 @@ async def add_flower(message: Message):
             message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,
             str(result)))
     return Response(code=0, message="success", data=result)
-
-
-if __name__ == '__main__':
-    uvicorn.run(app, host=global_config.host, port=global_config.port)
