@@ -738,7 +738,7 @@ class AdminHandler:
             @async_function
             def get_all_weather():
                 logger.info('管理员%s<%d>开始更新所有城市天气' % (username, qq))
-                util.get_all_weather()
+                util.get_all_weather(force=True)
             
             if global_config.get_all_weather:
                 return '请勿重复发起获取请求，已经有更新请求正在运行，该行为会花费较长时间。'

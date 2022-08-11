@@ -742,9 +742,12 @@ def get_update_right() -> None:
     :return:
     """
     try:
+        logger.info('尝试获取更新数据的权限')
         lock_the_world()
         global_config.get_right_update_data = True
+        logger.info('成功获取更新权限')
     except ResBeLockedException:
+        logger.warning('获取更新权限失败')
         return
 
 
@@ -755,15 +758,18 @@ def release_update_right() -> None:
     """
     if not global_config.get_right_update_data:
         return
+    logger.info('已释放更新权限')
     unlock_the_world()
 
 
-def get_all_weather() -> None:
+def get_all_weather(force: bool = False) -> None:
     """
     获取所有城市的天气
+    :param force: 强制执行
     :return: none
     """
-    if not global_config.get_right_update_data:
+    if not global_config.get_right_update_data and not force:
+        global_config.get_all_weather = False
         return
     logger.info('开始获取所有城市的天气')
     city_list: List[City] = flower_dao.select_all_city()
