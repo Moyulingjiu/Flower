@@ -1009,11 +1009,11 @@ class DecorateBuff(InnerClass):
         if self.change_temperature != 0.0:
             reply += '、温度%.2f' % self.change_temperature
         if self.perfect_coefficient != 0.0:
-            reply += '、完美时长增幅%.2f%%' % self.perfect_coefficient
+            reply += '、完美时长增幅%.2f%%' % (self.perfect_coefficient * 100)
         if self.hour_coefficient != 0.0:
-            reply += '、生长时长增幅%.2f%%' % self.hour_coefficient
+            reply += '、生长时长增幅%.2f%%' % (self.hour_coefficient * 100)
         if self.bad_hour_coefficient != 0.0:
-            reply += '、糟糕时长增幅%.2f%%' % self.bad_hour_coefficient
+            reply += '、糟糕时长增幅%.2f%%' % (self.bad_hour_coefficient * 100)
         if reply == '':
             return '无效果/特殊效果'
         return reply[1:]
