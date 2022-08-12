@@ -16,7 +16,7 @@ __all__ = [
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
     "Result", "SystemData", "Announcement", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
     
-    "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person",
+    "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person", "PathModel",
     
     "TradeRecords", "FlowerPrice",
     

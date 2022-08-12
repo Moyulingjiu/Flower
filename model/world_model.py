@@ -10,7 +10,7 @@ from model.base_model import *
 
 __all__ = [
     "Disease", "Profession", "Race", "WorldTerrain", "WorldArea", "Kingdom", "Relationship",
-    "Person", "Trait", "PersonName", "PersonLastName"
+    "Person", "Trait", "PersonName", "PersonLastName", "PathModel"
 ]
 
 
@@ -55,48 +55,51 @@ class PersonName(EntityClass):
 
 class Disease(Enum):
     """
-    疾病枚举类
+    疾病
     """
 
-    none = 0
+    def __init__(self, name: str = '', description: str = '', death_probability: int = 0,
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
 
-    @classmethod
-    def view_level(cls, disease) -> str:
-        pass
-
-    @classmethod
-    def get_level(cls, disease: str):
-        pass
+        self.name = name  # 名字
+        self.description = description  # 介绍
+        self.death_probability = death_probability  # 死亡概率
 
 
-class Profession(Enum):
+class Profession(EntityClass):
     """
-    职业类
-    """
-
-    none = 0
-
-    @classmethod
-    def view_level(cls, profession) -> str:
-        pass
-
-    @classmethod
-    def get_level(cls, profession: str):
-        pass
-
-
-class Race(Enum):
-    """
-    种族类
+    职业
     """
 
-    @classmethod
-    def view_level(cls, race) -> str:
-        pass
+    def __init__(self, name: str = '', description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
 
-    @classmethod
-    def get_level(cls, race: str):
-        pass
+        self.name = name  # 名字
+        self.description = description  # 介绍
+
+
+class Race(EntityClass):
+    """
+    种族
+    """
+
+    def __init__(self, name: str = '', description: str = '',
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+
+        self.name = name  # 名字
+        self.description = description  # 介绍
+
+    def __str__(self):
+        return '名字：%s\n介绍：%s' % (self.name, self.description)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class WorldTerrain(EntityClass):
@@ -112,10 +115,26 @@ class WorldTerrain(EntityClass):
         self.name = name  # 世界地形名
 
     def __str__(self):
-        return self.name
+        return '地姓：' + self.name
 
     def __repr__(self):
         return self.__str__()
+
+
+class PathModel(InnerClass):
+    """
+    连通图
+    """
+
+    def __init__(self, target_area_id: str = '', distance: int = 0, driving_price: int = 0, sail_price: int = 0,
+                 difficulty: int = 0):
+        super().__init__('PathModel')
+
+        self.target_area_id = target_area_id
+        self.distance = distance
+        self.driving_price = driving_price
+        self.sail_price = sail_price
+        self.difficulty = difficulty
 
 
 class WorldArea(EntityClass):
@@ -123,7 +142,8 @@ class WorldArea(EntityClass):
     世界地区
     """
 
-    def __init__(self, name: str = '', terrain_id: str = '', description: str = '', path_list: List[str] = None,
+    def __init__(self, name: str = '', terrain_id: str = '', race_id: str = '', description: str = '',
+                 path_list: List[PathModel] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -131,6 +151,7 @@ class WorldArea(EntityClass):
         self.name = name  # 地区名
         self.terrain_id = terrain_id  # 地形id
         self.description = description  # 描述
+        self.race_id = race_id  # 主要种族
         if path_list is None:
             path_list = []
         self.path_list = path_list  # 联通路径
@@ -155,12 +176,15 @@ class Kingdom(EntityClass):
     王国
     """
 
-    def __init__(self, name: str = '',
+    def __init__(self, name: str = '', area_id_list: List[str] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
 
         self.name = name  # 王国名
+        if area_id_list is None:
+            area_id_list = []
+        self.area_id_list = area_id_list  # 地区id
 
 
 class Relationship(EntityClass):
@@ -191,10 +215,10 @@ class Person(EntityClass):
 
     def __init__(self, name: str = '', gender: Gender = Gender.male, sexual_orientation: Gender = Gender.female,
                  spouse_id: str = '', predecessor: List[Tuple[str, datetime]] = None, relationships: List[str] = None,
-                 children: List[str] = None, father_id: str = '', mother_id: str = '',
+                 children: List[str] = None, father_id: str = '', mother_id: str = '', motherland: str = '',
                  die: bool = False, die_time: datetime = datetime.now(), max_age: int = 0, die_reason: str = '',
                  world_area_id: str = '', born_area_id: str = '', born_time: datetime = datetime.now(),
-                 gold: int = 0, disease: Disease = Disease.none, profession: Profession = Profession.none,
+                 gold: int = 0, disease_id: str = '', profession_id: str = '', race_id: str = '',
                  wisdom: int = 0, leadership: int = 0, force: int = 0, affinity: int = 0, ambition: int = 0,
                  health: int = 0, appearance: int = 0, appearance_description: str = '',
                  justice_or_evil: int = 0, extroversion_or_introversion: int = 0, bravery_or_cowardly: int = 0,
@@ -222,10 +246,12 @@ class Person(EntityClass):
         self.born_area_id = born_area_id  # 出生地
         self.born_time = born_time  # 出生时间（现实中每一天是其一年）
         self.max_age = max_age  # 最大年龄
+        self.motherland = motherland  # 祖国
 
         self.gold = gold  # 金币
-        self.disease = disease  # 疾病
-        self.profession = profession  # 职业
+        self.disease_id = disease_id  # 疾病
+        self.profession_id = profession_id  # 职业
+        self.race_id = race_id  # 种族
 
         self.die = die  # 是否死亡
         self.die_time = die_time  # 死亡时间
@@ -267,12 +293,18 @@ class Person(EntityClass):
         reply += '\n性别：%s，性取向：%s' % (self.gender.show(), self.sexual_orientation.show())
         reply += '\n父亲：%s，母亲：%s' % (self.father_id, self.mother_id)
         reply += '\n出生地：%s，现在所在地：%s' % (self.born_area_id, self.world_area_id)
+        reply += '\n祖国：%s' % self.motherland
+        reply += '\n种族：%s' % self.race_id
+        reply += '\n疾病：%s' % self.disease_id
+        reply += '\n职业：%s' % self.profession_id
+        reply += '\n' + ('-' * 6)
+        reply += '\n基础属性：'
         reply += '\n智慧：%d，领导力：%d，武力：%d，亲和力：%d，野心：%d，健康：%d，外貌：%d' % (
             self.wisdom, self.leadership, self.force, self.affinity, self.ambition, self.health, self.appearance
         )
         reply += '\n外貌描述：%s' % self.appearance_description
         reply += '\n' + ('-' * 6)
-        reply += '\n（一下描述词越小越靠近左边的词，越大越靠近右边的词）'
+        reply += '\n性格（以下描述词越小越靠近左边的词，越大越靠近右边的词）'
         reply += '\n邪恶/正义：%d' % self.justice_or_evil
         reply += '\n内向/外向：%d' % self.extroversion_or_introversion
         reply += '\n胆怯/勇敢：%d' % self.bravery_or_cowardly

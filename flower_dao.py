@@ -34,6 +34,9 @@ mongo_mail = mongo_db['mail']  # 信件
 mongo_achievement = mongo_db['achievement']  # 成就
 mongo_buff = mongo_db['buff']  # buff
 
+mongo_world_race = mongo_db['world_race']  # 种族
+mongo_world_profession = mongo_db['world_profession']  # 职业
+mongo_world_disease = mongo_db['world_disease']  # 疾病
 mongo_world_terrain = mongo_db['world_terrain']  # 世界地形
 mongo_world_area = mongo_db['world_area']  # 世界地区
 mongo_kingdom = mongo_db['kingdom']  # 世界地区
@@ -70,6 +73,9 @@ redis_mails_prefix = redis_global_prefix + 'mails'  # 正在投递中的mail
 redis_buff_prefix = redis_global_prefix + 'buff_'  # BUFF
 redis_achievement_prefix = redis_global_prefix + 'achievement_'  # 成就
 
+redis_world_race_prefix = redis_global_prefix + 'world_race_'  # 种族redis前缀
+redis_world_profession_prefix = redis_global_prefix + 'world_profession_'  # 职业redis前缀
+redis_world_disease_prefix = redis_global_prefix + 'world_disease_'  # 疾病redis前缀
 redis_world_terrain_prefix = redis_global_prefix + 'world_terrain_'  # 世界地形redis前缀
 redis_world_area_prefix = redis_global_prefix + 'world_area_'  # 世界地区redis前缀
 redis_kingdom_prefix = redis_global_prefix + 'kingdom_'  # 国家redis前缀
@@ -180,6 +186,8 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return dict_to_class(d, DecorateCat())
     elif d['class_type'] == 'Commodity':
         return dict_to_class(d, Commodity())
+    elif d['class_type'] == 'PathModel':
+        return dict_to_class(d, PathModel())
     return None
 
 
@@ -944,6 +952,52 @@ def insert_mail(mail: Mail) -> str:
 # 世界模型
 
 
+def select_world_race(_id: str) -> Race:
+    """
+    根据id查询世界地形
+    :param _id: id
+    :return: 世界地形
+    """
+    redis_ans = redis_db.get(redis_world_race_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_race.find_one({"_id": ObjectId(_id)})
+        race: Race = Race()
+        dict_to_class(result, race)
+        redis_db.set(redis_world_race_prefix + _id, serialization(race), ex=get_long_random_expire())
+        return race
+
+
+def select_world_race_by_name(name: str) -> Race:
+    """
+    根据名字查询种族
+    :param name: 种族名
+    :return:
+    """
+    redis_ans = redis_db.get(redis_world_terrain_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_race.find_one({"name": name})
+        race: Race = Race()
+        dict_to_class(result, race)
+        redis_db.set(redis_world_race_prefix + name, serialization(race), ex=get_long_random_expire())
+        return race
+
+
+def insert_world_race(world_race: Race) -> str:
+    """
+    插入地形
+    :param world_race: 种族
+    :return: id
+    """
+    result = mongo_world_race.insert_one(class_to_dict(world_race))
+    redis_db.delete(redis_world_race_prefix + str(result.inserted_id))
+    redis_db.delete(redis_world_race_prefix + world_race.name)
+    return str(result.inserted_id)
+
+
 def select_world_terrain(_id: str) -> WorldTerrain:
     """
     根据id查询世界地形
@@ -986,6 +1040,7 @@ def insert_world_terrain(world_terrain: WorldTerrain) -> str:
     """
     result = mongo_world_terrain.insert_one(class_to_dict(world_terrain))
     redis_db.delete(redis_world_terrain_prefix + str(result.inserted_id))
+    redis_db.delete(redis_world_terrain_prefix + world_terrain.name)
     return str(result.inserted_id)
 
 

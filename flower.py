@@ -1124,14 +1124,14 @@ class WorldControlHandler:
         if message == '创建人物':
             person: Person = world_handler.random_person()
             return str(person)
-        elif message[:4] == '世界地区':
+        elif message[:4] == '世界种族':
             data = message[4:].strip()
-            world_area: WorldArea = flower_dao.select_world_area_by_name(data)
-            if not world_area.valid() and ObjectId.is_valid(data):
-                world_area: WorldArea = flower_dao.select_world_area(data)
-            if not world_area.valid():
-                raise ResourceNotFound('不存在世界地区“%s”，既不是id也不是名字' % data)
-            return str(world_area)
+            race: Race = flower_dao.select_world_race_by_name(data)
+            if not race.valid() and ObjectId.is_valid(data):
+                race: Race = flower_dao.select_world_race(data)
+            if not race.valid():
+                raise ResourceNotFound('不存在世界种族“%s”' % data)
+            return str(race)
         elif message[:4] == '世界地形':
             data = message[4:].strip()
             world_terrain: WorldTerrain = flower_dao.select_world_terrain_by_name(data)
@@ -1140,6 +1140,42 @@ class WorldControlHandler:
             if not world_terrain.valid():
                 raise ResourceNotFound('不存在世界地形“%s”，既不是id也不是名字' % data)
             return str(world_terrain)
+        elif message[:4] == '世界地区':
+            data = message[4:].strip()
+            world_area: WorldArea = flower_dao.select_world_area_by_name(data)
+            if not world_area.valid() and ObjectId.is_valid(data):
+                world_area: WorldArea = flower_dao.select_world_area(data)
+            if not world_area.valid():
+                raise ResourceNotFound('不存在世界地区“%s”，既不是id也不是名字' % data)
+            reply: str = '地区名：' + world_area.name
+            reply += '\n描述：' + world_area.description
+            reply += '\n地形：'
+            terrain: WorldTerrain = flower_dao.select_world_terrain(world_area.terrain_id)
+            reply += terrain.name
+            reply += '\n主要种族：'
+            if world_area.race_id == '':
+                reply += '无'
+            else:
+                race: Race = flower_dao.select_world_race(world_area.race_id)
+                reply += race.name
+            reply += '\n连通地区：'
+            for path in world_area.path_list:
+                target_area: WorldArea = flower_dao.select_world_area(path.target_area_id)
+                reply += '\n%s' % target_area.name
+            return reply
+        elif message[:4] == '世界帝国':
+            data = message[4:].strip()
+            kingdom: Kingdom = flower_dao.select_kingdom_by_name(data)
+            if not kingdom.valid() and ObjectId.is_valid(data):
+                kingdom: Kingdom = flower_dao.select_kingdom(data)
+            if not kingdom.valid():
+                raise ResourceNotFound('不存在世界帝国“%s”，既不是id也不是名字' % data)
+            reply: str = '名字：' + kingdom.name
+            reply += '\n控制地区：'
+            for area_id in kingdom.area_id_list:
+                target_area: WorldArea = flower_dao.select_world_area(area_id)
+                reply += '\n%s' % target_area.name
+            return reply
         return ''
 
 
