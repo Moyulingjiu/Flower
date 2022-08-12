@@ -5,6 +5,8 @@
 import random
 from typing import List
 
+import numpy as np
+
 import flower_dao
 import global_config
 from global_config import logger
@@ -53,20 +55,20 @@ def random_person() -> Person:
     person.born_area_id = area.get_id()
     person.world_area_id = area.get_id()
     # 角色的各项属性
-    person.wisdom = random.randint(0, 101)
-    person.leadership = random.randint(0, 101)
-    person.force = random.randint(0, 101)
-    person.affinity = random.randint(0, 101)
-    person.ambition = random.randint(0, 101)
-    person.health = random.randint(0, 101)
-    person.appearance = random.randint(0, 101)
+    person.wisdom = int(np.random.randint(50, 15, 1)[0])
+    person.leadership = int(np.random.randint(50, 15, 1)[0])
+    person.force = int(np.random.randint(50, 15, 1)[0])
+    person.affinity = int(np.random.randint(50, 15, 1)[0])
+    person.ambition = int(np.random.randint(50, 15, 1)[0])
+    person.health = int(np.random.randint(50, 15, 1)[0])
+    person.appearance = int(np.random.randint(50, 15, 1)[0])
     # 角色的性格
-    person.justice_or_evil = random.randint(0, 101)
-    person.extroversion_or_introversion = random.randint(0, 101)
-    person.bravery_or_cowardly = random.randint(0, 101)
-    person.rational_or_sensual = random.randint(0, 101)
-    person.hedonic_or_computation = random.randint(0, 101)
-    person.selfish_or_generous = random.randint(0, 101)
+    person.justice_or_evil = int(np.random.randint(50, 15, 1)[0])
+    person.extroversion_or_introversion = int(np.random.randint(50, 15, 1)[0])
+    person.bravery_or_cowardly = int(np.random.randint(50, 15, 1)[0])
+    person.rational_or_sensual = int(np.random.randint(50, 15, 1)[0])
+    person.hedonic_or_computation = int(np.random.randint(50, 15, 1)[0])
+    person.selfish_or_generous = int(np.random.randint(50, 15, 1)[0])
     # 根据健康值来确定角色的最大年龄
     if person.health < 20:
         person.max_age = random.randint(1, 30)
