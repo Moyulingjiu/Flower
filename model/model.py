@@ -1165,7 +1165,7 @@ class User(EntityClass):
                  sign_continuous: int = 0, draw_card_number: int = 5, beginner_pack: bool = False,
                  warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), mailbox: MailBox = MailBox(),
                  buff: List[DecorateBuff] = None, achievement: Dict[str, DecorateAchievement] = None,
-                 born_city_id: str = '', city_id: str = '',
+                 born_city_id: str = '', city_id: str = '', knowledge: Dict[str, int] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -1195,6 +1195,10 @@ class User(EntityClass):
 
         self.born_city_id = born_city_id  # 出生城市id
         self.city_id = city_id  # 当前城市id
+
+        if knowledge is None:
+            knowledge = {}
+        self.knowledge = knowledge  # 花的知识
 
     def get_total_buff(self, cal_datetime: datetime) -> DecorateBuff:
         total_buff: DecorateBuff = DecorateBuff()
@@ -1335,7 +1339,7 @@ class SystemData:
             admin_right_qq = []
         self.admin_right_qq = admin_right_qq  # 拥有admin权限的QQ
         self.test_version = test_version  # 是否在测试版本（如果在测试版本，那么所有人都拥有master权限）
-        
+
         if white_token_list is None:
             white_token_list = []
         self.white_token_list = white_token_list  # 允许访问的token白名单

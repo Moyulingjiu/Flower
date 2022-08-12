@@ -61,7 +61,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 name: str = message[3:].strip()
                 if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询花 名字”')
-                reply = FlowerService.query_flower(name)
+                reply = FlowerService.query_flower(qq, username, name)
                 result.reply_text.append(reply)
                 return result
             elif message[:4] == '查询成就':
@@ -76,6 +76,16 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询buff 名字”')
                 reply = FlowerService.view_buff(name)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店物品':
+                data = message[4:].strip()
+                reply = FlowerService.view_item(data)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店天气':
+                data = message[4:].strip()
+                reply = FlowerService.view_weather(data)
                 result.reply_text.append(reply)
                 return result
 
@@ -96,16 +106,6 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 result.reply_text.append(reply)
                 if description != '':
                     result.reply_text.append(description)
-                return result
-            elif message[:4] == '花店物品':
-                data = message[4:].strip()
-                reply = FlowerService.view_item(data)
-                result.reply_text.append(reply)
-                return result
-            elif message[:4] == '花店天气':
-                data = message[4:].strip()
-                reply = FlowerService.view_weather(data)
-                result.reply_text.append(reply)
                 return result
             elif message == '花店农场设备':
                 reply = FlowerService.view_user_farm_equipment(qq, username)
@@ -151,6 +151,18 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise '格式错误！格式“花店buff 【页码】”页码可省略。'
+            elif message[:4] == '花店知识':
+                data = message[4:].strip()
+                try:
+                    if len(data) > 0:
+                        page: int = int(data) - 1
+                    else:
+                        page: int = 0
+                    reply = FlowerService.view_knowledge(qq, username, page)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise '格式错误！格式“花店知识 【页码】”页码可省略。'
 
             # 操作部分
             elif message == '初始化花店':
@@ -786,6 +798,28 @@ class AdminHandler:
             if update_number > 0:
                 return '成功清除' + str(update_number) + '人的buff'
             return '未能清除任何人的buff，请检查是否注册或者序号越界'
+        elif message[:4] == '给予知识':
+            try:
+                data: List[str] = message[4:].strip().split()
+                if len(data) != 2:
+                    raise TypeException('格式错误！格式“给予知识 花名 级别”，最低1级，最高3级')
+                flower_name = data[0]
+                level: int = int(data[1])
+                if level < 1 or level > 3:
+                    raise TypeException('格式错误！格式“给予知识 花名 级别”，最低1级，最高3级')
+                update_number: int = 0
+                if len(at_list) == 0:
+                    if cls.give_knowledge(qq, qq, flower_name, level):
+                        update_number += 1
+                else:
+                    for target_qq in at_list:
+                        if cls.give_knowledge(target_qq, qq, flower_name, level):
+                            update_number += 1
+                if update_number > 0:
+                    return '成功修改' + str(update_number) + '人的知识'
+                return '未能修改任何人的知识'
+            except ValueError:
+                raise TypeException('格式错误！格式“给予知识 花名 级别”，最低1级，最高3级')
         return ''
 
     @classmethod
@@ -1106,6 +1140,27 @@ class AdminHandler:
             else:
                 if 0 <= index < len(user.buff):
                     del user.buff[index]
+            user.update(operator_id)
+            flower_dao.update_user_by_qq(user)
+            return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            util.unlock_user(qq)
+    @classmethod
+    def give_knowledge(cls, qq: int, operator_id: int, flower_name: str, level: int) -> bool:
+        """
+        修改知识
+        :param qq: qq
+        :param operator_id: 操作人员id
+        :param flower_name: 花名
+        :param level: 级别
+        :return: 结果
+        """
+        try:
+            util.lock_user(qq)
+            user: User = util.get_user(qq, '')
+            user.knowledge[flower_name] = level
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
@@ -2062,46 +2117,57 @@ class FlowerService:
         return res
 
     @classmethod
-    def query_flower(cls, name: str) -> str:
+    def query_flower(cls, qq: int, username: str, name: str) -> str:
         """
         查询花
+        :param qq: qq
+        :param username: 用户名
         :param name: 花名
         :return: 结果
         """
+        user: User = util.get_user(qq, username)
         if len(name) > 30:
             return '花名过长'
         flower = flower_dao.select_flower_by_name(name)
         if flower is None or flower.name != name:
             return '没有找到花名' + name
+        if name in user.knowledge:
+            level: int = user.knowledge[name]
+        else:
+            level: int = 0
         res = '名字：' + flower.name
         res += '\n等级：' + FlowerLevel.view_level(flower.level)
-        if len(flower.climate_id) > 0:
-            res += '\n适宜气候：' + util.get_climate_list(flower.climate_id)
-        elif len(flower.op_climate_id) > 0:
-            res += '\n不适宜气候：' + util.get_climate_list(flower.op_climate_id)
-        elif len(flower.climate_id) == 0 and len(flower.op_climate_id) == 0:
-            res += '\n适宜气候：所有气候'
-        if len(flower.soil_id) > 0:
-            res += '\n适宜土壤：' + util.get_soil_list(flower.soil_id)
-        elif len(flower.op_soil_id) > 0:
-            res += '\n不适宜土壤：' + util.get_soil_list(flower.op_soil_id)
-        elif len(flower.soil_id) == 0 and len(flower.op_soil_id) == 0:
-            res += '\n适宜土壤：所有土壤'
 
-        res += '\n吸收水分：' + str(flower.water_absorption) + '/小时'
-        res += '\n吸收营养：' + str(flower.nutrition_absorption) + '/小时'
-        res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
+        if level >= 1:
+            if len(flower.climate_id) > 0:
+                res += '\n适宜气候：' + util.get_climate_list(flower.climate_id)
+            elif len(flower.op_climate_id) > 0:
+                res += '\n不适宜气候：' + util.get_climate_list(flower.op_climate_id)
+            elif len(flower.climate_id) == 0 and len(flower.op_climate_id) == 0:
+                res += '\n适宜气候：所有气候'
+            if len(flower.soil_id) > 0:
+                res += '\n适宜土壤：' + util.get_soil_list(flower.soil_id)
+            elif len(flower.op_soil_id) > 0:
+                res += '\n不适宜土壤：' + util.get_soil_list(flower.op_soil_id)
+            elif len(flower.soil_id) == 0 and len(flower.op_soil_id) == 0:
+                res += '\n适宜土壤：所有土壤'
 
-        res += '\n种子：'
-        res += '\n\t周期：' + str(flower.seed_time) + '小时'
-        res += util.show_conditions(flower.seed_condition)
-        res += '\n幼苗：'
-        res += '\n\t周期：' + str(flower.grow_time) + '小时'
-        res += util.show_conditions(flower.grow_condition)
-        res += '\n成熟：'
-        res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
-        res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
-        res += util.show_conditions(flower.mature_condition)
+        if level >= 2:
+            res += '\n吸收水分：' + str(flower.water_absorption) + '/小时'
+            res += '\n吸收营养：' + str(flower.nutrition_absorption) + '/小时'
+            res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
+
+        if level >= 3:
+            res += '\n种子：'
+            res += '\n\t周期：' + str(flower.seed_time) + '小时'
+            res += util.show_conditions(flower.seed_condition)
+            res += '\n幼苗：'
+            res += '\n\t周期：' + str(flower.grow_time) + '小时'
+            res += util.show_conditions(flower.grow_condition)
+            res += '\n成熟：'
+            res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
+            res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
+            res += util.show_conditions(flower.mature_condition)
 
         return res
 
@@ -2474,6 +2540,45 @@ class FlowerService:
             if total % page_size > 0:
                 total_page += 1
             reply += '\n------\n当前页码：%d/%d，输入“花店成就 %d”查看下一页' % (page + 1, total_page, page + 2)
+        return reply
+
+    @classmethod
+    def view_knowledge(cls, qq: int, username: str, page: int = 0, page_size: int = 20) -> str:
+        """
+        查看成就
+        :param qq:
+        :param username:
+        :param page:
+        :param page_size:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        reply: str = '%s，你的知识如下：' % user.username
+        if len(user.knowledge) == 0:
+            reply += '\n你的知识看起来还空空如也'
+            return reply
+        index = -1
+        for flower_name in user.knowledge:
+            index += 1
+            if index < page * page_size:
+                continue
+            elif index > (page + 1) * page_size:
+                break
+            reply += '\n' + str(flower_name)
+            if user.knowledge[flower_name] >= 3:
+                reply += '大师'
+            elif user.knowledge[flower_name] == 2:
+                reply += '熟悉'
+            elif user.knowledge[flower_name] == 1:
+                reply += '了解'
+            else:
+                reply += '不了解'
+        total = len(user.knowledge)
+        if total > page_size:
+            total_page = total // page_size
+            if total % page_size > 0:
+                total_page += 1
+            reply += '\n------\n当前页码：%d/%d，输入“花店知识 %d”查看下一页' % (page + 1, total_page, page + 2)
         return reply
 
     @classmethod
