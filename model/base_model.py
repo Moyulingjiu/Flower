@@ -9,8 +9,71 @@ from typing import List
 from pydantic import BaseModel
 
 __all__ = [
-    "Gender", "InnerClass", "EntityClass", "Result"
+    "Message", "OriginMail", "Response", "Result",
+    "Gender", "InnerClass", "EntityClass"
 ]
+
+
+class Result(BaseModel):
+    """
+    返回类
+    """
+
+    context_reply_text: List[str] = []
+    context_reply_image: List[str] = []
+    reply_text: List[str] = []
+    reply_image: List[str] = []
+    at_list: List[int] = None
+
+    @classmethod
+    def init(cls, context_reply_text: List[str] = None, context_reply_image: List[str] = None,
+             reply_text: List[str] or str = None, reply_image: List[str] or str = None,
+             at_list: List[int] = None) -> 'Result':
+        if context_reply_text is None:
+            context_reply_text = []
+        if context_reply_image is None:
+            context_reply_image = []
+
+        if reply_text is None:
+            reply_text = []
+        elif isinstance(reply_text, str):
+            reply_text = [reply_text]
+
+        if reply_image is None:
+            reply_image = []
+        elif isinstance(reply_image, str):
+            reply_image = [reply_image]
+
+        if at_list is None:
+            at_list = []
+
+        return Result(context_reply_text=context_reply_text, context_reply_image=context_reply_image,
+                      reply_text=reply_text, reply_image=reply_image, at_list=at_list)
+
+
+class Message(BaseModel):
+    message: str
+    qq: int
+    username: str
+    bot_qq: int
+    bot_name: str
+    at_list: List[int]
+
+
+class OriginMail(BaseModel):
+    token: str  # 验证身份
+    username: str  # 寄件人，可能会用名义去送（而不会实名）
+    target_qq: int  # 谁收到这封
+    title: str  # 标题
+    text: str  # 正文
+    appendix: list  # 附件
+    gold: int  # 附属黄金
+
+
+class Response(BaseModel):
+    code: int
+    message: str
+    data: Result or None
 
 
 class Gender(Enum):
@@ -83,40 +146,3 @@ class EntityClass:
     def update(self, update_id: int or str) -> None:
         self.update_time = datetime.now()
         self.update_id = str(update_id)
-
-
-class Result(BaseModel):
-    """
-    返回类
-    """
-
-    context_reply_text: List[str] = []
-    context_reply_image: List[str] = []
-    reply_text: List[str] = []
-    reply_image: List[str] = []
-    at_list: List[int] = None
-
-    @classmethod
-    def init(cls, context_reply_text: List[str] = None, context_reply_image: List[str] = None,
-             reply_text: List[str] or str = None, reply_image: List[str] or str = None,
-             at_list: List[int] = None) -> 'Result':
-        if context_reply_text is None:
-            context_reply_text = []
-        if context_reply_image is None:
-            context_reply_image = []
-
-        if reply_text is None:
-            reply_text = []
-        elif isinstance(reply_text, str):
-            reply_text = [reply_text]
-
-        if reply_image is None:
-            reply_image = []
-        elif isinstance(reply_image, str):
-            reply_image = [reply_image]
-
-        if at_list is None:
-            at_list = []
-
-        return Result(context_reply_text=context_reply_text, context_reply_image=context_reply_image,
-                      reply_text=reply_text, reply_image=reply_image, at_list=at_list)

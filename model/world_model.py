@@ -163,7 +163,7 @@ class WorldArea(EntityClass):
         reply += '\n描述：%s' % self.description
         reply += '\n连通地区id：'
         for area_path in self.path_list:
-            reply += area_path + '、'
+            reply += area_path.target_area_id + '、'
         if len(self.path_list) > 0:
             reply = reply[:-1]
         return reply

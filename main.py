@@ -2,17 +2,15 @@
 import datetime
 from typing import List
 
-import uvicorn
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
-from pydantic import BaseModel
 
-import global_config  # global_config必须放到第一位来，进行配置的初始化
 # 导入花店需要的辅助类
 import flower
 import flower_dao
+import global_config  # global_config必须放到第一位来，进行配置的初始化
 import util
 from flower_exceptions import UserNotRegisteredException, ResBeLockedException
 from global_config import logger
@@ -75,31 +73,6 @@ async def start_event():
     scheduler.start()
     logger.info('背景任务已启动')
     logger.info('FastApi已启动')
-
-
-class Message(BaseModel):
-    message: str
-    qq: int
-    username: str
-    bot_qq: int
-    bot_name: str
-    at_list: List[int]
-
-
-class OriginMail(BaseModel):
-    token: str  # 验证身份
-    username: str  # 寄件人，可能会用名义去送（而不会实名）
-    target_qq: int  # 谁收到这封
-    title: str  # 标题
-    text: str  # 正文
-    appendix: list  # 附件
-    gold: int  # 附属黄金
-
-
-class Response(BaseModel):
-    code: int
-    message: str
-    data: Result or None
 
 
 @app.get("/calibration")

@@ -7,6 +7,7 @@ from model.base_model import *
 from model.stock_market_model import *
 
 __all__ = [
+    "Message", "OriginMail", "Response", "Result",
     "InnerClass", "Gender",
     "FixPointNumber",
     "Region", "Terrain", "Climate", "Soil", "City",
@@ -14,7 +15,7 @@ __all__ = [
     "Cat", "DecorateCat", "Dog", "DecorateDog", "Commodity", "UserPerson",
     "User", "SignRecord", "Weather", "FlowerState", "Mail", "MailBox", "Clothing",
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
-    "Result", "SystemData", "Announcement", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
+    "SystemData", "Announcement", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
     
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person", "PathModel",
     
