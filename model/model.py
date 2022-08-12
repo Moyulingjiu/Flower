@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from model.base_model import *
 
@@ -11,7 +11,7 @@ __all__ = [
     "FlowerLevel", "Flower", "Weather", "ItemType", "FlowerQuality", "Item", "DecorateItem",
     "WareHouse", "Horse", "DecorateHorse", "Dog", "DecorateDog", "Cat", "DecorateCat", "FlowerState",
     "Farm", "SignRecord", "Mail", "MailBox", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
-    "User", "SystemData", "Announcement", "Commodity", "UserPerson"
+    "User", "SystemData", "Announcement", "Commodity", "UserPerson", "Clothing"
 ]
 
 
@@ -336,6 +336,18 @@ class ItemType(Enum):
     greenhouse = 'greenhouse'  # 温室（适用于农场）
     warehouse = 'warehouse'  # 仓库（适用于农场）
 
+    hat = 'hat'  # 帽子
+    clothes = 'clothes'  # 衣服
+    dress = 'dress'  # 连衣裙
+    trousers = 'trousers'  # 裤子
+    shoes = 'shoes'  # 鞋子
+    glove = 'glove'  # 手套
+    necklace = 'necklace'  # 项链
+    bracelet = 'bracelet'  # 手链
+    foot_ring = 'foot_ring'  # 脚链
+    cape = 'cape'  # 披风
+    coat = 'coat'  # 外套
+
     @classmethod
     def view_name(cls, item_type) -> str:
         if item_type == cls.unknown:
@@ -364,6 +376,28 @@ class ItemType(Enum):
             return '温室'
         elif item_type == cls.warehouse:
             return '仓库'
+        elif item_type == cls.hat:
+            return '帽子'
+        elif item_type == cls.clothes:
+            return '衣服'
+        elif item_type == cls.dress:
+            return '连衣裙'
+        elif item_type == cls.trousers:
+            return '裤子'
+        elif item_type == cls.shoes:
+            return '鞋子'
+        elif item_type == cls.glove:
+            return '手套'
+        elif item_type == cls.necklace:
+            return '项链'
+        elif item_type == cls.bracelet:
+            return '手链'
+        elif item_type == cls.foot_ring:
+            return '脚链'
+        elif item_type == cls.cape:
+            return '披风'
+        elif item_type == cls.coat:
+            return '外套'
         return ''
 
     @classmethod
@@ -394,6 +428,28 @@ class ItemType(Enum):
             return cls.greenhouse
         elif item_type == str(cls.warehouse):
             return cls.warehouse
+        elif item_type == str(cls.hat):
+            return cls.hat
+        elif item_type == str(cls.clothes):
+            return cls.clothes
+        elif item_type == str(cls.dress):
+            return cls.dress
+        elif item_type == str(cls.trousers):
+            return cls.trousers
+        elif item_type == str(cls.shoes):
+            return cls.shoes
+        elif item_type == str(cls.glove):
+            return cls.glove
+        elif item_type == str(cls.necklace):
+            return cls.necklace
+        elif item_type == str(cls.bracelet):
+            return cls.bracelet
+        elif item_type == str(cls.foot_ring):
+            return cls.foot_ring
+        elif item_type == str(cls.cape):
+            return cls.cape
+        elif item_type == str(cls.coat):
+            return cls.coat
         return cls.unknown
 
     @classmethod
@@ -1154,6 +1210,29 @@ class DecorateAchievement(InnerClass):
         return self.__lt__(other) or self.__eq__(other)
 
 
+class Clothing(InnerClass):
+    """
+    衣服
+    """
+
+    def __init__(self, hat: DecorateItem = DecorateItem(), clothes: DecorateItem = DecorateItem(),
+                 trousers: DecorateItem = DecorateItem(), shoes: DecorateItem = DecorateItem(),
+                 glove: DecorateItem = DecorateItem(), necklace: DecorateItem = DecorateItem(),
+                 bracelet: DecorateItem = DecorateItem(), foot_ring: DecorateItem = DecorateItem(),
+                 cape: DecorateItem = DecorateItem(), coat: DecorateItem = DecorateItem()):
+        super().__init__('Clothing')
+        self.hat = hat  # 帽子
+        self.clothes = clothes  # 衣服
+        self.trousers = trousers  # 裤子
+        self.shoes = shoes  # 鞋子
+        self.glove = glove  # 手套
+        self.necklace = necklace  # 项链
+        self.bracelet = bracelet  # 手链
+        self.foot_ring = foot_ring  # 脚链
+        self.cape = cape  # 披风
+        self.coat = coat  # 外套
+
+
 class User(EntityClass):
     """
     用户类
@@ -1166,6 +1245,7 @@ class User(EntityClass):
                  warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), mailbox: MailBox = MailBox(),
                  buff: List[DecorateBuff] = None, achievement: Dict[str, DecorateAchievement] = None,
                  born_city_id: str = '', city_id: str = '', knowledge: Dict[str, int] = None,
+                 clothing: Clothing = Clothing(),
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -1199,6 +1279,7 @@ class User(EntityClass):
         if knowledge is None:
             knowledge = {}
         self.knowledge = knowledge  # 花的知识
+        self.clothing = clothing  # 衣服
 
     def get_total_buff(self, cal_datetime: datetime) -> DecorateBuff:
         total_buff: DecorateBuff = DecorateBuff()
@@ -1249,7 +1330,7 @@ class UserPerson(EntityClass):
     """
 
     def __init__(self, qq: int = 0, person_id: str = '', commodities: List[Commodity] = None, news: List[str] = None,
-                 send_mail_price: int = 0,
+                 send_mail_price: int = 0, knowledge: Dict[str, Tuple[int, int]] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -1262,6 +1343,9 @@ class UserPerson(EntityClass):
             news = []
         self.news = news  # 小道消息
         self.send_mail_price = send_mail_price  # 发送mail的价格，为0表示无法发送
+        if knowledge is None:
+            knowledge = {}
+        self.knowledge = knowledge  # 知识 {花名： (等级，价格)}
 
 
 class SystemData:

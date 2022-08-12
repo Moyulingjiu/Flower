@@ -163,6 +163,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise '格式错误！格式“花店知识 【页码】”页码可省略。'
+            elif message == '花店时装':
+                reply = FlowerService.view_user_clothing(qq, username)
+                result.reply_text.append(reply)
+                return result
 
             # 操作部分
             elif message == '初始化花店':
@@ -2445,6 +2449,25 @@ class FlowerService:
         if not buff.valid():
             return 'BUFF“%s”不存在' % buff_name
         return str(buff)
+
+    @classmethod
+    def view_user_clothing(cls, qq: int, username: str) -> str:
+        """
+        展示时装
+        """
+        user: User = util.get_user(qq, username)
+        reply: str = user.username + '，你的时装如下：'
+        reply += '\n帽子：' + str(user.clothing.hat)
+        reply += '\n衣服：' + str(user.clothing.clothes)
+        reply += '\n裤子：' + str(user.clothing.trousers)
+        reply += '\n鞋子：' + str(user.clothing.shoes)
+        reply += '\n手套：' + str(user.clothing.glove)
+        reply += '\n项链：' + str(user.clothing.necklace)
+        reply += '\n手链：' + str(user.clothing.bracelet)
+        reply += '\n脚链：' + str(user.clothing.foot_ring)
+        reply += '\n披风：' + str(user.clothing.cape)
+        reply += '\n外套：' + str(user.clothing.coat)
+        return reply
 
     @classmethod
     def delete_mail(cls, qq: int, username: str, mail_index: int = 0) -> str:
