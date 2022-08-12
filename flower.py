@@ -1142,7 +1142,9 @@ class WorldControlHandler:
                 mother: Person = flower_dao.select_person(person.mother_id)
                 mother_name = mother.name
             reply += '\n父亲：%s（%s），母亲：%s（%s）' % (father_name, person.father_id, mother_name, person.mother_id)
-            reply += '\n出生地：%s，现在所在地：%s' % (person.born_area_id, person.world_area_id)
+            born_area: WorldArea = flower_dao.select_world_area(person.born_area_id)
+            area: WorldArea = flower_dao.select_world_area(person.world_area_id)
+            reply += '\n出生地：%s，现在所在地：%s' % (born_area.name, area.name)
             kingdom: Kingdom = flower_dao.select_kingdom(person.motherland)
             reply += '\n祖国：%s' % kingdom.name
             race: Race = flower_dao.select_world_race(person.race_id)
