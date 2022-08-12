@@ -1572,6 +1572,7 @@ class ContextHandler:
                         mail.text = context.text
                         mail.username = context.username
                         mail.appendix = context.appendix
+                        mail.gold = gold
                         mail.arrived = True  # 已经抵达
                         mail.status = '由系统直接送达'
                         reply = ''
