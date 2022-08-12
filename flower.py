@@ -1133,6 +1133,7 @@ class WorldControlHandler:
                 reply += '（已于%s死亡）' % person.die_time.strftime('%Y-%m-%d %H:%M:%S')
                 reply += '\n死亡原因：%s' % person.die_reason
             reply += '\n性别：%s，性取向：%s' % (person.gender.show(), person.sexual_orientation.show())
+            reply += '\n身高：%.2fm，体重：%.2fkg' % (person.height, person.weight)
             father_name: str = ''
             if person.father_id != '':
                 father: Person = flower_dao.select_person(person.father_id)

@@ -50,6 +50,14 @@ def random_person() -> Person:
     person_name: PersonName = flower_dao.select_random_person_name(Gender.male)
     person.name = random.choice(last_name_list).value + person_name.value
 
+    # 给予身高
+    if person.gender == Gender.male:
+        person.height = random.random() * (2.1 - 1.5) + 1.5
+        person.weight = random.random() * (100.0 - 45.0) + 45.0
+    else:
+        person.height = random.random() * (1.9 - 1.3) + 1.3
+        person.weight = random.random() * (100.0 - 35.0) + 35.0
+
     # 出生地
     area_list: List[WorldArea] = flower_dao.select_all_world_area()
     area: WorldArea = random.choice(area_list)

@@ -215,6 +215,7 @@ class Person(EntityClass):
     """
 
     def __init__(self, name: str = '', gender: Gender = Gender.male, sexual_orientation: Gender = Gender.female,
+                 height: float = 0.0, weight: float = 0.0,
                  spouse_id: str = '', predecessor: List[Tuple[str, datetime]] = None, relationships: List[str] = None,
                  children: List[str] = None, father_id: str = '', mother_id: str = '', motherland: str = '',
                  die: bool = False, die_time: datetime = datetime.now(), max_age: int = 0, die_reason: str = '',
@@ -231,6 +232,8 @@ class Person(EntityClass):
         self.name = name  # 名字
         self.gender = gender  # 性别
         self.sexual_orientation = sexual_orientation  # 性取向
+        self.height = height  # 身高
+        self.weight = weight  # 体重
         self.spouse_id = spouse_id  # 伴侣
         if predecessor is None:
             predecessor = []
@@ -292,6 +295,7 @@ class Person(EntityClass):
             reply += '（已于%s死亡）' % self.die_time.strftime('%Y-%m-%d %H:%M:%S')
             reply += '\n死亡原因：%s' % self.die_reason
         reply += '\n性别：%s，性取向：%s' % (self.gender.show(), self.sexual_orientation.show())
+        reply += '\n身高：%.2fm，体重：%.2fkg' % (self.height, self.weight)
         reply += '\n父亲：%s，母亲：%s' % (self.father_id, self.mother_id)
         reply += '\n出生地：%s，现在所在地：%s' % (self.born_area_id, self.world_area_id)
         reply += '\n祖国：%s' % self.motherland
