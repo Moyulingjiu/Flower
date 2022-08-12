@@ -1577,7 +1577,31 @@ class ContextHandler:
                         reply = ''
                         update_number: int = 0
                         if context.send_all_user:
-                            reply = '暂未实现'
+                            total_user_number: int = flower_dao.select_all_user_number()
+                            page_size: int = 20
+                            page: int = -1
+                            while total_user_number > 0:
+                                total_user_number -= page_size
+                                page += 1
+                                user_list: List[User] = flower_dao.select_all_user(page=page, page_size=page_size)
+                                for user in user_list:
+                                    target_qq: int = user.qq
+                                    try:
+                                        if target_qq != qq:
+                                            util.lock_user(target_qq)
+                                        user: User = util.get_user(target_qq)
+                                        mail.target_qq = target_qq
+                                        mail_id: str = flower_dao.insert_mail(mail)
+                                        user.mailbox.mail_list.append(mail_id)
+                                        flower_dao.update_user_by_qq(user)
+                                        update_number += 1
+                                    except UserNotRegisteredException:
+                                        reply += str(target_qq) + '，未注册\n'
+                                    except ResBeLockedException:
+                                        reply += str(target_qq) + '，无法发送信件\n'
+                                    finally:
+                                        if target_qq != qq:
+                                            util.unlock_user(target_qq)
                         else:
                             for target_qq in context.addressee:
                                 try:
