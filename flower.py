@@ -802,11 +802,11 @@ class AdminHandler:
             try:
                 data: List[str] = message[4:].strip().split()
                 if len(data) != 2:
-                    raise TypeException('格式错误！格式“给予知识 花名 级别”，最低1级，最高3级')
+                    raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高3级')
                 flower_name = data[0]
                 level: int = int(data[1])
                 if level < 1 or level > 3:
-                    raise TypeException('格式错误！格式“给予知识 花名 级别”，最低1级，最高3级')
+                    raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高3级')
                 update_number: int = 0
                 if len(at_list) == 0:
                     if cls.give_knowledge(qq, qq, flower_name, level):
@@ -819,7 +819,23 @@ class AdminHandler:
                     return '成功修改' + str(update_number) + '人的知识'
                 return '未能修改任何人的知识'
             except ValueError:
-                raise TypeException('格式错误！格式“给予知识 花名 级别”，最低1级，最高3级')
+                raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高3级')
+        elif message[:4] == '删除知识':
+            data = message[4:].strip()
+            if len(data) == 0:
+                raise TypeException('格式错误！格式“@xxx 删除知识 花名”')
+            update_number: int = 0
+            if len(at_list) == 0:
+                if cls.remove_knowledge(qq, qq, data):
+                    update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.remove_knowledge(target_qq, qq, data):
+                        update_number += 1
+            if update_number > 0:
+                return '成功删除' + str(update_number) + '人的知识'
+            return '未能删除任何人的知识\n' \
+                   '可能是：目标没有该知识、目标没有注册'
         return ''
 
     @classmethod
@@ -1147,6 +1163,7 @@ class AdminHandler:
             return False
         finally:
             util.unlock_user(qq)
+
     @classmethod
     def give_knowledge(cls, qq: int, operator_id: int, flower_name: str, level: int) -> bool:
         """
@@ -1164,6 +1181,30 @@ class AdminHandler:
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
+        except UserNotRegisteredException:
+            return False
+        finally:
+            util.unlock_user(qq)
+
+    @classmethod
+    def remove_knowledge(cls, qq: int, operator_id: int, flower_name: str) -> bool:
+        """
+        删除知识
+        :param qq: qq
+        :param operator_id: 操作人员id
+        :param flower_name: 花名
+        :return: 结果
+        """
+        try:
+            util.lock_user(qq)
+            user: User = util.get_user(qq, '')
+            if flower_name in user.knowledge:
+                del user.knowledge[flower_name]
+                user.update(operator_id)
+                flower_dao.update_user_by_qq(user)
+                return True
+            else:
+                return False
         except UserNotRegisteredException:
             return False
         finally:
