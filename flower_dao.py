@@ -83,6 +83,10 @@ redis_person_prefix = redis_global_prefix + 'person_'  # npc redis前缀
 redis_relationship_prefix = redis_global_prefix + 'relationship_'  # 关系redis前缀
 redis_all_person_prefix = redis_global_prefix + 'all_person_'  # npc redis前缀
 redis_all_world_area = redis_global_prefix + 'all_world_area'  # 所有地区的redis前缀
+redis_all_race = redis_global_prefix + 'all_race'  # 所有种族的redis前缀
+redis_all_profession = redis_global_prefix + 'all_profession'  # 所有职业的redis前缀
+redis_all_disease = redis_global_prefix + 'all_disease'  # 所有疾病的redis前缀
+redis_all_kingdom = redis_global_prefix + 'all_kingdom'  # 所有帝国的redis前缀
 redis_user_person_prefix = redis_global_prefix + 'user_person_'  # 用户-npc关系
 
 redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
@@ -852,7 +856,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-        
+
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
@@ -952,6 +956,26 @@ def insert_mail(mail: Mail) -> str:
 # 世界模型
 
 
+def select_all_world_race() -> List[Race]:
+    """
+    查询所有种族
+    :return: 种族 的 数组
+    """
+    redis_ans = redis_db.get(redis_all_race)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_race.find({"is_delete": 0})
+        race_list: List[Race] = []
+        for race_result in result:
+            race: Race = Race()
+            dict_to_class(race_result, race)
+            race_list.append(race)
+        redis_db.set(redis_all_race, serialization(race_list),
+                     ex=get_long_random_expire())
+        return race_list
+
+
 def select_world_race(_id: str) -> Race:
     """
     根据id查询世界地形
@@ -995,6 +1019,7 @@ def insert_world_race(world_race: Race) -> str:
     result = mongo_world_race.insert_one(class_to_dict(world_race))
     redis_db.delete(redis_world_race_prefix + str(result.inserted_id))
     redis_db.delete(redis_world_race_prefix + world_race.name)
+    redis_db.delete(redis_all_race)
     return str(result.inserted_id)
 
 
@@ -1106,7 +1131,28 @@ def insert_world_area(world_area: WorldArea) -> str:
     """
     result = mongo_world_area.insert_one(class_to_dict(world_area))
     redis_db.delete(redis_world_area_prefix + str(result.inserted_id))
+    redis_db.delete(redis_all_world_area)
     return str(result.inserted_id)
+
+
+def select_all_kingdom() -> List[Kingdom]:
+    """
+    查询所有种族
+    :return: 种族 的 数组
+    """
+    redis_ans = redis_db.get(redis_all_kingdom)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_kingdom.find({"is_delete": 0})
+        kingdom_list: List[Kingdom] = []
+        for kingdom_result in result:
+            kingdom: Kingdom = Kingdom()
+            dict_to_class(kingdom_result, kingdom)
+            kingdom_list.append(kingdom)
+        redis_db.set(redis_all_kingdom, serialization(kingdom_list),
+                     ex=get_long_random_expire())
+        return kingdom_list
 
 
 def select_kingdom(_id: str) -> Kingdom:
@@ -1151,6 +1197,7 @@ def insert_kingdom(kingdom: Kingdom) -> str:
     """
     result = mongo_kingdom.insert_one(class_to_dict(kingdom))
     redis_db.delete(redis_kingdom_prefix + str(result.inserted_id))
+    redis_db.delete(redis_all_kingdom)
     return str(result.inserted_id)
 
 

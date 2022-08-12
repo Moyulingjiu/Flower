@@ -1125,7 +1125,46 @@ class WorldControlHandler:
         system_data: SystemData = util.get_system_data()
         if message == '创建人物':
             person: Person = world_handler.random_person()
-            return str(person)
+            reply = 'id:%s' % person.get_id()
+            reply += '\n名字：%s' % person.name
+            reply += '\n年龄：%d/%d岁' % (
+                ((datetime.now() - person.born_time).total_seconds() // (24 * 3600)), person.max_age)
+            if person.die:
+                reply += '（已于%s死亡）' % person.die_time.strftime('%Y-%m-%d %H:%M:%S')
+                reply += '\n死亡原因：%s' % person.die_reason
+            reply += '\n性别：%s，性取向：%s' % (person.gender.show(), person.sexual_orientation.show())
+            father_name: str = ''
+            if person.father_id != '':
+                father: Person = flower_dao.select_person(person.father_id)
+                father_name = father.name
+            mother_name: str = ''
+            if person.father_id != '':
+                mother: Person = flower_dao.select_person(person.mother_id)
+                mother_name = mother.name
+            reply += '\n父亲：%s（%s），母亲：%s（%s）' % (father_name, person.father_id, mother_name, person.mother_id)
+            reply += '\n出生地：%s，现在所在地：%s' % (person.born_area_id, person.world_area_id)
+            kingdom: Kingdom = flower_dao.select_kingdom(person.motherland)
+            reply += '\n祖国：%s' % kingdom.name
+            race: Race = flower_dao.select_world_race(person.race_id)
+            reply += '\n种族：%s' % race.name
+            reply += '\n疾病：%s' % person.disease_id
+            reply += '\n职业：%s' % person.profession_id
+            reply += '\n' + ('-' * 6)
+            reply += '\n基础属性：'
+            reply += '\n智慧：%d，领导力：%d，武力：%d，亲和力：%d，野心：%d，健康：%d，外貌：%d' % (
+                person.wisdom, person.leadership, person.force, person.affinity, person.ambition, person.health,
+                person.appearance
+            )
+            reply += '\n外貌描述：%s' % person.appearance_description
+            reply += '\n' + ('-' * 6)
+            reply += '\n性格（以下描述词越小越靠近左边的词，越大越靠近右边的词）'
+            reply += '\n邪恶/正义：%d' % person.justice_or_evil
+            reply += '\n内向/外向：%d' % person.extroversion_or_introversion
+            reply += '\n胆怯/勇敢：%d' % person.bravery_or_cowardly
+            reply += '\n感性/理智：%d' % person.rational_or_sensual
+            reply += '\n节俭/享乐：%d' % person.hedonic_or_computation
+            reply += '\n自私/大方：%d' % person.selfish_or_generous
+            return reply
         elif message[:4] == '世界种族':
             data = message[4:].strip()
             if ObjectId.is_valid(data):

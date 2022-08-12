@@ -35,7 +35,6 @@ def random_person() -> Person:
     """
     随机凭空生成一个人物（没有父母）
     """
-    area_list: List[WorldArea] = flower_dao.select_all_world_area()
     person: Person = Person()
     person.gender = random.choice([Gender.male, Gender.female])
     # 有3%的概率性取向异常
@@ -50,11 +49,28 @@ def random_person() -> Person:
     last_name_list: List[PersonLastName] = flower_dao.select_all_person_last_name()
     person_name: PersonName = flower_dao.select_random_person_name(Gender.male)
     person.name = random.choice(last_name_list).value + person_name.value
-    
+
     # 出生地
-    area = random.choice(area_list)
+    area_list: List[WorldArea] = flower_dao.select_all_world_area()
+    area: WorldArea = random.choice(area_list)
     person.born_area_id = area.get_id()
     person.world_area_id = area.get_id()
+    # 有80%的概率为该地区的主要种族
+    if random.randint(1, 100) > 80 or area.race_id == '':
+        race_list: List[Race] = flower_dao.select_all_world_race()
+        race: Race = random.choice(race_list)
+        person.race_id = race.get_id()
+    else:
+        person.race_id = area.race_id
+    # 该地区所在的帝国为其祖国
+    kingdom_list: List[Kingdom] = flower_dao.select_all_kingdom()
+    for kingdom in kingdom_list:
+        if area.get_id() in kingdom.area_id_list:
+            person.motherland = kingdom.get_id()
+            break
+    if person.motherland == '':
+        person.motherland = random.choice(kingdom_list).get_id()
+
     # 角色的各项属性
     person.wisdom = int(np.random.normal(50, 15, 1)[0])
     person.leadership = int(np.random.normal(50, 15, 1)[0])
