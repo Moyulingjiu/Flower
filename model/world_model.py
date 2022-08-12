@@ -127,14 +127,15 @@ class PathModel(InnerClass):
     """
 
     def __init__(self, target_area_id: str = '', distance: float = 0, driving_price: int = 0, sail_price: int = 0,
-                 difficulty: int = 0):
+                 difficulty: int = 0, death_probability: float = 0.0):
         super().__init__('PathModel')
 
-        self.target_area_id = target_area_id
-        self.distance = distance
-        self.driving_price = driving_price
-        self.sail_price = sail_price
-        self.difficulty = difficulty
+        self.target_area_id = target_area_id  # 目的地id
+        self.distance = distance  # 距离
+        self.driving_price = driving_price  # 陆行价格
+        self.sail_price = sail_price  # 航行价格
+        self.difficulty = difficulty  # 难度
+        self.death_probability = death_probability  # 死亡概率
 
 
 class WorldArea(EntityClass):

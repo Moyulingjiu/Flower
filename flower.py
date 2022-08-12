@@ -45,39 +45,41 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             # 数据查询部分
             if message[:4] == '查询城市':
                 name: str = message[4:].strip()
-                if len(name) == 0:
+                if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询城市 名字”')
                 reply = FlowerService.query_city(name)
                 result.reply_text.append(reply)
                 return result
             elif message[:4] == '查询土壤':
                 name: str = message[4:].strip()
-                if len(name) == 0:
+                if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询土壤 名字”')
                 reply = FlowerService.query_soil(name)
                 result.reply_text.append(reply)
                 return result
             elif message[:3] == '查询花':
                 name: str = message[3:].strip()
-                if len(name) == 0:
+                if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询花 名字”')
                 reply = FlowerService.query_flower(name)
                 result.reply_text.append(reply)
                 return result
             elif message[:4] == '查询成就':
                 name: str = message[4:].strip()
-                if len(name) == 0:
+                if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询成就 名字”')
                 reply = FlowerService.view_achievement(name)
                 result.reply_text.append(reply)
                 return result
             elif message[:6].lower() == '查询buff':
                 name: str = message[6:].strip()
-                if len(name) == 0:
+                if len(name) == 0 or ObjectId.is_valid(name):
                     raise TypeException('格式错误！格式“查询buff 名字”')
                 reply = FlowerService.view_buff(name)
                 result.reply_text.append(reply)
                 return result
+
+            # 查看自己数据的部分
             elif message == '花店数据':
                 reply = FlowerService.view_user_data(qq, username)
                 result.reply_text.append(reply)
