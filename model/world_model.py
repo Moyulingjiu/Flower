@@ -115,7 +115,7 @@ class WorldTerrain(EntityClass):
         self.name = name  # 世界地形名
 
     def __str__(self):
-        return '地姓：' + self.name
+        return '地形：' + self.name
 
     def __repr__(self):
         return self.__str__()
@@ -126,7 +126,7 @@ class PathModel(InnerClass):
     连通图
     """
 
-    def __init__(self, target_area_id: str = '', distance: int = 0, driving_price: int = 0, sail_price: int = 0,
+    def __init__(self, target_area_id: str = '', distance: float = 0, driving_price: int = 0, sail_price: int = 0,
                  difficulty: int = 0):
         super().__init__('PathModel')
 
