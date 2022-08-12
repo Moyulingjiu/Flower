@@ -3,6 +3,7 @@
 世界管理器
 """
 import random
+from datetime import datetime, timedelta
 from typing import List
 
 import numpy as np
@@ -55,20 +56,20 @@ def random_person() -> Person:
     person.born_area_id = area.get_id()
     person.world_area_id = area.get_id()
     # 角色的各项属性
-    person.wisdom = int(np.random.randint(50, 15, 1)[0])
-    person.leadership = int(np.random.randint(50, 15, 1)[0])
-    person.force = int(np.random.randint(50, 15, 1)[0])
-    person.affinity = int(np.random.randint(50, 15, 1)[0])
-    person.ambition = int(np.random.randint(50, 15, 1)[0])
-    person.health = int(np.random.randint(50, 15, 1)[0])
-    person.appearance = int(np.random.randint(50, 15, 1)[0])
+    person.wisdom = int(np.random.normal(50, 15, 1)[0])
+    person.leadership = int(np.random.normal(50, 15, 1)[0])
+    person.force = int(np.random.normal(50, 15, 1)[0])
+    person.affinity = int(np.random.normal(50, 15, 1)[0])
+    person.ambition = int(np.random.normal(50, 15, 1)[0])
+    person.health = int(np.random.normal(50, 15, 1)[0])
+    person.appearance = int(np.random.normal(50, 15, 1)[0])
     # 角色的性格
-    person.justice_or_evil = int(np.random.randint(50, 15, 1)[0])
-    person.extroversion_or_introversion = int(np.random.randint(50, 15, 1)[0])
-    person.bravery_or_cowardly = int(np.random.randint(50, 15, 1)[0])
-    person.rational_or_sensual = int(np.random.randint(50, 15, 1)[0])
-    person.hedonic_or_computation = int(np.random.randint(50, 15, 1)[0])
-    person.selfish_or_generous = int(np.random.randint(50, 15, 1)[0])
+    person.justice_or_evil = int(np.random.normal(50, 15, 1)[0])
+    person.extroversion_or_introversion = int(np.random.normal(50, 15, 1)[0])
+    person.bravery_or_cowardly = int(np.random.normal(50, 15, 1)[0])
+    person.rational_or_sensual = int(np.random.normal(50, 15, 1)[0])
+    person.hedonic_or_computation = int(np.random.normal(50, 15, 1)[0])
+    person.selfish_or_generous = int(np.random.normal(50, 15, 1)[0])
     # 根据健康值来确定角色的最大年龄
     if person.health < 20:
         person.max_age = random.randint(1, 30)
@@ -80,4 +81,6 @@ def random_person() -> Person:
         person.max_age = random.randint(60, 100)
     else:
         person.max_age = random.randint(60, 125)
+    age: int = random.randint(0, person.max_age - 1)
+    person.born_time = datetime.now() - timedelta(days=age)
     return person
