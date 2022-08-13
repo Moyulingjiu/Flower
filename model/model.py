@@ -250,9 +250,17 @@ class Flower(EntityClass):
         self.level = level  # 花的等级
         self.description = description  # 描述
         
+        if climate_id is None:
+            climate_id = []
         self.climate_id = climate_id  # 适宜的气候id（如果适宜气候id和不适宜都为空，那么表示适宜所有环境）
+        if soil_id is None:
+            soil_id = []
         self.soil_id = soil_id  # 适宜的土壤id
+        if op_climate_id is None:
+            op_climate_id = []
         self.op_climate_id = op_climate_id  # 不适宜的气候id（不能与适宜气候id并存，可能导致bug）
+        if op_soil_id is None:
+            op_soil_id = []
         self.op_soil_id = op_soil_id  # 不适宜的土壤id（不能与适宜的土壤id并存）
         
         # 条件

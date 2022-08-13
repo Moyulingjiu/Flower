@@ -683,7 +683,8 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         real_time_weather = weather
     while start_time <= now:
         soil = update_farm_soil(user, soil, start_time)
-        check_farm_soil_climate_condition(user, flower)
+        if user.farm.flower_id != '':
+            check_farm_soil_climate_condition(user, flower)
         
         update_farm_condition(user, flower, real_time_weather, start_time, soil, start_time)
         if user.farm.flower_id != '' and user.farm.flower_state != FlowerState.withered:
