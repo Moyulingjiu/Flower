@@ -1403,9 +1403,23 @@ def select_relationship_by_pair(src_person: str, dst_person: str) -> Relationshi
         return relationship
 
 
+def update_relationship(relationship: Relationship) -> int:
+    """
+    更新关系
+    :param relationship: 关系
+    :return: id
+    """
+    result = mongo_relationship.update_one({"_id": ObjectId(relationship.get_id())},
+                                           {"$set": class_to_dict(relationship)})
+    redis_db.delete(redis_relationship_prefix + relationship.get_id())
+    redis_db.delete(redis_relationship_prefix + relationship.src_person + '_' + relationship.dst_person,
+                    serialization(relationship))
+    return result.modified_count
+
+
 def insert_relationship(relationship: Relationship) -> str:
     """
-    插入地形
+    插入关系
     :param relationship: 关系
     :return: id
     """
@@ -1542,6 +1556,17 @@ def select_user_person_by_qq(qq: int, select_time: datetime = datetime.now()) ->
         redis_db.set(redis_user_person_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'),
                      serialization(user_person_list), ex=global_config.day_second)
         return user_person_list
+
+
+def update_user_person(user_person: UserPerson) -> int:
+    """
+    更新玩家-npc关联
+    :param user_person: npc
+    :return:
+    """
+    result = mongo_user_person.update_one({"_id": ObjectId(user_person.get_id())}, {"$set": class_to_dict(user_person)})
+    redis_db.delete(redis_user_person_prefix + str(user_person.qq) + '_' + user_person.create_time.strftime('%Y_%m_%d'))
+    return result.modified_count
 
 
 def insert_user_person(user_person: UserPerson) -> str:

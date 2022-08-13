@@ -380,6 +380,38 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise TypeException('格式错误！格式“领取附件 【序号】”，领取某一封信的附件')
+            elif message[:4] == '购买商品':
+                data = message[4:].strip()
+                data_list = data.split(' ')
+                if len(data_list) < 2 or len(data_list) > 3:
+                    raise TypeException('格式错误！格式“购买商品 人物序号 商品序号 数量”数量为1可以省略，'
+                                        '人物序号可以通过命令“花店人物”查看')
+                try:
+                    user_person_id: int = int(data_list[0])
+                    commodity_id: int = int(data_list[1])
+                    if len(data_list) == 3:
+                        number: int = int(data_list[2])
+                    else:
+                        number: int = 1
+                    reply = FlowerService.buy_commodity(qq, username, user_person_id, commodity_id, number)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise TypeException('格式错误！格式“购买商品 人物序号 商品序号 数量”数量为1可以省略，'
+                                        '人物序号可以通过命令“花店人物”查看')
+            elif message[:4] == '购买知识':
+                data = message[4:].strip()
+                data_list = data.split(' ')
+                if len(data_list) != 2:
+                    raise TypeException('格式错误！格式“购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
+                try:
+                    user_person_id: int = int(data_list[0])
+                    flower_name: str = data_list[1]
+                    reply = FlowerService.buy_knowledge(qq, username, user_person_id, flower_name)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise TypeException('格式错误！格式“购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
         
         # 管理员（admin、master）操作
         user_right: UserRight = util.get_user_right(qq)
@@ -2898,7 +2930,7 @@ class FlowerService:
                     else:
                         reply += '\n对' + str(target_qq) + '转账失败，等级相差过大'
                         continue
-                        
+                    
                     target_user.gold += int(gold * ration)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
@@ -3632,6 +3664,119 @@ class FlowerService:
             reply += '\n' + '-' * 6
         util.unlock_user(qq)
         return reply
+    
+    @classmethod
+    def buy_commodity(cls, qq: int, username: str, person_index: int, commodity_index: int, number: int) -> str:
+        """
+        购买商品
+        :param qq:
+        :param username:
+        :param person_index:
+        :param commodity_index:
+        :param number:
+        :return:
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+        if len(user_person_list) == 0:
+            util.generate_today_person(user_person_list, qq)
+        if person_index > 0:
+            person_index -= 1
+        if person_index < 0 or person_index >= len(user_person_list):
+            util.unlock_user(qq)
+            return user.username + '，人物序号超限'
+        user_person: UserPerson = user_person_list[person_index]
+        relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
+        person: Person = flower_dao.select_person(user_person.person_id)
+        profession: Profession = flower_dao.select_profession(person.profession_id)
+        if not relationship.valid():
+            relationship.src_person = user_person.person_id
+            relationship.dst_person = str(qq)
+            relationship.value = person.affinity
+        if commodity_index > 0:
+            commodity_index -= 1
+        if commodity_index < 0 or commodity_index > len(user_person.commodities):
+            util.unlock_user(qq)
+            return user.username + '，商品序号超限'
+        commodity: Commodity = user_person.commodities[commodity_index]
+        if commodity.stock < number:
+            util.unlock_user(qq)
+            return user.username + '，商品库存不足'
+        if user.gold < commodity.gold * number:
+            util.unlock_user(qq)
+            return user.username + '，金币不足'
+        try:
+            item_obj: Item = flower_dao.select_item_by_id(commodity.item_id)
+            item: DecorateItem = DecorateItem()
+            item.item_id = commodity.item_id
+            item.number = number
+            if item_obj.max_durability > 0:
+                item.durability = item_obj.max_durability
+            if item_obj.item_type == ItemType.accelerate:
+                item.hour = 1
+            elif item_obj.item_type == ItemType.flower:
+                item.flower_quality = FlowerQuality.normal
+            util.insert_items(user.warehouse, [copy.deepcopy(item)])
+            user.gold -= commodity.gold * number
+            user.exp += 1
+            if profession.name == '商人':
+                if random.randint(0, 100) < person.affinity:
+                    relationship.value += 1
+                    flower_dao.update_relationship(relationship)
+            flower_dao.update_user_by_qq(user)
+            user_person.commodities[commodity_index].stock -= number
+            flower_dao.update_user_person(user_person)
+            return user.username + '，花费金币%.2f，购买%s' % (commodity.gold * number / 100, str(item))
+        except ItemNotFoundException:
+            return user.username + '，该商品不可以出售'
+        except ItemNegativeNumberException:
+            return user.username + '，不可以购买0份或者负数份'
+        except WareHouseSizeNotEnoughException:
+            return user.username + '，背包容量不够'
+        finally:
+            util.unlock_user(qq)
+    
+    @classmethod
+    def buy_knowledge(cls, qq: int, username: str, person_index: int, flower_name: str) -> str:
+        """
+        购买知识
+        :param qq:
+        :param username:
+        :param person_index:
+        :param flower_name:
+        :return:
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+        if len(user_person_list) == 0:
+            util.generate_today_person(user_person_list, qq)
+        if person_index > 0:
+            person_index -= 1
+        if person_index < 0 or person_index >= len(user_person_list):
+            util.unlock_user(qq)
+            return user.username + '，人物序号超限'
+        user_person: UserPerson = user_person_list[person_index]
+        if flower_name not in user_person.knowledge:
+            util.unlock_user(qq)
+            return user.username + '，该人物不出售该花的知识'
+        (level, gold) = user_person.knowledge[flower_name]
+        if user.gold < gold:
+            util.unlock_user(qq)
+            return user.username + '，金币不足'
+        if flower_name in user.knowledge and user.knowledge[flower_name] >= level:
+            util.unlock_user(qq)
+            return user.username + '，你已经有了更高级别的该知识'
+        user.gold -= gold
+        user.knowledge[flower_name] = level
+        flower_dao.update_user_by_qq(user)
+        util.unlock_user(qq)
+        return user.username + '，购买成功！'
+    
+    @classmethod
+    def sell_commodity(cls, qq: int, username: str, person_index: int, item: DecorateItem) -> str:
+        pass
 
 
 class DrawCard:

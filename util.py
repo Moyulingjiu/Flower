@@ -305,6 +305,8 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             item.level = item_obj.level
             if item_obj.item_type == ItemType.flower and item.flower_quality == FlowerQuality.not_flower:
                 item.flower_quality = FlowerQuality.normal
+            if item_obj.item_type == ItemType.accelerate and item.hour < 1:
+                item.hour = 1
         for i in copy_items:
             if i == item:
                 if i.number + item.number <= item_obj.max_stack:
