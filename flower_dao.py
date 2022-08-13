@@ -1394,17 +1394,17 @@ def insert_relationship(relationship: Relationship) -> str:
 
 
 def select_all_person_number() -> int:
-    number: int = mongo_user_person.count_documents({"is_delete": 0})
+    number: int = mongo_person.count_documents({"is_delete": 0})
     return number
 
 
 def select_all_alive_person_number() -> int:
-    number: int = mongo_user_person.count_documents({"is_delete": 0, "die": False})
+    number: int = mongo_person.count_documents({"is_delete": 0, "die": False})
     return number
 
 
 def select_all_profession_person_number(profession_id: str) -> int:
-    number: int = mongo_user_person.count_documents({"is_delete": 0, "profession_id": profession_id})
+    number: int = mongo_person.count_documents({"is_delete": 0, "profession_id": profession_id})
     return number
 
 
