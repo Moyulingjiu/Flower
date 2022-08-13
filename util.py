@@ -1241,9 +1241,9 @@ def random_choice_pool(pool: Dict[str, int], relationship: Relationship) -> Comm
                 logger.error('商店池中物品不存在！')
             commodity.gold = int(item.gold * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
             if commodity.gold <= 10 * 100:
-                commodity.stock = random.randint(1, 100)
+                commodity.stock = random.randint(1, 30)
             elif commodity.gold <= 50 * 100:
-                commodity.stock = random.randint(1, 20)
+                commodity.stock = random.randint(1, 10)
             elif commodity.gold <= 50 * 500:
                 commodity.stock = random.randint(1, 5)
             else:

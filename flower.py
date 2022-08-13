@@ -2888,10 +2888,21 @@ class FlowerService:
                     user.gold -= gold
                     # 转账1个人加一次经验
                     user.exp += 1
-                    target_user.gold += int(gold * 0.8)
+                    level = user.level - target_user.level
+                    if level <= 10:
+                        ration = 0.8 * (1.0 + 0.2 * (random.random() - 0.5))
+                    elif level <= 20:
+                        ration = 0.4 * (1.0 + 0.2 * (random.random() - 0.5))
+                    elif level <= 30:
+                        ration = 0.1 * (1.0 + 0.2 * (random.random() - 0.5))
+                    else:
+                        reply += '\n对' + str(target_qq) + '转账失败，等级相差过大'
+                        continue
+                        
+                    target_user.gold += int(gold * ration)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
-                    reply += '\n对' + str(target_qq) + '转账成功，余额：' + '%.2f' % (user.gold / 100)
+                    reply += '\n对' + str(target_qq) + '转账成功，余额：%.2f，税率%.2f' % (user.gold / 100, ration)
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
@@ -2900,7 +2911,6 @@ class FlowerService:
                 util.unlock_user(target_qq)
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
-        reply += '\n转账有20%手续费'
         return reply
     
     @classmethod
