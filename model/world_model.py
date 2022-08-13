@@ -281,11 +281,11 @@ class Person(EntityClass):
         self.appearance = appearance  # 外貌
         self.appearance_description = appearance_description  # 外貌描述
         
-        self.justice_or_evil = justice_or_evil  # 正义/邪恶：（0~100）：影响是否会帮助弱小，是否会欺骗别人。
-        self.extroversion_or_introversion = extroversion_or_introversion  # 外向/内向：（0~100）：影响是否愿意出门，是否愿意和其他人交朋友。
-        self.bravery_or_cowardly = bravery_or_cowardly  # 勇敢/胆怯：（0~100）：影响是否会上战场，遇见危机的情况。
-        self.rational_or_sensual = rational_or_sensual  # 理智/感性：（0~100）：影响处事方式，一个理智的国王不会因为孩子被绑架而发动战争，一个感性的会。
-        self.hedonic_or_computation = hedonic_or_computation  # 享乐/计较：（0~100）：影响是否会超前消费，是否会存钱。
+        self.justice_or_evil = justice_or_evil  # 邪恶/正义：（0~100）：影响是否会帮助弱小，是否会欺骗别人。
+        self.extroversion_or_introversion = extroversion_or_introversion  # 内向/外向：（0~100）：影响是否愿意出门，是否愿意和其他人交朋友。
+        self.bravery_or_cowardly = bravery_or_cowardly  # 胆怯/勇敢：（0~100）：影响是否会上战场，遇见危机的情况。
+        self.rational_or_sensual = rational_or_sensual  # 感性/理智：（0~100）：影响处事方式，一个理智的国王不会因为孩子被绑架而发动战争，一个感性的会。
+        self.hedonic_or_computation = hedonic_or_computation  # 节俭/享乐：（0~100）：影响是否会超前消费，是否会存钱。
         self.selfish_or_generous = selfish_or_generous  # 自私/大方：（0~100）：影响其对自己的喜爱程度，是否会给朋友、孩子、父母花钱。
     
     def __setattr__(self, key, value):
@@ -296,6 +296,7 @@ class Person(EntityClass):
                 value = 0
             elif value > 100:
                 value = 100
+            value = int(value)
         object.__setattr__(self, key, value)
     
     def __str__(self):
