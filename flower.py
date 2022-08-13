@@ -811,7 +811,16 @@ class AdminHandler:
             announcement_context: AnnouncementContext = AnnouncementContext()
             flower_dao.insert_context(qq, announcement_context)
             return '请问公告的正文是什么，只可以包含文字信息！'
-        
+        elif message[:9] == '在该机器人留言花店':
+            data: List[str] = message[9:].strip().split(' ')
+            if len(data) != 2 or len(data[1]) == 0:
+                raise TypeException('格式错误！格式“在该机器人留言花店 QQ号 留言内容”留言内容只可以是文字')
+            try:
+                target_qq: int = int(data[0])
+                util.leave_message(target_qq, data[1])
+                return '留言成功！'
+            except ValueError:
+                raise TypeException('格式错误！格式“在该机器人留言花店 QQ号 留言内容”留言内容只可以是文字')
         # 系统操作部分
         elif message[:10] == '添加花店用户名屏蔽词':
             word: str = message[10:].strip()

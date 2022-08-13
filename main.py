@@ -173,8 +173,10 @@ async def add_flower(message: Message):
         
         # 检查留言板
         if message.qq in global_config.message_board:
-            for message in global_config.message_board[message.qq]:
-                result.reply_text.append(message)
+            logger.info('检测到留言消息')
+            for leave_message in global_config.message_board[message.qq]:
+                logger.info('用户<%s>(%d)有留言：%s' % (message.username, message.qq, leave_message))
+                result.reply_text.append(leave_message)
             global_config.message_board[message.qq] = []
         
         logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
