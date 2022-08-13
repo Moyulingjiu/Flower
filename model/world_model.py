@@ -18,17 +18,17 @@ class PersonLastName(EntityClass):
     """
     姓氏
     """
-
+    
     def __init__(self, value: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.value = value  # 姓氏
-
+    
     def __str__(self):
         return self.value
-
+    
     def __repr__(self):
         return self.__str__()
 
@@ -37,32 +37,32 @@ class PersonName(EntityClass):
     """
     名
     """
-
+    
     def __init__(self, value: str = '', gender: Gender = Gender.male,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.value = value  # 姓氏
         self.gender = gender  # 性别
-
+    
     def __str__(self):
         return self.value + '（%s）' % ('男' if self.gender == Gender.male else '女')
-
+    
     def __repr__(self):
         return self.__str__()
 
 
-class Disease(Enum):
+class Disease(EntityClass):
     """
     疾病
     """
-
+    
     def __init__(self, name: str = '', description: str = '', death_probability: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 名字
         self.description = description  # 介绍
         self.death_probability = death_probability  # 死亡概率
@@ -72,12 +72,12 @@ class Profession(EntityClass):
     """
     职业
     """
-
+    
     def __init__(self, name: str = '', description: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 名字
         self.description = description  # 介绍
 
@@ -86,18 +86,18 @@ class Race(EntityClass):
     """
     种族
     """
-
+    
     def __init__(self, name: str = '', description: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 名字
         self.description = description  # 介绍
-
+    
     def __str__(self):
         return '名字：%s\n介绍：%s' % (self.name, self.description)
-
+    
     def __repr__(self):
         return self.__str__()
 
@@ -106,17 +106,17 @@ class WorldTerrain(EntityClass):
     """
     世界地区
     """
-
+    
     def __init__(self, name: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 世界地形名
-
+    
     def __str__(self):
         return '地形：' + self.name
-
+    
     def __repr__(self):
         return self.__str__()
 
@@ -125,11 +125,11 @@ class PathModel(InnerClass):
     """
     连通图
     """
-
+    
     def __init__(self, target_area_id: str = '', distance: float = 0, driving_price: int = 0, sail_price: int = 0,
                  difficulty: int = 0, death_probability: float = 0.0):
         super().__init__('PathModel')
-
+        
         self.target_area_id = target_area_id  # 目的地id
         self.distance = distance  # 距离
         self.driving_price = driving_price  # 陆行价格
@@ -142,13 +142,13 @@ class WorldArea(EntityClass):
     """
     世界地区
     """
-
+    
     def __init__(self, name: str = '', terrain_id: str = '', race_id: str = '', description: str = '',
                  path_list: List[PathModel] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 地区名
         self.terrain_id = terrain_id  # 地形id
         self.description = description  # 描述
@@ -156,7 +156,7 @@ class WorldArea(EntityClass):
         if path_list is None:
             path_list = []
         self.path_list = path_list  # 联通路径
-
+    
     def __str__(self):
         reply = '地区：%s' % self.name
         reply += '\n地形id：%s' % self.terrain_id
@@ -167,7 +167,7 @@ class WorldArea(EntityClass):
         if len(self.path_list) > 0:
             reply = reply[:-1]
         return reply
-
+    
     def __repr__(self):
         return self.__str__()
 
@@ -176,16 +176,27 @@ class Kingdom(EntityClass):
     """
     王国
     """
-
-    def __init__(self, name: str = '', area_id_list: List[str] = None,
+    
+    def __init__(self, name: str = '', area_id_list: List[str] = None, king_id: str = '',
+                 noble_id_list: List[str] = None,
+                 governance_level: int = 0, financial_level: int = 0, military_level: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 王国名
         if area_id_list is None:
             area_id_list = []
         self.area_id_list = area_id_list  # 地区id
+        
+        self.king_id = king_id  # 国王的id
+        if noble_id_list is None:
+            noble_id_list = []
+        self.noble_id_list = noble_id_list  # 贵族id
+        
+        self.governance_level = governance_level  # 治理水平
+        self.financial_level = financial_level  # 财政水平
+        self.military_level = military_level  # 军事水平
 
 
 class Relationship(EntityClass):
@@ -193,7 +204,7 @@ class Relationship(EntityClass):
     人际关系
     人物src_person->des_person的好感为value，value为0表示不喜欢也不讨厌，小于0讨厌，大于0喜欢
     """
-
+    
     def __init__(self, src_person: str = '', dst_person: str = '', value: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
@@ -201,10 +212,10 @@ class Relationship(EntityClass):
         self.src_person = src_person  # 人物1
         self.dst_person = dst_person  # 人物2
         self.value = value  # 关系水平
-
+    
     def __str__(self):
         return '%s 对 %s 的关系为：%d' % (self.src_person, self.dst_person, self.value)
-
+    
     def __repr__(self):
         return self.__str__()
 
@@ -213,7 +224,7 @@ class Person(EntityClass):
     """
     人物模型
     """
-
+    
     def __init__(self, name: str = '', gender: Gender = Gender.male, sexual_orientation: Gender = Gender.female,
                  height: float = 0.0, weight: float = 0.0,
                  spouse_id: str = '', predecessor: List[Tuple[str, datetime]] = None, relationships: List[str] = None,
@@ -228,7 +239,7 @@ class Person(EntityClass):
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-
+        
         self.name = name  # 名字
         self.gender = gender  # 性别
         self.sexual_orientation = sexual_orientation  # 性取向
@@ -251,16 +262,16 @@ class Person(EntityClass):
         self.born_time = born_time  # 出生时间（现实中每一天是其一年）
         self.max_age = max_age  # 最大年龄
         self.motherland = motherland  # 祖国
-
+        
         self.gold = gold  # 金币
         self.disease_id = disease_id  # 疾病
         self.profession_id = profession_id  # 职业
         self.race_id = race_id  # 种族
-
+        
         self.die = die  # 是否死亡
         self.die_time = die_time  # 死亡时间
         self.die_reason = die_reason  # 死亡原因
-
+        
         self.wisdom = wisdom  # 智慧
         self.leadership = leadership  # 领导力
         self.force = force  # 武力
@@ -269,14 +280,14 @@ class Person(EntityClass):
         self.health = health  # 健康（健康与疾病不同，健康影响的是患疾病的概率，而不是直接有病，病还可能是外伤）
         self.appearance = appearance  # 外貌
         self.appearance_description = appearance_description  # 外貌描述
-
+        
         self.justice_or_evil = justice_or_evil  # 正义/邪恶：（0~100）：影响是否会帮助弱小，是否会欺骗别人。
         self.extroversion_or_introversion = extroversion_or_introversion  # 外向/内向：（0~100）：影响是否愿意出门，是否愿意和其他人交朋友。
         self.bravery_or_cowardly = bravery_or_cowardly  # 勇敢/胆怯：（0~100）：影响是否会上战场，遇见危机的情况。
         self.rational_or_sensual = rational_or_sensual  # 理智/感性：（0~100）：影响处事方式，一个理智的国王不会因为孩子被绑架而发动战争，一个感性的会。
         self.hedonic_or_computation = hedonic_or_computation  # 享乐/计较：（0~100）：影响是否会超前消费，是否会存钱。
         self.selfish_or_generous = selfish_or_generous  # 自私/大方：（0~100）：影响其对自己的喜爱程度，是否会给朋友、孩子、父母花钱。
-
+    
     def __setattr__(self, key, value):
         if key in ['wisdom', 'leadership', 'force', 'leadership', 'force', 'affinity', 'ambition', 'health',
                    'appearance', 'justice_or_evil', 'extroversion_or_introversion', 'bravery_or_cowardly',
@@ -286,7 +297,7 @@ class Person(EntityClass):
             elif value > 100:
                 value = 100
         object.__setattr__(self, key, value)
-
+    
     def __str__(self):
         reply = 'id:%s' % self.get_id()
         reply += '\n名字：%s' % self.name
@@ -317,7 +328,7 @@ class Person(EntityClass):
         reply += '\n节俭/享乐：%d' % self.hedonic_or_computation
         reply += '\n自私/大方：%d' % self.selfish_or_generous
         return reply
-
+    
     def __repr__(self):
         return self.__str__()
 

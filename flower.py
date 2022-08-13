@@ -806,11 +806,11 @@ class AdminHandler:
             try:
                 data: List[str] = message[4:].strip().split()
                 if len(data) != 2:
-                    raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高3级')
+                    raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高4级')
                 flower_name = data[0]
                 level: int = int(data[1])
-                if level < 1 or level > 3:
-                    raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高3级')
+                if level < 1 or level > 4:
+                    raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高4级')
                 update_number: int = 0
                 if len(at_list) == 0:
                     if cls.give_knowledge(qq, qq, flower_name, level):
@@ -823,7 +823,7 @@ class AdminHandler:
                     return '成功修改' + str(update_number) + '人的知识'
                 return '未能修改任何人的知识'
             except ValueError:
-                raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高3级')
+                raise TypeException('格式错误！格式“@xxx 给予知识 花名 级别”，最低1级，最高4级')
         elif message[:4] == '删除知识':
             data = message[4:].strip()
             if len(data) == 0:
@@ -2196,24 +2196,27 @@ class FlowerService:
                 res += '\n不适宜土壤：' + util.get_soil_list(flower.op_soil_id)
             elif len(flower.soil_id) == 0 and len(flower.op_soil_id) == 0:
                 res += '\n适宜土壤：所有土壤'
-
         if level >= 2:
             res += '\n吸收水分：' + str(flower.water_absorption) + '/小时'
             res += '\n吸收营养：' + str(flower.nutrition_absorption) + '/小时'
             res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
-
+        if level >= 4:
+            res += '需累计完美时长：' + str(flower.prefect_time)
+            res += '枯萎累计时长：' + str(flower.withered_time)
         if level >= 3:
             res += '\n种子：'
-            res += '\n\t周期：' + str(flower.seed_time) + '小时'
+            if level >= 4:
+                res += '\n\t周期：' + str(flower.seed_time) + '小时'
             res += util.show_conditions(flower.seed_condition)
             res += '\n幼苗：'
-            res += '\n\t周期：' + str(flower.grow_time) + '小时'
+            if level >= 4:
+                res += '\n\t周期：' + str(flower.grow_time) + '小时'
             res += util.show_conditions(flower.grow_condition)
             res += '\n成熟：'
-            res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
-            res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
+            if level >= 4:
+                res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
+                res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
             res += util.show_conditions(flower.mature_condition)
-
         return res
 
     @classmethod
@@ -2631,12 +2634,14 @@ class FlowerService:
             reply += '\n' + str(flower_name)
             if user.knowledge[flower_name] >= 3:
                 reply += '大师'
-            elif user.knowledge[flower_name] == 2:
+            elif user.knowledge[flower_name] == 3:
                 reply += '熟悉'
-            elif user.knowledge[flower_name] == 1:
+            elif user.knowledge[flower_name] == 2:
                 reply += '了解'
+            elif user.knowledge[flower_name] == 1:
+                reply += '菜鸟'
             else:
-                reply += '不了解'
+                reply += '不认识'
         total = len(user.knowledge)
         if total > page_size:
             total_page = total // page_size

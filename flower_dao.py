@@ -856,7 +856,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-
+        
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
@@ -954,6 +954,139 @@ def insert_mail(mail: Mail) -> str:
 
 ####################################################################################################
 # 世界模型
+
+def select_all_disease() -> List[Disease]:
+    """
+    查询所有疾病
+    :return: 疾病的数组
+    """
+    redis_ans = redis_db.get(redis_all_disease)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_disease.find({"is_delete": 0})
+        disease_list: List[Disease] = []
+        for disease_result in result:
+            disease: Disease = Disease()
+            dict_to_class(disease_result, disease)
+            disease_list.append(disease)
+        redis_db.set(redis_all_disease, serialization(disease_list),
+                     ex=get_long_random_expire())
+        return disease_list
+
+
+def select_disease(_id: str) -> Disease:
+    """
+    根据id查询职业
+    :param _id: id
+    :return: 职业
+    """
+    redis_ans = redis_db.get(redis_world_disease_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_disease.find_one({"_id": ObjectId(_id)})
+        disease: Disease = Disease()
+        dict_to_class(result, disease)
+        redis_db.set(redis_world_disease_prefix + _id, serialization(disease), ex=get_long_random_expire())
+        return disease
+
+
+def select_disease_by_name(name: str) -> Disease:
+    """
+    根据名字查询疾病
+    :param name: 疾病
+    :return:
+    """
+    redis_ans = redis_db.get(redis_world_disease_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_disease.find_one({"name": name})
+        disease: Disease = Disease()
+        dict_to_class(result, disease)
+        redis_db.set(redis_world_disease_prefix + name, serialization(disease), ex=get_long_random_expire())
+        return disease
+
+
+def insert_disease(disease: Disease) -> str:
+    """
+    插入职业
+    :param disease: 疾病
+    :return: id
+    """
+    result = mongo_world_disease.insert_one(class_to_dict(disease))
+    redis_db.delete(redis_world_disease_prefix + str(result.inserted_id))
+    redis_db.delete(redis_world_disease_prefix + disease.name)
+    redis_db.delete(redis_all_disease)
+    return str(result.inserted_id)
+
+
+def select_all_profession() -> List[Profession]:
+    """
+    查询所有职业
+    :return: 职业的数组
+    """
+    redis_ans = redis_db.get(redis_all_profession)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_profession.find({"is_delete": 0})
+        profession_list: List[Profession] = []
+        for profession_result in result:
+            profession: Profession = Profession()
+            dict_to_class(profession_result, profession)
+            profession_list.append(profession)
+        redis_db.set(redis_all_profession, serialization(profession_list),
+                     ex=get_long_random_expire())
+        return profession_list
+
+
+def select_profession(_id: str) -> Profession:
+    """
+    根据id查询职业
+    :param _id: id
+    :return: 职业
+    """
+    redis_ans = redis_db.get(redis_world_profession_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_profession.find_one({"_id": ObjectId(_id)})
+        profession: Profession = Profession()
+        dict_to_class(result, profession)
+        redis_db.set(redis_world_profession_prefix + _id, serialization(profession), ex=get_long_random_expire())
+        return profession
+
+
+def select_profession_by_name(name: str) -> Profession:
+    """
+    根据名字查询职业
+    :param name: 职业
+    :return:
+    """
+    redis_ans = redis_db.get(redis_world_profession_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_world_profession.find_one({"name": name})
+        profession: Profession = Profession()
+        dict_to_class(result, profession)
+        redis_db.set(redis_world_profession_prefix + name, serialization(profession), ex=get_long_random_expire())
+        return profession
+
+
+def insert_profession(profession: Profession) -> str:
+    """
+    插入职业
+    :param profession: 职业
+    :return: id
+    """
+    result = mongo_world_profession.insert_one(class_to_dict(profession))
+    redis_db.delete(redis_world_profession_prefix + str(result.inserted_id))
+    redis_db.delete(redis_world_profession_prefix + profession.name)
+    redis_db.delete(redis_all_profession)
+    return str(result.inserted_id)
 
 
 def select_all_world_race() -> List[Race]:
