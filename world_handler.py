@@ -36,7 +36,7 @@ def random_generate_world():
     profession_list: List[Profession] = flower_dao.select_all_profession()
 
 
-def random_person() -> Person:
+def random_person(born_area: WorldArea = None, born_profession: Profession = None, age: int = -1) -> Person:
     """
     随机凭空生成一个人物（没有父母）
     """
@@ -68,8 +68,11 @@ def random_person() -> Person:
     person.weight = bmi * (person.height * person.height)
     
     # 出生地
-    area_list: List[WorldArea] = flower_dao.select_all_world_area()
-    area: WorldArea = random.choice(area_list)
+    if born_area is None:
+        area_list: List[WorldArea] = flower_dao.select_all_world_area()
+        area: WorldArea = random.choice(area_list)
+    else:
+        area: WorldArea = born_area
     person.born_area_id = area.get_id()
     person.world_area_id = area.get_id()
     # 有80%的概率为该地区的主要种族
@@ -89,6 +92,14 @@ def random_person() -> Person:
             break
     if person.motherland == '':
         person.motherland = random.choice(kingdom_list).get_id()
+    
+    # 获取职业，随机职业
+    if born_profession is None:
+        profession_list: List[Profession] = flower_dao.select_all_profession()
+        profession = random.choice(profession_list)
+    else:
+        profession = born_profession
+    person.profession_id = profession.get_id()
     
     # 角色的各项属性
     person.wisdom = int(np.random.normal(50, 15, 1)[0])
@@ -174,6 +185,7 @@ def random_person() -> Person:
         person.max_age = random.randint(60, 100)
     else:
         person.max_age = random.randint(60, 125)
-    age: int = random.randint(0, person.max_age - 1)
+    if age == -1:
+        age: int = random.randint(0, person.max_age - 1)
     person.born_time = datetime.now() - timedelta(days=age)
     return person
