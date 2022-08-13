@@ -1242,7 +1242,7 @@ class User(EntityClass):
     """
     
     def __init__(self, qq: int = 0, username: str = '', gender: Gender = Gender.unknown, auto_get_name: bool = True,
-                 gold: int = 0, exp: int = 0,
+                 gold: int = 0, exp: int = 0, level: int = 0,
                  last_sign_date: datetime = datetime.today() - timedelta(days=1), sign_count: int = 0,
                  sign_continuous: int = 0, draw_card_number: int = 5, beginner_pack: bool = False,
                  warehouse: WareHouse = WareHouse(), farm: Farm = Farm(), mailbox: MailBox = MailBox(),
@@ -1258,6 +1258,7 @@ class User(EntityClass):
         self.auto_get_name = auto_get_name  # 是否自动获取用户名
         self.gold = gold
         self.exp = exp  # 经验值
+        self.level = level  # 当前等级（避免从头搜索经验数组）
         
         self.last_sign_date = last_sign_date  # 上次签到日期
         self.sign_count = sign_count  # 签到次数

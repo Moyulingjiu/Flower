@@ -1489,6 +1489,7 @@ class ContextHandler:
                     continue
                 user.gold -= system_data.remove_farm_flower_cost_gold
                 user.farm.flower_id = ''
+                user.exp += 1
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，成功花费' + '%.2f' % (
                         system_data.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
@@ -2214,21 +2215,20 @@ class FlowerService:
         if level >= 2:
             res += '\n吸收水分：' + str(flower.water_absorption) + '/小时'
             res += '\n吸收营养：' + str(flower.nutrition_absorption) + '/小时'
-            res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
         if level >= 4:
-            res += '需累计完美时长：' + str(flower.prefect_time)
-            res += '枯萎累计时长：' + str(flower.withered_time)
+            res += '\n需累计完美时长：' + str(flower.prefect_time)
+            res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
         if level >= 3:
             res += '\n种子：'
-            if level >= 4:
+            if level > 4:
                 res += '\n\t周期：' + str(flower.seed_time) + '小时'
             res += util.show_conditions(flower.seed_condition)
             res += '\n幼苗：'
-            if level >= 4:
+            if level > 4:
                 res += '\n\t周期：' + str(flower.grow_time) + '小时'
             res += util.show_conditions(flower.grow_condition)
             res += '\n成熟：'
-            if level >= 4:
+            if level > 4:
                 res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
                 res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
             res += util.show_conditions(flower.mature_condition)
@@ -2242,6 +2242,7 @@ class FlowerService:
         :param username: 用户名
         :return: 结果
         """
+        util.lock_user(qq)
         user: User = util.get_user(qq, username)
         born_city: City = flower_dao.select_city_by_id(user.born_city_id)
         city: City = flower_dao.select_city_by_id(user.city_id)
@@ -2249,11 +2250,13 @@ class FlowerService:
         if user.auto_get_name:
             res += '（自动获取）'
         res += '\n等级：'
-        level = 0
+        level = user.level
         system_data = util.get_system_data()
-        for i in range(len(system_data.exp_level)):
+        for i in range(level, len(system_data.exp_level)):
             if user.exp >= system_data.exp_level[i]:
-                level = i
+                level = i + 1
+                user.level = i + 1
+                flower_dao.update_user_by_qq(user)
         res += str(level + 1)
         res += '\n角色性别：' + user.gender.show()
         res += '\n出生地：' + born_city.city_name
@@ -2261,6 +2264,7 @@ class FlowerService:
         res += '\n金币：' + util.show_gold(user.gold)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         res += '\n已在花店%d天' % ((datetime.now() - user.create_time).total_seconds() // global_config.day_second + 1)
+        util.unlock_user(qq)
         return res
 
     @classmethod
@@ -2702,6 +2706,8 @@ class FlowerService:
             user.sign_continuous = 1
         user.sign_count += 1
         user.last_sign_date = today
+        # 签到1点经验
+        user.exp += 1
         gold = random.randint(100, 500)
         user.gold += gold
         # 只对于不足次数的补足，有可能有活动之类的额外增加了每日的抽卡次数
@@ -2742,6 +2748,8 @@ class FlowerService:
                     reply += '\n对' + str(target_qq) + '转账失败，余额不足'
                 else:
                     user.gold -= gold
+                    # 转账1个人加一次经验
+                    user.exp += 1
                     target_user.gold += int(gold * 0.8)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
@@ -3006,6 +3014,8 @@ class FlowerService:
             return user.username + '，浇水失败！金币不足！\n每浇水一次，需要金币%.2f' % (
                     system_data.watering_cost_gold / 100)
         user.gold -= cost_gold
+        # 浇水多少次加多少经验值
+        user.exp += multiple
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
         if humidity_change == 0.0:
@@ -3371,6 +3381,17 @@ class FlowerService:
                     util.give_achievement(user, good_at_flower, number)
                     if user.farm.flower_state == FlowerState.perfect:
                         util.give_achievement(user, flower_master, number)
+                    # 增加经验值
+                    if flower.level == FlowerLevel.S:
+                        user.exp += 1000
+                    elif flower.level == FlowerLevel.A:
+                        user.exp+= 500
+                    elif flower.level == FlowerLevel.B:
+                        user.exp += 100
+                    elif flower.level == FlowerLevel.C:
+                        user.exp += 50
+                    else:
+                        user.exp += 10
                     # 更新user
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，收获成功，获得%s-%sx%d' % (
