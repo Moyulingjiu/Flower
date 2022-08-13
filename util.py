@@ -672,10 +672,6 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     """
     now: datetime = datetime.now()
     start_time: datetime = user.farm.last_check_time + timedelta(hours=1)
-    if user.farm.flower_id == '':
-        return
-    if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
-        return
     
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
