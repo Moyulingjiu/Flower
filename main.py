@@ -146,40 +146,44 @@ async def add_flower(message: Message):
     :param message: 消息
     :return: 结果
     """
-    # 全局加锁不进行响应
-    if util.get_global_lock():
-        return Response(code=0, message="success", data=Result.init())
-    # 进行花店的操作逻辑
-    result: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,
-                                   message.at_list)
-    if len(result.reply_text) > 0 or len(result.context_reply_text) > 0 or len(result.reply_image) or len(
-            result.context_reply_image) > 0:
-        # 对此不必要加锁，公告只是通知而已，通知几次无所谓（线程冲突的后果也不过多通知一次）
-        announcement_list: List[Announcement] = flower_dao.select_valid_announcement()
-        for announcement in announcement_list:
-            qq_str: str = str(message.qq)
-            if qq_str not in announcement.read_list or announcement.read_list[qq_str] < 3:
-                if qq_str not in announcement.read_list:
-                    announcement.read_list[qq_str] = 1
-                else:
-                    announcement.read_list[qq_str] += 1
-                flower_dao.update_announcement(announcement)
-                reply = '花店公告（由%s编辑）\n------\n%s\n------\n发布日期：%s\n*公告仅会展示三次' % (
-                    announcement.username,
-                    announcement.text,
-                    announcement.expire_time.strftime('%Y-%m-%d %H:%M:%S')
-                )
-                result.reply_text.append(reply)
-        
-        # 检查留言板
-        if message.qq in global_config.message_board:
-            logger.info('检测到留言消息')
-            for leave_message in global_config.message_board[message.qq]:
-                logger.info('用户<%s>(%d)有留言：%s' % (message.username, message.qq, leave_message))
-                result.reply_text.append(leave_message)
-            global_config.message_board[message.qq] = []
-        
-        logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
-            message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,
-            str(result)))
-    return Response(code=0, message="success", data=result)
+    try:
+        # 全局加锁不进行响应
+        if util.get_global_lock():
+            return Response(code=0, message="success", data=Result.init())
+        # 进行花店的操作逻辑
+        result: Result = flower.handle(message.message, message.qq, message.username, message.bot_qq, message.bot_name,
+                                       message.at_list)
+        if len(result.reply_text) > 0 or len(result.context_reply_text) > 0 or len(result.reply_image) or len(
+                result.context_reply_image) > 0:
+            # 对此不必要加锁，公告只是通知而已，通知几次无所谓（线程冲突的后果也不过多通知一次）
+            announcement_list: List[Announcement] = flower_dao.select_valid_announcement()
+            for announcement in announcement_list:
+                qq_str: str = str(message.qq)
+                if qq_str not in announcement.read_list or announcement.read_list[qq_str] < 3:
+                    if qq_str not in announcement.read_list:
+                        announcement.read_list[qq_str] = 1
+                    else:
+                        announcement.read_list[qq_str] += 1
+                    flower_dao.update_announcement(announcement)
+                    reply = '花店公告（由%s编辑）\n------\n%s\n------\n发布日期：%s\n*公告仅会展示三次' % (
+                        announcement.username,
+                        announcement.text,
+                        announcement.expire_time.strftime('%Y-%m-%d %H:%M:%S')
+                    )
+                    result.reply_text.append(reply)
+            
+            # 检查留言板
+            if message.qq in global_config.message_board:
+                logger.info('检测到留言消息')
+                for leave_message in global_config.message_board[message.qq]:
+                    logger.info('用户<%s>(%d)有留言：%s' % (message.username, message.qq, leave_message))
+                    result.reply_text.append(leave_message)
+                global_config.message_board[message.qq] = []
+            
+            logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
+                message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,
+                str(result)))
+        return Response(code=0, message="success", data=result)
+    except Exception as e:
+        logger.error(str(e))
+        return Response(code=500, message="internal error", data=Result.init())
