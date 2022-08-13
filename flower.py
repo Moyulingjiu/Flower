@@ -4005,7 +4005,7 @@ class FlowerService:
             relationship.src_person = user_person.person_id
             relationship.dst_person = str(qq)
             relationship.value = person.affinity
-        if profession.name != '商人' or profession.name != '探险家':
+        if profession.name != '商人' and profession.name != '探险家':
             util.unlock_user(qq)
             return user.username + '，其不接受出售商品'
         if item.item_name in user_person.ban_item:
