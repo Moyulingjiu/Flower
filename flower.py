@@ -1423,6 +1423,12 @@ class WorldControlHandler:
                 target_area: WorldArea = flower_dao.select_world_area(area_id)
                 reply += '\n%s' % target_area.name
             return reply
+        elif message == '世界人口':
+            number: int = flower_dao.select_all_person_number()
+            return '世界总人口：%d' % number
+        elif message == '世界活人人口':
+            number: int = flower_dao.select_all_alive_person_number()
+            return '世界活人人口：%d' % number
         return ''
 
 
