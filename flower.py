@@ -33,7 +33,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
         # 处理上下文需要加锁，避免两个线程同时处理到一个上下文
         util.lock_user(qq)
         context_handler: ContextHandler = ContextHandler()
-        result: Result = context_handler.handle(message, qq, username, bot_qq, bot_name, at_list)
+        result: Result = context_handler.handle(message, qq, username, bot_qq, bot_name)
         # 如果阻断传播就已经可以停止了
         if (len(result.context_reply_text) != 0 or len(
                 result.context_reply_image) != 0) and context_handler.block_transmission:
@@ -376,7 +376,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             if reply != '':
                 get_reply = True
                 result.reply_text.append(reply)
-            reply: str = WorldControlHandler.handle(message, qq, username, at_list)
+            reply: str = WorldControlHandler.handle(message, qq)
             if reply != '':
                 get_reply = True
                 result.reply_text.append(reply)
@@ -1243,8 +1243,7 @@ class WorldControlHandler:
     """
     
     @classmethod
-    def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
-        system_data: SystemData = util.get_system_data()
+    def handle(cls, message: str, qq: int) -> str:
         if message == '创建人物':
             person: Person = world_handler.random_person()
             reply = 'id:%s' % person.get_id()
@@ -1279,6 +1278,57 @@ class WorldControlHandler:
             reply += '\n智慧：%d，领导力：%d，武力：%d，亲和力：%d，野心：%d，健康：%d，外貌：%d' % (
                 person.wisdom, person.leadership, person.force, person.affinity, person.ambition, person.health,
                 person.appearance
+            )
+            reply += '\n外貌描述：%s' % person.appearance_description
+            reply += '\n' + ('-' * 6)
+            reply += '\n性格（以下描述词越小越靠近左边的词，越大越靠近右边的词）'
+            reply += '\n邪恶/正义：%d' % person.justice_or_evil
+            reply += '\n内向/外向：%d' % person.extroversion_or_introversion
+            reply += '\n胆怯/勇敢：%d' % person.bravery_or_cowardly
+            reply += '\n感性/理智：%d' % person.rational_or_sensual
+            reply += '\n节俭/享乐：%d' % person.hedonic_or_computation
+            reply += '\n自私/大方：%d' % person.selfish_or_generous
+            return reply
+        elif message[:5] == '花店npc':
+            data = message[5:].strip()
+            if not ObjectId.is_valid(data):
+                raise TypeException('格式错误！格式“花店npc npc的id”，id一般为一长串字母英文混合')
+            person: Person = flower_dao.select_person(data)
+            if not person.valid():
+                return '人物不存在'
+            reply = 'id:%s' % person.get_id()
+            reply += '\n名字：%s' % person.name
+            age: int = int((datetime.now() - person.born_time).total_seconds() // global_config.day_second)
+            reply += '\n年龄：%d/%d岁' % (
+                age, person.max_age)
+            if person.die:
+                reply += '（已于%s死亡）' % person.die_time.strftime('%Y-%m-%d %H:%M:%S')
+                reply += '\n死亡原因：%s' % person.die_reason
+            reply += '\n性别：%s，性取向：%s' % (person.gender.show(), person.sexual_orientation.show())
+            reply += '\n身高：%.2fm，体重：%.2fkg' % (person.height, person.weight)
+            father_name: str = ''
+            if person.father_id != '':
+                father: Person = flower_dao.select_person(person.father_id)
+                father_name = father.name
+            mother_name: str = ''
+            if person.father_id != '':
+                mother: Person = flower_dao.select_person(person.mother_id)
+                mother_name = mother.name
+            reply += '\n父亲：%s（%s），母亲：%s（%s）' % (father_name, person.father_id, mother_name, person.mother_id)
+            born_area: WorldArea = flower_dao.select_world_area(person.born_area_id)
+            area: WorldArea = flower_dao.select_world_area(person.world_area_id)
+            reply += '\n出生地：%s，现在所在地：%s' % (born_area.name, area.name)
+            kingdom: Kingdom = flower_dao.select_kingdom(person.motherland)
+            reply += '\n祖国：%s' % kingdom.name
+            race: Race = flower_dao.select_world_race(person.race_id)
+            reply += '\n种族：%s' % race.name
+            reply += '\n疾病：%s' % person.disease_id
+            reply += '\n职业：%s' % person.profession_id
+            reply += '\n' + ('-' * 6)
+            reply += '\n基础属性：'
+            reply += '\n智慧：%d，领导力：%d，武力：%d，亲和力：%d，野心：%d，健康：%d，外貌：%d/%d' % (
+                person.wisdom, person.leadership, person.force, person.affinity, person.ambition, person.health,
+                util.show_appearance(person.appearance, age), person.appearance
             )
             reply += '\n外貌描述：%s' % person.appearance_description
             reply += '\n' + ('-' * 6)
@@ -1374,7 +1424,7 @@ class ContextHandler:
     def __init__(self):
         self.block_transmission: bool = True  # 是否阻断消息继续传递，默认阻断
     
-    def handle(self, message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_list: List[int]) -> Result:
+    def handle(self, message: str, qq: int, username: str, bot_qq: int, bot_name: str) -> Result:
         """
         上下文处理
         :param message: 消息
@@ -1382,7 +1432,6 @@ class ContextHandler:
         :param username: 用户名
         :param bot_qq: 机器人qq
         :param bot_name: 机器人名
-        :param at_list: 艾特列表
         :return: 结果
         """
         system_data: SystemData = util.get_system_data()

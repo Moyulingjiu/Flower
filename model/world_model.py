@@ -226,7 +226,7 @@ class Person(EntityClass):
     """
     
     def __init__(self, name: str = '', gender: Gender = Gender.male, sexual_orientation: Gender = Gender.female,
-                 height: float = 0.0, weight: float = 0.0,
+                 height: float = 0.0, weight: float = 0.0, immortal: bool = False,
                  spouse_id: str = '', predecessor: List[Tuple[str, datetime]] = None, relationships: List[str] = None,
                  children: List[str] = None, father_id: str = '', mother_id: str = '', motherland: str = '',
                  die: bool = False, die_time: datetime = datetime.now(), max_age: int = 0, die_reason: str = '',
@@ -271,6 +271,7 @@ class Person(EntityClass):
         self.die = die  # 是否死亡
         self.die_time = die_time  # 死亡时间
         self.die_reason = die_reason  # 死亡原因
+        self.immortal = immortal  # 不死人（一般做特殊处理，在轮回之外）
         
         self.wisdom = wisdom  # 智慧
         self.leadership = leadership  # 领导力

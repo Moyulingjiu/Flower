@@ -1194,3 +1194,24 @@ def leave_message(qq: int, message: str):
         global_config.message_board[qq].append(message)
     else:
         global_config.message_board[qq] = [message]
+
+
+def show_appearance(appearance: int, age: int) -> int:
+    """
+    显示颜值
+    :param appearance:
+    :param age:
+    :return:
+    """
+    if age <= 5:
+        return appearance
+    if age <= 18:
+        return int(appearance * (1.0 - 0.3 * (18 - age) / 13))
+    if age <= 30:
+        return appearance
+    elif age <= 40:
+        return int(appearance * (0.7 + 0.3 * (40 - age) / 10))
+    elif age <= 70:
+        return int(appearance * (0.3 + 0.4 * (70 - age) / 30))
+    else:
+        return int(appearance * 0.3)
