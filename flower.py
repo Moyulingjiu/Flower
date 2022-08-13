@@ -412,6 +412,63 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise TypeException('格式错误！格式“购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
+            elif message[:4] == '出售商品':
+                data = message[4:].strip()
+                data_list = data.split(' ')
+                try:
+                    person_index: int = int(data_list[0])
+                    if len(data_list) == 2:
+                        item_origin_name: str = data_list[1]
+                    elif len(data_list) == 3:
+                        item_origin_name: str = data_list[1] + ' ' + data_list[2]
+                    else:
+                        raise TypeException('')
+                    util.lock_user(qq)
+                    user: User = util.get_user(qq, username)
+                    item: DecorateItem = util.analysis_item(item_origin_name)
+                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
+                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
+                        item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
+                        choices: Dict[str, Choice] = {}
+                        if len(item_list) > 1:
+                            similar_items_name: List[DecorateItem] = []
+                            reply = '你的仓库有多件相似物品，可能为以下物品：'
+                            index: int = 0
+                            for warehouse_item in item_list:
+                                if warehouse_item not in similar_items_name:
+                                    index += 1
+                                    reply += '\n%d.' % index + warehouse_item.show_without_number()
+                                    item.flower_quality = warehouse_item.flower_quality
+                                    item.durability = warehouse_item.durability
+                                    item.hour = warehouse_item.hour
+                                    item.create = warehouse_item.create
+                                    item.update = warehouse_item.update
+                                    item.rot_second = warehouse_item.rot_second
+                                    item.max_durability = warehouse_item.max_durability
+                                    args = {
+                                        'qq': qq,
+                                        'username': username,
+                                        'person_index': person_index,
+                                        'item': copy.deepcopy(item)
+                                    }
+                                    choices[str(index)] = Choice(args=args, callback=FlowerService.sell_commodity)
+                                    similar_items_name.append(warehouse_item)
+                            reply += '\n请输入对应的序号，选择是哪一种物品。例如输入“1”选择第一种的物品。其余任意输入取消'
+                            if len(similar_items_name) > 1:
+                                flower_dao.insert_context(qq, ChooseContext(choices=choices))
+                                result.reply_text.append(reply)
+                                return result
+                        # 如果只有一件物品，出售的只能是它
+                        item.durability = item_list[0].durability
+                        item.flower_quality = item_list[0].flower_quality
+                    util.unlock_user(qq)
+                    reply = FlowerService.sell_commodity(qq, username, person_index, item)
+                    result.reply_text.append(reply)
+                    return result
+                except TypeException or ValueError:
+                    raise TypeException('格式错误，格式“出售商品 【人物序号】 【物品名字】 【数量】”数量为1可以省略')
+                except ItemNotFoundException:
+                    raise TypeException('该物品不存在！')
         
         # 管理员（admin、master）操作
         user_right: UserRight = util.get_user_right(qq)
@@ -677,7 +734,7 @@ class AdminHandler:
             except ValueError:
                 raise TypeException('格式错误！格式“农场完美加速 【小时】”。')
         elif message == '给予buff':
-            context: GiveBuff = GiveBuff()
+            context: GiveBuffContext = GiveBuffContext()
             if len(at_list) > 0:
                 context.target_qq = at_list
             else:
@@ -2070,7 +2127,7 @@ class ContextHandler:
                 reply = user.username + '，成功清空信箱'
                 result.context_reply_text.append(reply)
             # 给予buff
-            elif isinstance(context, GiveBuff):
+            elif isinstance(context, GiveBuffContext):
                 if message == '取消':
                     del_context_list.append(origin_list[index])
                     reply = '已为您取消发送公告'
@@ -2268,6 +2325,135 @@ class ContextHandler:
                         except ValueError:
                             reply = '格式错误！格式“修改糟糕时长增幅 【数值】”'
                             result.context_reply_text.append(reply)
+            # 向npc出售商品议价
+            elif isinstance(context, CommodityBargaining):
+                if context.step == 0:
+                    if context.can_bargain:
+                        if message == '是':
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.step += 1
+                            flower_dao.insert_context(qq, context)
+                            reply = '你可以输入“成交”来完成交易，“取消”来取消交易，“议价 价格”来提出一个价格，但npc不一定会接受\n' \
+                                    '注意：价格是单价，不是整个的价格'
+                            result.context_reply_text.append(reply)
+                            continue
+                        elif message == '否':
+                            del_context_list.append(origin_list[index])
+                            # 出售物品
+                            user: User = util.get_user(qq, username)
+                            try:
+                                gold: int = context.gold * context.item.number
+                                util.remove_items(user.warehouse, [context.item])
+                                user.gold += gold
+                                flower_dao.update_user_by_qq(user)
+                                reply = user.username + '，出售成功，获得金币%s，余额：%s' % (
+                                    util.show_gold(gold),
+                                    util.show_gold(user.gold)
+                                )
+                                result.context_reply_text.append(reply)
+                                continue
+                            except ItemNotFoundException:
+                                reply = user.username + '，该物品不可以出售'
+                                result.context_reply_text.append(reply)
+                                continue
+                            except ItemNotEnoughException:
+                                reply = user.username + '，物品不足'
+                                result.context_reply_text.append(reply)
+                                continue
+                        del_context_list.append(origin_list[index])
+                        reply = '已为您取消出售'
+                        result.context_reply_text.append(reply)
+                        continue
+                    else:
+                        del_context_list.append(origin_list[index])
+                        if message != '是':
+                            reply = '已为您取消出售'
+                            result.context_reply_text.append(reply)
+                            continue
+                        # 出售物品
+                        user: User = util.get_user(qq, username)
+                        try:
+                            gold: int = context.gold * context.item.number
+                            util.remove_items(user.warehouse, [context.item])
+                            user.gold += gold
+                            flower_dao.update_user_by_qq(user)
+                            reply = user.username + '，出售成功，获得金币%s，余额：%s' % (
+                                util.show_gold(gold),
+                                util.show_gold(user.gold)
+                            )
+                            result.context_reply_text.append(reply)
+                            continue
+                        except ItemNotFoundException:
+                            reply = user.username + '，该物品不可以出售'
+                            result.context_reply_text.append(reply)
+                            continue
+                        except ItemNotEnoughException:
+                            reply = user.username + '，物品不足'
+                            result.context_reply_text.append(reply)
+                            continue
+                elif context.step == 1:
+                    if message == '取消':
+                        del_context_list.append(origin_list[index])
+                        reply = '已为您取消出售'
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message == '成交':
+                        del_context_list.append(origin_list[index])
+                        # 出售物品
+                        user: User = util.get_user(qq, username)
+                        try:
+                            gold: int = context.gold * context.item.number
+                            util.remove_items(user.warehouse, [context.item])
+                            user.gold += gold
+                            flower_dao.update_user_by_qq(user)
+                            reply = user.username + '，出售成功，获得金币%s，余额：%s' % (
+                                util.show_gold(gold),
+                                util.show_gold(user.gold)
+                            )
+                            result.context_reply_text.append(reply)
+                            continue
+                        except ItemNotFoundException:
+                            reply = user.username + '，该物品不可以出售'
+                            result.context_reply_text.append(reply)
+                            continue
+                        except ItemNotEnoughException:
+                            reply = user.username + '，物品不足'
+                            result.context_reply_text.append(reply)
+                            continue
+                    elif message[:2] == '议价':
+                        data = message[2:].strip()
+                        try:
+                            gold: int = int(float(data) * 100)
+                            if context.bargain_times >= 3:
+                                reply = '你已经议价3次了，不能继续议价了，只能输入“成交”/“取消”\n' \
+                                        '当前单价：' + util.show_gold(context.gold)
+                                result.context_reply_text.append(reply)
+                                continue
+                            item_obj: Item = flower_dao.select_item_by_name(context.item.item_name)
+                            relationship: Relationship = flower_dao.select_relationship_by_pair(context.person_id,
+                                                                                                str(qq))
+                            person: Person = flower_dao.select_person(context.person_id)
+                            max_gold: int = int(
+                                item_obj.gold * (
+                                        0.8 + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
+                            if relationship.value > 95:
+                                max_gold *= 1.0 + random.random()
+                            if gold > max_gold:
+                                reply = '%s表示自己不能接受这个价格' % person.name
+                                result.context_reply_text.append(reply)
+                                continue
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.gold = gold
+                            context.bargain_times += 1
+                            flower_dao.insert_context(qq, context)
+                            reply = '%s接受了这个价格\n当前单价：%s' % (person.name, util.show_gold(context.gold))
+                            result.context_reply_text.append(reply)
+                            continue
+                        except ValueError:
+                            reply = '格式错误！格式“议价 价格”，如“议价 1.2”\n' \
+                                    '注意价格是单价'
+                            result.context_reply_text.append(reply)
+                            continue
         
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
@@ -3736,7 +3922,7 @@ class FlowerService:
             flower_dao.update_user_person(user_person)
             return user.username + '，花费金币%.2f，购买%s' % (commodity.gold * number / 100, str(item))
         except ItemNotFoundException:
-            return user.username + '，该商品不可以出售'
+            return user.username + '，该商品不可以购买'
         except ItemNegativeNumberException:
             return user.username + '，不可以购买0份或者负数份'
         except WareHouseSizeNotEnoughException:
@@ -3813,7 +3999,25 @@ class FlowerService:
             util.unlock_user(qq)
             return user.username + '，其不接受出售商品'
         item_obj: Item = flower_dao.select_item_by_name(item.item_name)
-        
+        if relationship.value < 10:
+            gold: int = 1
+        else:
+            gold: int = int(
+                item_obj.gold * (0.8 + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
+        can_bargain: bool = relationship.value > 70
+        context: CommodityBargaining = CommodityBargaining(
+            person_id=person.get_id(),
+            item=item,
+            gold=gold,
+            can_bargain=can_bargain
+        )
+        flower_dao.insert_context(qq, context)
+        if can_bargain:
+            return user.username + '，%s出价单个%.2f，是否要议价，' \
+                                   '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
+        else:
+            return user.username + '，%s出价单个%.2f，' \
+                                   '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
 
 
 class DrawCard:
