@@ -3887,7 +3887,7 @@ class FlowerService:
             relationship.value = person.affinity
         if commodity_index > 0:
             commodity_index -= 1
-        if commodity_index < 0 or commodity_index > len(user_person.commodities):
+        if commodity_index < 0 or commodity_index >= len(user_person.commodities):
             util.unlock_user(qq)
             return user.username + '，商品序号超限'
         commodity: Commodity = user_person.commodities[commodity_index]
