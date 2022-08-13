@@ -283,6 +283,7 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
         create_item: bool = False
         if item.item_id != '' and item.item_id is not None:
             item_obj: Item = flower_dao.select_item_by_id(item.item_id)
+            item.item_name = item_obj.name
         else:
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
             create_item: bool = True

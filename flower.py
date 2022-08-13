@@ -3709,6 +3709,13 @@ class FlowerService:
         try:
             item_obj: Item = flower_dao.select_item_by_id(commodity.item_id)
             item: DecorateItem = DecorateItem()
+            item.item_name = item_obj.name
+            item.item_type = item_obj.item_type
+            item.rot_second = item_obj.rot_second  # 腐烂的秒数
+            item.humidity = item_obj.humidity  # 湿度
+            item.nutrition = item_obj.nutrition  # 营养
+            item.temperature = item_obj.temperature  # 温度
+            item.level = item_obj.level
             item.item_id = commodity.item_id
             item.number = number
             if item_obj.max_durability > 0:
@@ -3776,7 +3783,37 @@ class FlowerService:
     
     @classmethod
     def sell_commodity(cls, qq: int, username: str, person_index: int, item: DecorateItem) -> str:
-        pass
+        """
+        出售商品
+        :param qq:
+        :param username:
+        :param person_index:
+        :param item:
+        :return:
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+        if len(user_person_list) == 0:
+            util.generate_today_person(user_person_list, qq)
+        if person_index > 0:
+            person_index -= 1
+        if person_index < 0 or person_index >= len(user_person_list):
+            util.unlock_user(qq)
+            return user.username + '，人物序号超限'
+        user_person: UserPerson = user_person_list[person_index]
+        relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
+        person: Person = flower_dao.select_person(user_person.person_id)
+        profession: Profession = flower_dao.select_profession(person.profession_id)
+        if not relationship.valid():
+            relationship.src_person = user_person.person_id
+            relationship.dst_person = str(qq)
+            relationship.value = person.affinity
+        if profession.name != '商人' or profession.name != '探险家':
+            util.unlock_user(qq)
+            return user.username + '，其不接受出售商品'
+        item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+        
 
 
 class DrawCard:
