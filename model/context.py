@@ -3,7 +3,7 @@ import datetime
 from typing import Dict, List
 
 from flower_exceptions import FunctionArgsException
-from model import City, DecorateItem, DecorateBuff, Person
+from model import City, DecorateItem, DecorateBuff
 
 __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",

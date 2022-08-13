@@ -2433,9 +2433,14 @@ class ContextHandler:
                             relationship: Relationship = flower_dao.select_relationship_by_pair(context.person_id,
                                                                                                 str(qq))
                             person: Person = flower_dao.select_person(context.person_id)
+                            if item_obj.item_type == ItemType.flower:
+                                ratio: float = 1.0
+                            else:
+                                ratio: float = 0.8
                             max_gold: int = int(
-                                item_obj.gold * (
-                                        0.8 + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
+                                item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (
+                                        random.random() - 0.5)))
+                            
                             if relationship.value > 95:
                                 max_gold *= 1.0 + random.random()
                             if gold > max_gold:
@@ -4002,8 +4007,12 @@ class FlowerService:
         if relationship.value < 10:
             gold: int = 1
         else:
+            if item_obj.item_type == ItemType.flower:
+                ratio: float = 1.0
+            else:
+                ratio: float = 0.8
             gold: int = int(
-                item_obj.gold * (0.8 + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
+                item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
         can_bargain: bool = relationship.value > 70
         context: CommodityBargaining = CommodityBargaining(
             person_id=person.get_id(),
