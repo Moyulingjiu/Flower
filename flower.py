@@ -2449,13 +2449,14 @@ class ContextHandler:
                             if relationship.value > 95:
                                 max_gold *= 1.0 + random.random()
                             flower_dao.remove_context(qq, origin_list[index])
-                            context.gold = gold
                             context.bargain_times += 1
-                            flower_dao.insert_context(qq, context)
                             if gold > max_gold:
+                                flower_dao.insert_context(qq, context)
                                 reply = '%s表示自己不能接受这个价格' % person.name
                                 result.context_reply_text.append(reply)
                                 continue
+                            context.gold = gold
+                            flower_dao.insert_context(qq, context)
                             reply = '%s接受了这个价格\n当前单价：%s' % (person.name, util.show_gold(context.gold))
                             result.context_reply_text.append(reply)
                             continue
