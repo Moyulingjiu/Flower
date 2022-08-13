@@ -1435,7 +1435,7 @@ class WorldControlHandler:
             alive_number: int = flower_dao.select_all_alive_person_number()
             die_number = total_number - alive_number
             age_range: List = [0 for _ in range(11)]
-            profession_number: Dict[str, int] = {}
+            profession_number: Dict[str or None, int] = {}
             page: int = -1
             page_size: int = 20
             now: datetime = datetime.now()
@@ -2382,7 +2382,7 @@ class FlowerService:
                 level = i + 1
                 user.level = i + 1
                 flower_dao.update_user_by_qq(user)
-        res += str(level)
+        res += str(level) + '（%d/%d）' % (user.exp, system_data.exp_level[level])
         res += '\n角色性别：' + user.gender.show()
         res += '\n出生地：' + born_city.city_name
         res += '\n所在城市：' + city.city_name
