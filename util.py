@@ -1181,3 +1181,16 @@ def give_achievement(user: User, achievement_name: str, value: int = 1, cover_ol
         else:
             user_achievement.level = 0
         user_achievement.collection = list(user_achievement.collection)
+
+
+def leave_message(qq: int, message: str):
+    """
+    留言
+    :param qq: qq
+    :param message: 消息
+    :return:
+    """
+    if qq in global_config.message_board:
+        global_config.message_board[qq].append(message)
+    else:
+        global_config.message_board[qq] = [message]

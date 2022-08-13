@@ -8,6 +8,7 @@ import logging.handlers
 import os
 import sys
 from datetime import datetime
+from typing import List, Dict
 
 import yaml
 
@@ -42,6 +43,9 @@ half_day_second: int = hour_second * 12
 week_second: int = day_second * 7
 month_second: int = day_second * 30
 year_second: int = day_second * 365
+
+# 延迟任务的留言板
+message_board: Dict[int, List[str]] = {}
 
 
 class FlowerLog:

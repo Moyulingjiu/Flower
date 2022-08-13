@@ -1074,7 +1074,7 @@ class DecorateBuff(InnerClass):
         if self.bad_hour_coefficient != 0.0:
             reply += '、糟糕时长增幅%.2f%%' % (self.bad_hour_coefficient * 100)
         if reply == '':
-            return '无效果/特殊效果'
+            return '无效果或者拥有特殊效果'
         return reply[1:]
     
     def __str__(self):

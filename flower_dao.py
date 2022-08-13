@@ -1320,6 +1320,18 @@ def select_kingdom_by_name(name: str) -> Kingdom:
         dict_to_class(result, kingdom)
         redis_db.set(redis_kingdom_prefix + name, serialization(kingdom), ex=get_long_random_expire())
         return kingdom
+    
+    
+def update_kingdom(kingdom: Kingdom) -> int:
+    """
+    更新帝国
+    :param kingdom: 国家
+    :return: id
+    """
+    result = mongo_kingdom.update_one({"_id": ObjectId(kingdom.get_id())}, {"$set": class_to_dict(kingdom)})
+    redis_db.delete(redis_kingdom_prefix + kingdom.get_id())
+    redis_db.delete(redis_all_kingdom)
+    return result.modified_count
 
 
 def insert_kingdom(kingdom: Kingdom) -> str:
@@ -1381,6 +1393,21 @@ def insert_relationship(relationship: Relationship) -> str:
     return str(result.inserted_id)
 
 
+def select_all_person_number() -> int:
+    number: int = mongo_user_person.count_documents({"is_delete": 0})
+    return number
+
+
+def select_all_alive_person_number() -> int:
+    number: int = mongo_user_person.count_documents({"is_delete": 0, "die": False})
+    return number
+
+
+def select_all_profession_person_number(profession_id: str) -> int:
+    number: int = mongo_user_person.count_documents({"is_delete": 0, "profession_id": profession_id})
+    return number
+
+
 def select_all_person(page: int, page_size: int = 30) -> List[str]:
     """
     查询所有npc
@@ -1417,6 +1444,17 @@ def select_person(_id: str) -> Person:
         person.gender = Gender.get(person.gender)
         redis_db.set(redis_person_prefix + _id, serialization(person), ex=get_long_random_expire())
         return person
+    
+    
+def update_person(person: Person) -> int:
+    """
+    更新npc
+    :param person: npc
+    :return: id
+    """
+    result = mongo_person.update_one({"_id": ObjectId(person.get_id())}, {"$set": class_to_dict(person)})
+    redis_db.delete(redis_person_prefix + person.get_id())
+    return result.modified_count
 
 
 def insert_person(person: Person) -> str:

@@ -115,7 +115,7 @@ async def send_mail(origin_mail: OriginMail):
     try:
         util.lock_user(origin_mail.target_qq)
         user: User = util.get_user(origin_mail.target_qq, '')
-    except UserNotRegisteredException as e:
+    except UserNotRegisteredException:
         util.unlock_user(origin_mail.target_qq)
         return Response(code=404, message='not found', data=None)
     except ResBeLockedException:
@@ -170,6 +170,12 @@ async def add_flower(message: Message):
                     announcement.expire_time.strftime('%Y-%m-%d %H:%M:%S')
                 )
                 result.reply_text.append(reply)
+        
+        # 检查留言板
+        if message.qq in global_config.message_board:
+            for message in global_config.message_board[message.qq]:
+                result.reply_text.append(message)
+            global_config.message_board[message.qq] = []
         
         logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
             message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,

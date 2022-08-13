@@ -18,6 +18,15 @@ def get_random_ratio(symbol: float = 1):
     return random.random() * 0.2 * symbol + 1.0
 
 
+def random_kingdom_area(kingdom: Kingdom) -> WorldArea:
+    if len(kingdom.area_id_list) > 0:
+        area_id = random.choice(kingdom.area_id_list)
+        area: WorldArea = flower_dao.select_world_area(area_id)
+    else:
+        area: WorldArea = random.choice(flower_dao.select_all_world_area())
+    return area
+
+
 def update_world():
     """
     更新世界
@@ -28,15 +37,194 @@ def update_world():
     logger.info('开始更新世界')
 
 
-def random_generate_world():
+def random_generate_world() -> int:
     """
     随机生成世界
-    :return:
+    :return: 总人口
     """
-    profession_list: List[Profession] = flower_dao.select_all_profession()
+    logger.info('开始生成世界！')
+    area_list: List[WorldArea] = flower_dao.select_all_world_area()
+    kingdom_list: List[Kingdom] = flower_dao.select_all_kingdom()
+    terrain_cache = {}
+    total_population: int = 0
+    for area in area_list:
+        if area.terrain_id in terrain_cache:
+            terrain: WorldTerrain = terrain_cache[area.terrain_id]
+        else:
+            terrain: WorldTerrain = flower_dao.select_world_terrain(area.terrain_id)
+            terrain_cache[area.terrain_id] = terrain
+        population: int = 1
+        if terrain.name == '冰盖':
+            population: int = 10
+        elif terrain.name == '草原':
+            population: int = 50
+        elif terrain.name == '岛':
+            population: int = 20
+        elif terrain.name == '港口':
+            population: int = 50
+        elif terrain.name == '高原':
+            population: int = 20
+        elif terrain.name == '海洋':
+            population: int = 0
+        elif terrain.name == '禁地':
+            population: int = 0
+        elif terrain.name == '胡泊':
+            population: int = 20
+        elif terrain.name == '林地':
+            population: int = 20
+        elif terrain.name == '平原':
+            population: int = 100
+        elif terrain.name == '丘陵':
+            population: int = 50
+        elif terrain.name == '盆地':
+            population: int = 20
+        elif terrain.name == '沙漠':
+            population: int = 10
+        elif terrain.name == '山脉':
+            population: int = 10
+        elif terrain.name == '山地':
+            population: int = 20
+        elif terrain.name == '峡谷':
+            population: int = 20
+        elif terrain.name == '雨林':
+            population: int = 4
+        elif terrain.name == '海峡':
+            population: int = 0
+        logger.info('生成地区“%s”的人口“%d”' % (area.name, population))
+        total_population += population
+        for i in range(population):
+            if random.random() < 0.9:
+                rand = random.random()
+                if rand <= 0.1:
+                    profession: Profession = flower_dao.select_profession_by_name('商人')
+                elif rand <= 0.17:
+                    profession: Profession = flower_dao.select_profession_by_name('旅行商人')
+                elif rand <= 0.27:
+                    profession: Profession = flower_dao.select_profession_by_name('农民')
+                elif rand <= 0.37:
+                    profession: Profession = flower_dao.select_profession_by_name('渔夫')
+                elif rand <= 0.38:
+                    profession: Profession = flower_dao.select_profession_by_name('建筑师')
+                elif rand <= 0.43:
+                    profession: Profession = flower_dao.select_profession_by_name('猎人')
+                elif rand <= 0.48:
+                    profession: Profession = flower_dao.select_profession_by_name('伐木工')
+                elif rand <= 0.63:
+                    profession: Profession = flower_dao.select_profession_by_name('学生')
+                elif rand <= 0.66:
+                    profession: Profession = flower_dao.select_profession_by_name('老师')
+                elif rand <= 0.68:
+                    profession: Profession = flower_dao.select_profession_by_name('科学家')
+                elif rand <= 0.78:
+                    profession: Profession = flower_dao.select_profession_by_name('探险家')
+                elif rand <= 0.83:
+                    profession: Profession = flower_dao.select_profession_by_name('交易员')
+                elif rand <= 0.88:
+                    profession: Profession = flower_dao.select_profession_by_name('工程师')
+                elif rand <= 0.9:
+                    profession: Profession = flower_dao.select_profession_by_name('医生')
+                elif rand <= 0.93:
+                    profession: Profession = flower_dao.select_profession_by_name('护士')
+                elif rand <= 0.97:
+                    profession: Profession = flower_dao.select_profession_by_name('治安队')
+                else:
+                    profession: Profession = Profession()
+            else:
+                rand = random.random()
+                if rand < 0.5:
+                    profession: Profession = flower_dao.select_profession_by_name('骑士')
+                elif rand < 0.8:
+                    profession: Profession = flower_dao.select_profession_by_name('男爵')
+                elif rand < 0.9:
+                    profession: Profession = flower_dao.select_profession_by_name('子爵')
+                elif rand < 0.97:
+                    profession: Profession = flower_dao.select_profession_by_name('伯爵')
+                elif rand < 0.99:
+                    profession: Profession = flower_dao.select_profession_by_name('侯爵')
+                else:
+                    profession: Profession = flower_dao.select_profession_by_name('公爵')
+            person: Person = random_person(born_profession=profession)
+            # 如果不是学生那么不能太小
+            if profession.name != '学生' and \
+                    (datetime.now() - person.born_time).total_seconds() // global_config.day_second < 20:
+                person.born_time = datetime.now() - timedelta(days=random.randint(20, 25))
+            flower_dao.insert_person(person)
+    for kingdom in kingdom_list:
+        logger.info('生成国家“%s”的政要' % kingdom.name)
+        profession: Profession = flower_dao.select_profession_by_name('国王')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=20
+        )
+        kingdom.king_id = flower_dao.insert_person(person)
+        kingdom.governance_level = person.leadership  # 治理水平
+        kingdom.financial_level = person.wisdom  # 财政水平
+        kingdom.military_level = person.force  # 军事水平
+        flower_dao.update_kingdom(kingdom)
+        profession: Profession = flower_dao.select_profession_by_name('陆军军事大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=30
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('海军军事大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=30
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('财政大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=50
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('治理大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=50
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('教育大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=50
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('科技大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=50
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('外交大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=50
+        )
+        flower_dao.insert_person(person)
+        profession: Profession = flower_dao.select_profession_by_name('国安大臣')
+        person: Person = random_person(
+            born_area=random_kingdom_area(kingdom),
+            born_profession=profession,
+            min_age=50
+        )
+        flower_dao.insert_person(person)
+        total_population += 10
+    logger.info('生成世界结束！总计人口%d' % total_population)
+    return total_population
 
 
-def random_person(born_area: WorldArea = None, born_profession: Profession = None, age: int = -1) -> Person:
+def random_person(born_area: WorldArea = None, born_profession: Profession = None, age: int = -1,
+                  min_age: int = 0) -> Person:
     """
     随机凭空生成一个人物（没有父母）
     """
@@ -173,7 +361,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
         person.wisdom = person.wisdom * get_random_ratio(0.8)
         person.affinity = person.affinity * get_random_ratio(1.2)
         person.bravery_or_cowardly = person.bravery_or_cowardly * get_random_ratio(-0.8)
-
+    
     # 根据健康值来确定角色的最大年龄
     if person.health < 20:
         person.max_age = random.randint(1, 30)
@@ -187,5 +375,9 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
         person.max_age = random.randint(60, 125)
     if age == -1:
         age: int = random.randint(0, person.max_age - 1)
+        if age < min_age:
+            age = min_age
+    if person.max_age < age:
+        person.max_age = age + 5
     person.born_time = datetime.now() - timedelta(days=age)
     return person
