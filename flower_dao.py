@@ -595,6 +595,8 @@ def select_flower_by_id(_id: str) -> Flower:
     :param _id: id
     :return: 花卉
     """
+    if not ObjectId.is_valid(_id):
+        return Flower()
     redis_ans = redis_db.get(redis_flower_prefix + _id)
     if redis_ans is not None:
         return deserialize(redis_ans)
