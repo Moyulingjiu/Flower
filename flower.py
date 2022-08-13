@@ -171,7 +171,16 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_today_person(qq, username)
                 result.reply_text.append(reply)
                 return result
-                
+            elif message[:4] == '花店人物':
+                data = message[4:].strip()
+                try:
+                    index: int = int(data)
+                    reply = FlowerService.view_today_person_index(qq, username, index)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise TypeException('格式错误！格式“花店人物 序号”来查看某个具体的人')
+            
             # 操作部分
             elif message == '初始化花店':
                 reply = FlowerService.init_user(qq, username)
@@ -3555,6 +3564,62 @@ class FlowerService:
             person: Person = flower_dao.select_person(user_person.person_id)
             profession: Profession = flower_dao.select_profession(person.profession_id)
             reply += '\n%d.%s（%s）' % (index, person.name, profession.name)
+        util.unlock_user(qq)
+        return reply
+    
+    @classmethod
+    def view_today_person_index(cls, qq: int, username: str, index: int) -> str:
+        """
+        查看今天的人物
+        :param qq: qq
+        :param username: 用户名
+        :param index: 序号
+        :return:
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+        if len(user_person_list) == 0:
+            util.generate_today_person(user_person_list, qq)
+        if index > 0:
+            index -= 1
+        if index < 0 or index >= len(user_person_list):
+            util.unlock_user(qq)
+            return user.username + '，序号超限'
+        user_person: UserPerson = user_person_list[index]
+        person: Person = flower_dao.select_person(user_person.person_id)
+        reply: str = person.name + '（%s）' % person.get_id()
+        reply += '\n' + '-' * 6
+        if len(user_person.news) > 0:
+            reply += '\n可以打听小道消息'
+            reply += '\n' + '-' * 6
+        if len(user_person.commodities) > 0:
+            reply += '\n可以购买如下商品：'
+            index = 0
+            for commodity in user_person.commodities:
+                index += 1
+                item: Item = flower_dao.select_item_by_id(commodity.item_id)
+                reply += '\n%d.%s，金币：%.2f，库存：%d' % (index, item.name, commodity.gold / 100, commodity.stock)
+            reply += '\n' + '-' * 6
+        if len(user_person.knowledge) > 0:
+            reply += '\n可以购买如下知识：'
+            index = 0
+            for knowledge in user_person.knowledge:
+                index += 1
+                level = user_person.knowledge[knowledge][0]
+                if level >= 3:
+                    level_str = '大师'
+                elif level == 3:
+                    level_str = '熟悉'
+                elif level == 2:
+                    level_str = '了解'
+                elif level == 1:
+                    level_str = '菜鸟'
+                else:
+                    level_str = '不认识'
+                price = user_person.knowledge[knowledge][1]
+                reply += '\n%d.%s%s：%.2f金币' % (index, knowledge, level_str, price / 100)
+            reply += '\n' + '-' * 6
         util.unlock_user(qq)
         return reply
 
