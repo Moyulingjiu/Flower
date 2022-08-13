@@ -2438,7 +2438,7 @@ class ContextHandler:
                             else:
                                 ratio: float = 0.8
                             max_gold: int = int(
-                                item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (
+                                item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.2 * (
                                         random.random() - 0.5)))
                             
                             if relationship.value > 95:
