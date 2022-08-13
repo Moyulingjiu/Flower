@@ -2396,6 +2396,9 @@ class ContextHandler:
                         del_context_list.append(origin_list[index])
                         reply = '已为您取消出售'
                         result.context_reply_text.append(reply)
+                        user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
+                        user_person.ban_item.append(context.item.item_name)
+                        flower_dao.update_user_person(user_person)
                         continue
                     elif message == '成交':
                         del_context_list.append(origin_list[index])
@@ -4003,6 +4006,9 @@ class FlowerService:
         if profession.name != '商人' or profession.name != '探险家':
             util.unlock_user(qq)
             return user.username + '，其不接受出售商品'
+        if item.item_name in user_person.ban_item:
+            util.unlock_user(qq)
+            return user.username + '，其不接受出售商品'
         item_obj: Item = flower_dao.select_item_by_name(item.item_name)
         if relationship.value < 10:
             gold: int = 1
@@ -4015,6 +4021,7 @@ class FlowerService:
                 item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
         can_bargain: bool = relationship.value > 70
         context: CommodityBargaining = CommodityBargaining(
+            user_person_id=user_person.get_id(),
             person_id=person.get_id(),
             item=item,
             gold=gold,

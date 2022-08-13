@@ -186,9 +186,10 @@ class CommodityBargaining(BaseContext):
     议价
     """
     
-    def __init__(self, person_id: str, item: DecorateItem, gold: int, can_bargain: bool = False,
-                 bargain_times: int = 0):
+    def __init__(self, user_person_id: str, person_id: str, item: DecorateItem, gold: int,
+                 can_bargain: bool = False, bargain_times: int = 0):
         super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        self.user_person_id = user_person_id  # 今日任务
         self.person_id = person_id  # npc id
         self.item = item  # 商品
         self.gold = gold  # 价格

@@ -1538,6 +1538,23 @@ def insert_person(person: Person) -> str:
     return str(result.inserted_id)
 
 
+def select_user_person(_id: str) -> UserPerson:
+    """
+    根据id查询用户-npc关系
+    :param _id: id
+    :return: user_person
+    """
+    redis_ans = redis_db.get(redis_user_person_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_user_person.find_one({"_id": ObjectId(_id)})
+        user_person: UserPerson = UserPerson()
+        dict_to_class(result, user_person)
+        redis_db.set(redis_user_person_prefix + _id, serialization(user_person), ex=get_random_expire())
+        return user_person
+
+
 def select_user_person_by_qq(qq: int, select_time: datetime = datetime.now()) -> List[UserPerson]:
     """
     查询用户-npc关联关系
@@ -1568,6 +1585,7 @@ def update_user_person(user_person: UserPerson) -> int:
     """
     result = mongo_user_person.update_one({"_id": ObjectId(user_person.get_id())}, {"$set": class_to_dict(user_person)})
     redis_db.delete(redis_user_person_prefix + str(user_person.qq) + '_' + user_person.create_time.strftime('%Y_%m_%d'))
+    redis_db.delete(redis_user_person_prefix + user_person.get_id())
     return result.modified_count
 
 
