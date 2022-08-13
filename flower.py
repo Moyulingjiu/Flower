@@ -408,6 +408,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     except ResourceNotFound as e:
         return Result.init(reply_text=e.message)
     except Exception as e:
+        logger.error('未知错误')
         logger.error(str(e))
     finally:
         util.unlock_user(qq)
@@ -749,6 +750,20 @@ class AdminHandler:
                 return FlowerService.view_user_buff(at_list[0], '', page)
             except ValueError:
                 raise '格式错误！格式“@xxx 花店buff 【页码】”页码可省略。'
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message[:4] == '花店知识':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店知识 【页码】”，必须并且只能艾特一人')
+            data = message[4:].strip()
+            try:
+                if len(data) > 0:
+                    page: int = int(data) - 1
+                else:
+                    page: int = 0
+                return FlowerService.view_knowledge(at_list[0], username, page)
+            except ValueError:
+                raise '格式错误！格式“@xxx 花店知识 【页码】”页码可省略。'
             except UserNotRegisteredException:
                 return '对方未注册'
         elif message == '发送信件':
