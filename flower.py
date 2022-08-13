@@ -226,13 +226,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 if warehouse_item not in similar_items_name:
                                     index += 1
                                     reply += '\n%d.' % index + warehouse_item.show_without_number()
-                                    item.flower_quality = warehouse_item.flower_quality
-                                    item.durability = warehouse_item.durability
-                                    item.hour = warehouse_item.hour
-                                    item.create = warehouse_item.create
-                                    item.update = warehouse_item.update
-                                    item.rot_second = warehouse_item.rot_second
-                                    item.max_durability = warehouse_item.max_durability
+                                    number: int = item.number
+                                    item = copy.deepcopy(warehouse_item)
+                                    item.number = number
                                     args = {
                                         'qq': qq,
                                         'username': username,
@@ -246,9 +242,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 result.reply_text.append(reply)
                                 return result
                         # 如果只有一件物品，那么丢弃的应该是这件物品
-                        item.durability = item_list[0].durability
-                        item.flower_quality = item_list[0].flower_quality
-                        item.hour = item_list[0].hour
+                        number: int = item.number
+                        item = copy.deepcopy(item_list[0])
+                        item.number = number
                     util.unlock_user(qq)
                     reply = FlowerService.use_item(qq, username, item)
                     result.reply_text.append(reply)
@@ -275,13 +271,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 if warehouse_item not in similar_items_name:
                                     index += 1
                                     reply += '\n%d.' % index + warehouse_item.show_without_number()
-                                    item.flower_quality = warehouse_item.flower_quality
-                                    item.durability = warehouse_item.durability
-                                    item.hour = warehouse_item.hour
-                                    item.create = warehouse_item.create
-                                    item.update = warehouse_item.update
-                                    item.rot_second = warehouse_item.rot_second
-                                    item.max_durability = warehouse_item.max_durability
+                                    number: int = item.number
+                                    item = copy.deepcopy(warehouse_item)
+                                    item.number = number
                                     args = {
                                         'qq': qq,
                                         'username': username,
@@ -295,8 +287,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 result.reply_text.append(reply)
                                 return result
                         # 如果只有一件物品，那么丢弃的应该是这件物品
-                        item.durability = item_list[0].durability
-                        item.flower_quality = item_list[0].flower_quality
+                        number: int = item.number
+                        item = copy.deepcopy(item_list[0])
+                        item.number = number
                     util.unlock_user(qq)
                     reply = FlowerService.throw_item(qq, username, item)
                     result.reply_text.append(reply)
@@ -440,13 +433,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 if warehouse_item not in similar_items_name:
                                     index += 1
                                     reply += '\n%d.' % index + warehouse_item.show_without_number()
-                                    item.flower_quality = warehouse_item.flower_quality
-                                    item.durability = warehouse_item.durability
-                                    item.hour = warehouse_item.hour
-                                    item.create = warehouse_item.create
-                                    item.update = warehouse_item.update
-                                    item.rot_second = warehouse_item.rot_second
-                                    item.max_durability = warehouse_item.max_durability
+                                    number: int = item.number
+                                    item = copy.deepcopy(warehouse_item)
+                                    item.number = number
                                     args = {
                                         'qq': qq,
                                         'username': username,
@@ -461,8 +450,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                                 result.reply_text.append(reply)
                                 return result
                         # 如果只有一件物品，出售的只能是它
-                        item.durability = item_list[0].durability
-                        item.flower_quality = item_list[0].flower_quality
+                        number: int = item.number
+                        item = copy.deepcopy(item_list[0])
+                        item.number = number
                     util.unlock_user(qq)
                     reply = FlowerService.sell_commodity(qq, username, person_index, item)
                     result.reply_text.append(reply)
