@@ -2324,7 +2324,7 @@ class FlowerService:
                 level = i + 1
                 user.level = i + 1
                 flower_dao.update_user_by_qq(user)
-        res += str(level + 1)
+        res += str(level)
         res += '\n角色性别：' + user.gender.show()
         res += '\n出生地：' + born_city.city_name
         res += '\n所在城市：' + city.city_name
