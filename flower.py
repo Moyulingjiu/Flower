@@ -1349,7 +1349,8 @@ class WorldControlHandler:
             def create_world():
                 population: int = world_handler.random_generate_world()
                 util.leave_message(qq, '世界生成已经完成，总计人口：%d' % population)
-            
+
+            create_world()
             return '当前开始创建世界，预估需要十分钟~请勿重复发起命令'
         elif message[:4] == '世界种族':
             data = message[4:].strip()
