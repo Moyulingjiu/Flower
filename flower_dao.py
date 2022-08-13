@@ -568,6 +568,27 @@ def select_all_flower_number() -> int:
     return int(number)
 
 
+def select_random_flower(level_list: List[FlowerLevel]) -> Flower:
+    """
+    随机获取一种花
+    :return:
+    """
+    if level_list is None or len(level_list) == 0:
+        number: int = select_all_flower_number()
+        index: int = random.randint(0, number - 1)
+        result = mongo_flower.find({"is_delete": 0}).skip(index).limit(1)
+    else:
+        level = random.choice(level_list)
+        number: int = mongo_flower.count_documents({"is_delete": 0, "level": level})
+        index: int = random.randint(0, number - 1)
+        result = mongo_flower.find({"is_delete": 0, "level": level}).skip(index).limit(1)
+    for flower_result in result:
+        flower: Flower = Flower()
+        dict_to_class(flower_result, flower)
+        return flower
+    return Flower()
+
+
 def select_flower_by_id(_id: str) -> Flower:
     """
     根据id获取花卉
@@ -1320,8 +1341,8 @@ def select_kingdom_by_name(name: str) -> Kingdom:
         dict_to_class(result, kingdom)
         redis_db.set(redis_kingdom_prefix + name, serialization(kingdom), ex=get_long_random_expire())
         return kingdom
-    
-    
+
+
 def update_kingdom(kingdom: Kingdom) -> int:
     """
     更新帝国
@@ -1413,12 +1434,13 @@ def select_age_range_person_number(min_age: int, max_age: int) -> int:
     now: datetime = datetime.now()
     min_born_time = now - timedelta(days=max_age)
     max_born_time = now - timedelta(days=min_age)
-    number: int = mongo_person.count_documents({"is_delete": 0, "die": False, "born_time": {'$gte': min_born_time, '$lt': max_born_time}})
+    number: int = mongo_person.count_documents(
+        {"is_delete": 0, "die": False, "born_time": {'$gte': min_born_time, '$lt': max_born_time}})
     return number
 
 
 def select_all_profession_person_number(profession_id: str) -> int:
-    number: int = mongo_person.count_documents({"is_delete": 0, "profession_id": profession_id})
+    number: int = mongo_person.count_documents({"is_delete": 0, "profession_id": profession_id, "die": False})
     return number
 
 
@@ -1444,6 +1466,22 @@ def select_all_person(page: int, page_size: int = 30) -> List[Person]:
         return person_list
 
 
+def select_random_person_by_profession(profession_id: str) -> Person:
+    """
+    随机选择一位某职业人
+    :param profession_id:
+    :return:
+    """
+    number: int = select_all_profession_person_number(profession_id)
+    index: int = random.randint(0, number - 1)
+    result = mongo_person.find({"is_delete": 0, "profession_id": profession_id, "die": False}).skip(index).limit(1)
+    for person_result in result:
+        person: Person = Person()
+        dict_to_class(person_result, person)
+        return person
+    return Person()
+
+
 def select_person(_id: str) -> Person:
     """
     根据id查询npc
@@ -1460,8 +1498,8 @@ def select_person(_id: str) -> Person:
         person.gender = Gender.get(person.gender)
         redis_db.set(redis_person_prefix + _id, serialization(person), ex=get_long_random_expire())
         return person
-    
-    
+
+
 def update_person(person: Person) -> int:
     """
     更新npc
@@ -1646,7 +1684,7 @@ def select_random_person_name(gender: Gender) -> PersonName:
     else:
         gender_value = 0
     number: int = mongo_person_name.count_documents({"is_delete": 0, "gender": gender_value})
-    index: int = random.randint(0, number)
+    index: int = random.randint(0, number - 1)
     result = mongo_person_name.find({"is_delete": 0, "gender": gender_value}).skip(index).limit(1)
     for person_name_result in result:
         person_name: PersonName = PersonName()

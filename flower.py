@@ -167,7 +167,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_user_clothing(qq, username)
                 result.reply_text.append(reply)
                 return result
-            
+            elif message == '花店人物':
+                reply = FlowerService.view_today_person(qq, username)
+                result.reply_text.append(reply)
+                return result
+                
             # 操作部分
             elif message == '初始化花店':
                 reply = FlowerService.init_user(qq, username)
@@ -3530,6 +3534,29 @@ class FlowerService:
                 return user.username + '，你的花已枯萎。'
         finally:
             util.unlock_user(qq)
+    
+    @classmethod
+    def view_today_person(cls, qq: int, username: str) -> str:
+        """
+        查看今天的人物
+        :param qq: qq
+        :param username: 用户名
+        :return:
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+        if len(user_person_list) == 0:
+            util.generate_today_person(user_person_list, qq)
+        reply: str = user.username + '，你今天的人物如下：'
+        index: int = 0
+        for user_person in user_person_list:
+            index += 1
+            person: Person = flower_dao.select_person(user_person.person_id)
+            profession: Profession = flower_dao.select_profession(person.profession_id)
+            reply += '\n%d.%s（%s）' % (index, person.name, profession.name)
+        util.unlock_user(qq)
+        return reply
 
 
 class DrawCard:

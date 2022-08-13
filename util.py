@@ -8,7 +8,7 @@ import random
 from datetime import datetime, timedelta
 from enum import Enum
 from threading import Thread
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import flower_dao
 import global_config
@@ -24,11 +24,11 @@ def async_function(f):
     :param f: 函数
     :return: 包装之后的函数
     """
-
+    
     def wrapper(*args, **kwargs):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
-
+    
     return wrapper
 
 
@@ -215,7 +215,7 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
-
+    
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
     if not item_obj.valid():
         raise ItemNotFoundException('')
@@ -447,7 +447,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-
+    
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -457,7 +457,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-
+    
     # 改变土壤（如果被buff锁定了，那么就无法改变）
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if not total_buff.lock_soil:
@@ -612,7 +612,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.bad_hour += 1 * (1.0 + total_buff.bad_hour_coefficient)
         else:
             user.farm.perfect_hour = 0
-
+        
         # 根据条件不同，每小时增长的小时不同
         if condition_level == ConditionLevel.PERFECT:
             if flower.level == FlowerLevel.S:
@@ -643,7 +643,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 0.6 * (1.0 + total_buff.hour_coefficient)
             else:
                 user.farm.hour += 0.7 * (1.0 + total_buff.hour_coefficient)
-
+        
         # 根据条件来查看花的状态
         if user.farm.bad_hour >= flower.withered_time:
             user.farm.flower_state = FlowerState.withered
@@ -673,23 +673,23 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         return
     if user.farm.flower_state == FlowerState.not_flower or user.farm.flower_state == FlowerState.withered:
         return
-
+    
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-
+    
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
     while start_time <= now:
         soil = update_farm_soil(user, soil, start_time)
         check_farm_soil_climate_condition(user, flower)
-
+        
         update_farm_condition(user, flower, real_time_weather, start_time, soil, start_time)
         if user.farm.flower_state != FlowerState.withered:
             check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time, start_time)
-
+        
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
@@ -1215,3 +1215,103 @@ def show_appearance(appearance: int, age: int) -> int:
         return int(appearance * (0.3 + 0.4 * (70 - age) / 30))
     else:
         return int(appearance * 0.3)
+
+
+def random_choice_pool(pool: Dict[str, int], relationship: Relationship) -> Commodity:
+    """
+    从池子里抽取东西
+    :param pool:
+    :param relationship:
+    :return:
+    """
+    if len(pool) == 0:
+        return Commodity()
+    total: int = 0
+    for item_id in pool:
+        total += pool[item_id]
+    rand: int = random.randint(0, total)
+    for item_id in pool:
+        rand -= pool[item_id]
+        if rand < 0:
+            commodity: Commodity = Commodity()
+            commodity.item_id = item_id
+            item: Item = flower_dao.select_item_by_id(item_id)
+            if not item.valid():
+                commodity.item_id = ''
+                logger.error('商店池中物品不存在！')
+            commodity.gold = int(item.gold * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+            if commodity.gold <= 10 * 100:
+                commodity.stock = random.randint(1, 100)
+            elif commodity.gold <= 50 * 100:
+                commodity.stock = random.randint(1, 20)
+            elif commodity.gold <= 50 * 500:
+                commodity.stock = random.randint(1, 5)
+            else:
+                commodity.stock = 1
+            return commodity
+    return Commodity()
+
+
+def generate_today_person(user_person_list: List[UserPerson], qq: int):
+    system_data: SystemData = get_system_data()
+    for _ in range(3):
+        # 商人80%，探险家30%，建筑师10%
+        rand: float = random.random()
+        if rand < 0.8:
+            profession: Profession = flower_dao.select_profession_by_name('商人')
+            item_pool: Dict[str, int] = system_data.merchant_item_pool
+        elif rand < 0.9:
+            profession: Profession = flower_dao.select_profession_by_name('探险家')
+            item_pool: Dict[str, int] = system_data.explorer_item_pool
+        elif rand < 0.95:
+            profession: Profession = flower_dao.select_profession_by_name('农民')
+            item_pool: Dict[str, int] = {}
+        else:
+            profession: Profession = flower_dao.select_profession_by_name('建筑师')
+            item_pool: Dict[str, int] = system_data.architect_item_pool
+        person: Person = flower_dao.select_random_person_by_profession(profession.get_id())
+        if not person.valid():
+            continue
+        user_person: UserPerson = UserPerson()
+        user_person.qq = qq
+        user_person.person_id = person.get_id()
+        
+        relationship: Relationship = flower_dao.select_relationship_by_pair(person.get_id(), str(qq))
+        if not relationship.valid():
+            relationship: Relationship = Relationship()
+            relationship.src_person = person.get_id()
+            relationship.dst_person = str(qq)
+            relationship.value = person.affinity
+            flower_dao.insert_relationship(relationship)
+        # 总计最多有十件商品
+        item_number: int = random.randint(1, 10)
+        for _ in range(item_number):
+            commodity: Commodity = random_choice_pool(item_pool, relationship)
+            if commodity.item_id != '':
+                user_person.commodities.append(commodity)
+        if profession.name == '商人':
+            seed_number = random.randint(1, 10)
+            for _ in range(seed_number):
+                commodity: Commodity = random_choice_pool(system_data.merchant_seed_pool, relationship)
+                if commodity.item_id != '':
+                    user_person.commodities.append(commodity)
+        elif profession.name == '探险家':
+            seed_number = random.randint(1, 10)
+            for _ in range(seed_number):
+                commodity: Commodity = random_choice_pool(system_data.explorer_seed_pool, relationship)
+                if commodity.item_id != '':
+                    user_person.commodities.append(commodity)
+        elif profession.name == '农民':
+            for _ in range(random.randint(1, 3)):
+                flower: Flower = flower_dao.select_random_flower([FlowerLevel.C, FlowerLevel.B])
+                if not flower.valid():
+                    continue
+                level: int = random.randint(1, 4)
+                if flower.level == FlowerLevel.B:
+                    gold: int = int(5000 * level * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                else:
+                    gold: int = int(1000 * level * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                user_person.knowledge[flower.name] = (level, gold)
+        
+        flower_dao.insert_user_person(user_person)
+        user_person_list.append(user_person)
