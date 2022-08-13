@@ -416,6 +416,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 data = message[4:].strip()
                 data_list = data.split(' ')
                 try:
+                    if len(data_list) < 1:
+                        raise TypeException('')
                     person_index: int = int(data_list[0])
                     if len(data_list) == 2:
                         item_origin_name: str = data_list[1]
