@@ -743,7 +743,7 @@ class AdminHandler:
                 context.target_qq.append(qq)
             flower_dao.insert_context(qq, context)
             return '请问buff名字是什么？（输入“取消”来取消）'
-        elif message[:8] == '清除花店buff':
+        elif message[:8] == '删除花店buff':
             data = message[8:].strip()
             if len(data) == 0:
                 index = -1
