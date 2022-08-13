@@ -2,6 +2,7 @@
 import datetime
 from typing import List
 
+import uvicorn
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -187,3 +188,7 @@ async def add_flower(message: Message):
     except Exception as e:
         logger.error(str(e))
         return Response(code=500, message="internal error", data=Result.init())
+
+if __name__ == '__main__':
+    uvicorn.run(app, host=global_config.host, port=global_config.port)
+    

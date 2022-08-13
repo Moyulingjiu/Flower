@@ -1403,12 +1403,26 @@ def select_all_alive_person_number() -> int:
     return number
 
 
+def select_age_range_person_number(min_age: int, max_age: int) -> int:
+    """
+    查询一个年龄区间有多少人
+    :param min_age: 最小年龄
+    :param max_age: 最大年龄
+    :return:
+    """
+    now: datetime = datetime.now()
+    min_born_time = now - timedelta(days=max_age)
+    max_born_time = now - timedelta(days=min_age)
+    number: int = mongo_person.count_documents({"is_delete": 0, "die": False, "born_time": {'$gte': min_born_time, '$lt': max_born_time}})
+    return number
+
+
 def select_all_profession_person_number(profession_id: str) -> int:
     number: int = mongo_person.count_documents({"is_delete": 0, "profession_id": profession_id})
     return number
 
 
-def select_all_person(page: int, page_size: int = 30) -> List[str]:
+def select_all_person(page: int, page_size: int = 30) -> List[Person]:
     """
     查询所有npc
     :param page: 页码
@@ -1420,12 +1434,14 @@ def select_all_person(page: int, page_size: int = 30) -> List[str]:
         return deserialize(redis_ans)
     else:
         result = mongo_person.find({"is_delete": 0}).limit(page_size).skip(page * page_size)
-        person_id_list: List[str] = []
+        person_list: List[Person] = []
         for person_result in result:
-            person_id_list.append(str(person_result['_id']))
-        redis_db.set(redis_all_person_prefix + '%d_%d' % (page, page_size), serialization(person_id_list),
+            person: Person = Person()
+            dict_to_class(person_result, person)
+            person_list.append(person)
+        redis_db.set(redis_all_person_prefix + '%d_%d' % (page, page_size), serialization(person_list),
                      ex=get_long_random_expire())
-        return person_id_list
+        return person_list
 
 
 def select_person(_id: str) -> Person:

@@ -128,7 +128,7 @@ def random_generate_world() -> int:
                 elif rand <= 0.97:
                     profession: Profession = flower_dao.select_profession_by_name('治安队')
                 else:
-                    profession: Profession = Profession()
+                    profession: Profession = flower_dao.select_profession_by_name('无业')
             else:
                 rand = random.random()
                 if rand < 0.5:

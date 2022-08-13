@@ -1358,7 +1358,7 @@ class WorldControlHandler:
             def create_world():
                 population: int = world_handler.random_generate_world()
                 util.leave_message(qq, '世界生成已经完成，总计人口：%d' % population)
-
+            
             create_world()
             return '当前开始创建世界，预估需要十分钟~请勿重复发起命令'
         elif message[:4] == '世界种族':
@@ -1429,6 +1429,48 @@ class WorldControlHandler:
         elif message == '世界活人人口':
             number: int = flower_dao.select_all_alive_person_number()
             return '世界活人人口：%d' % number
+        elif message == '世界人口分析':
+            logger.info('管理员%d开启了世界人口分析')
+            total_number: int = flower_dao.select_all_person_number()
+            alive_number: int = flower_dao.select_all_alive_person_number()
+            die_number = total_number - alive_number
+            age_range: List = [0 for _ in range(11)]
+            profession_number: Dict[str, int] = {}
+            page: int = -1
+            page_size: int = 20
+            now: datetime = datetime.now()
+            logger.info('遍历所有人口，总计数量：%d，页面大小：%d' % (total_number, page_size))
+            while total_number > 0:
+                total_number -= page_size
+                page += 1
+                logger.info('当前页：%d，剩余人数：%d' % (page, total_number))
+                person_list: List[Person] = flower_dao.select_all_person(page, page_size)
+                for person in person_list:
+                    age: int = int((now - person.born_time).total_seconds() // global_config.day_second)
+                    if age >= 100:
+                        age_range[10] += 1
+                    else:
+                        age_range[int(age // 10)] += 1
+                    if person.profession_id not in profession_number:
+                        profession_number[person.profession_id] = 1
+                    else:
+                        profession_number[person.profession_id] += 1
+            logger.info('统计完成！')
+            reply: str = '世界总人口：%d（死亡：%d）' % (alive_number, die_number)
+            reply += '\n' + '-' * 6
+            reply += '\n各年龄阶段：'
+            for i in range(10):
+                reply += '\n%d岁~%d岁：%d' % (i * 10, (i + 1) * 10, age_range[i])
+            reply += '\n大于100岁：%d' % age_range[10]
+            reply += '\n' + '-' * 6
+            reply += '\n职业分析：'
+            for profession_id in profession_number:
+                if profession_id is None:
+                    reply += '\n无业：%d' % profession_number[profession_id]
+                    continue
+                profession: Profession = flower_dao.select_profession(profession_id)
+                reply += '\n%s：%d' % (profession.name, profession_number[profession_id])
+            return reply
         return ''
 
 
