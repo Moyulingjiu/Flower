@@ -53,10 +53,14 @@ def random_person() -> Person:
     # 给予身高
     if person.gender == Gender.male:
         person.height = random.random() * (2.1 - 1.5) + 1.5
-        person.weight = random.random() * (100.0 - 45.0) + 45.0
     else:
         person.height = random.random() * (1.9 - 1.3) + 1.3
-        person.weight = random.random() * (100.0 - 35.0) + 35.0
+    # 有30%的概率过瘦或肥胖
+    if random.randint(1, 100) >= 70:
+        bmi: float = random.random() * (35 - 15) + 15
+    else:
+        bmi: float = random.random() * (27 - 18) + 18
+    person.weight = bmi * (person.height * person.height)
 
     # 出生地
     area_list: List[WorldArea] = flower_dao.select_all_world_area()
