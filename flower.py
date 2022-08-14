@@ -260,7 +260,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     user: User = util.get_user(qq, username)
                     item: DecorateItem = util.analysis_item(data)
                     if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
+                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
+                            item.item_type == ItemType.accelerate:
                         item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
                         choices: Dict[str, Choice] = {}
                         if len(item_list) > 1:
@@ -422,7 +423,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     user: User = util.get_user(qq, username)
                     item: DecorateItem = util.analysis_item(item_origin_name)
                     if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0:
+                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
+                            item.item_type == ItemType.accelerate:
                         item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
                         choices: Dict[str, Choice] = {}
                         if len(item_list) > 1:
