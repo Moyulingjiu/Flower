@@ -9,6 +9,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 
 # 导入花店需要的辅助类
+from starlette.responses import FileResponse
+
 import flower
 import flower_dao
 import global_config  # global_config必须放到第一位来，进行配置的初始化
@@ -84,6 +86,15 @@ async def calibration():
     """
     return Response(code=0, message='success',
                     data=Result.init(reply_text=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+
+@app.get("/help")
+async def download_help():
+    filename = "doc/帮助.png"
+    return FileResponse(
+            filename,  # 要下载的文件
+            filename="flower_help.png"
+        )
 
 
 @app.post("/draw")
