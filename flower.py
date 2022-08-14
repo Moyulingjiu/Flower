@@ -1820,6 +1820,9 @@ class ContextHandler:
                         item.item_name = '标准肥料'
                         item.number = 5
                         item_list.append(copy.deepcopy(item))
+                        item.item_name = '花语卡'
+                        item.number = 10
+                        item_list.append(copy.deepcopy(item))
                         
                         try:
                             user: User = util.get_user(qq, username)
@@ -3842,6 +3845,14 @@ class FlowerService:
                         else:
                             return user.username + '，你的花花有点沮丧'
                     return user.username + '，好像什么也没有听见'
+                elif item.item_name == '贫瘠卡':
+                    nutrition: float = item.nutrition * item.number
+                    nutrition = util.add_nutrition(user.farm, nutrition)
+                    return user.username + '，营养%.2f' % nutrition
+                elif item.item_name == '干燥卡':
+                    humidity: float = item.humidity * item.number
+                    humidity = util.add_humidity(user.farm, humidity)
+                    return user.username + '，湿度%.2f' % humidity
             raise UseFailException(user.username + '，该物品不可以使用')
         except ItemNotFoundException:
             return user.username + '，没有该物品'
