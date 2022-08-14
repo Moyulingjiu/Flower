@@ -1795,10 +1795,10 @@ class ContextHandler:
                     if message == '花店人物':
                         self.block_transmission = False
                         flower_dao.remove_context(qq, origin_list[index])
-
+                        
                         item: DecorateItem = DecorateItem()
                         item_list: List[DecorateItem] = []
-
+                        
                         # 初始获取初始种子
                         seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
                         for seed in seed_list:
@@ -1820,7 +1820,24 @@ class ContextHandler:
                         item.item_name = '标准肥料'
                         item.number = 5
                         item_list.append(copy.deepcopy(item))
-                            
+                        
+                        try:
+                            user: User = util.get_user(qq, username)
+                            util.insert_items(user.warehouse, item_list)
+                            flower_dao.update_user_by_qq(user)
+                        except ItemNotFoundException:
+                            reply = '内部错误！'
+                            result.context_reply_text.append(reply)
+                            continue
+                        except ItemNegativeNumberException:
+                            reply = '内部错误！'
+                            result.context_reply_text.append(reply)
+                            continue
+                        except WareHouseSizeNotEnoughException:
+                            reply = '仓库空间不足'
+                            result.context_reply_text.append(reply)
+                            continue
+                        
                         reply = '这里每天都会刷新三位人物，他们会给你带来不同的道具以及种子\n' \
                                 '每天晚上十二点刷新哦~\n' \
                                 '具体的操作指令可以查看“花店帮助”，新手教程就到这里了~我们为你准备了一些新手道具，可以前往仓库查看！'
@@ -3386,9 +3403,17 @@ class FlowerService:
         item.hour = 12
         item_list.append(copy.deepcopy(item))
         
-        util.insert_items(user.warehouse, item_list)
-        flower_dao.update_user_by_qq(user)
-        util.unlock_user(qq)
+        try:
+            util.insert_items(user.warehouse, item_list)
+            flower_dao.update_user_by_qq(user)
+        except ItemNotFoundException:
+            return '内部错误！'
+        except ItemNegativeNumberException:
+            return '内部错误！'
+        except WareHouseSizeNotEnoughException:
+            return '仓库空间不足'
+        finally:
+            util.unlock_user(qq)
         
         context: BeginnerGuideContext = BeginnerGuideContext()
         flower_dao.insert_context(qq, context)
