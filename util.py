@@ -293,7 +293,6 @@ def insert_items(warehouse: WareHouse, items: List[DecorateItem]):
             raise ItemNegativeNumberException('物品' + item_obj.name + '数量不能为负数或零')
         if create_item:
             item.item_id = item_obj.get_id()
-            item.item_type = item_obj.item_type
             # 将不变的属性从item复制过来
             item.item_type = item_obj.item_type
             item.max_durability = item_obj.max_durability  # 最大耐久度

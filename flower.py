@@ -4056,8 +4056,35 @@ class DrawCard:
             if draw_probability_index < 0:
                 draw_probability_index = 0
             if rand < system_data.draw_card_probability[draw_probability_index]:
-                # todo: 抽到物品（这部分需要在物品表完善之后完成）
-                return '抽到物品'
+                if random.random() < 0.7:
+                    pool: Dict[str, int] = system_data.draw_item_pool
+                else:
+                    pool: Dict[str, int] = system_data.draw_seed_pool
+                commodity: Commodity = util.random_choice_pool(pool, Relationship())
+                item_obj: Item = flower_dao.select_item_by_id(commodity.item_id)
+                item: DecorateItem = DecorateItem()
+                item.item_id = item_obj.get_id()
+                item.item_name = item_obj.name
+                item.item_type = item_obj.item_type
+                item.max_durability = item_obj.max_durability  # 最大耐久度
+                if item.durability < 0:
+                    item.durability = item_obj.max_durability
+                item.rot_second = item_obj.rot_second  # 腐烂的秒数
+                item.humidity = item_obj.humidity  # 湿度
+                item.nutrition = item_obj.nutrition  # 营养
+                item.temperature = item_obj.temperature  # 温度
+                item.level = item_obj.level
+                if item_obj.item_type == ItemType.flower and item.flower_quality == FlowerQuality.not_flower:
+                    item.flower_quality = FlowerQuality.normal
+                if item_obj.item_type == ItemType.accelerate and item.hour < 1:
+                    item.hour = 1
+                try:
+                    util.insert_items(user.warehouse, [item])
+                    user.draw_card_number -= 1
+                    flower_dao.update_user_by_qq(user)
+                    return '抽到物品%s' % str(item)
+                except ItemNotFoundException or ItemNegativeNumberException or WareHouseSizeNotEnoughException:
+                    return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
             return ''
         except UserNotRegisteredException:
             return ''
