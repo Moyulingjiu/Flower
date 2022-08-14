@@ -2432,7 +2432,7 @@ class ContextHandler:
                             person: Person = flower_dao.select_person(context.person_id)
                             if item_obj.item_type == ItemType.flower:
                                 ratio: float = 1.0
-                                if item.flower_quality == FlowerQuality.perfect:
+                                if context.item.flower_quality == FlowerQuality.perfect:
                                     ratio: float = 1.3 + random.random()
                             else:
                                 ratio: float = 0.8
