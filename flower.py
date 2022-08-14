@@ -1666,7 +1666,9 @@ class ContextHandler:
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
                         flower_dao.insert_context(qq, context)
-                        reply = '很好你已经完成了签到！每日签到可以获取金币。接下来试试“花店数据”。\n您可以输入“关闭新手指引”来取消指引。'
+                        reply = '很好你已经完成了签到！每日签到可以获取一定数量的金币。如果破产了，可以通过签到回血。\n' \
+                                '接下来试试“花店数据”。\n' \
+                                '您可以输入“关闭新手指引”来取消指引。'
                         result.context_reply_text.append(reply)
                 elif context.step == 1:
                     if message == '花店数据':
@@ -1674,13 +1676,154 @@ class ContextHandler:
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
                         flower_dao.insert_context(qq, context)
-                        reply = '在这里你可以看见一些玩家的基本数据，接下来试试“花店仓库”。\n您可以输入“关闭新手指引”来取消指引。'
+                        reply = '在这里你可以看见一些玩家的基本数据，包括玩家等级、金币数量等等\n' \
+                                '接下来试试“花店仓库”。\n' \
+                                '您可以输入“关闭新手指引”来取消指引。'
                         result.context_reply_text.append(reply)
                 elif context.step == 2:
                     if message == '花店仓库':
                         self.block_transmission = False
-                        del_context_list.append(origin_list[index])
-                        reply = '在这里你可以看见你的新手物资。新手指引结束了（这句话后面再改）。'
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '在这里你可以看见刚刚我们发给你的杂草种子、新手水壶、加速卡。\n' \
+                                '接下来试试“种植杂草”。'
+                        result.context_reply_text.append(reply)
+                elif context.step == 3:
+                    if message == '种植杂草':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '很好！你的杂草已经种植在你的农场了\n' \
+                                '接下来试试“花店农场”查看你的农场。'
+                        result.context_reply_text.append(reply)
+                elif context.step == 4:
+                    if message == '花店农场':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '在这里你可以看见你的花花的生长情况。\n' \
+                                '是不是很疑惑，为什么温度这些维度都没有具体的数值？\n' \
+                                '不急，接下来试试“花店农场设备”。'
+                        result.context_reply_text.append(reply)
+                elif context.step == 5:
+                    if message == '花店农场设备':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '看见这里的水壶等东西了吗？这些道具将会影响你对“花店农场”的监控，道具越高级数值越准确。\n' \
+                                '接下来试试“浇水”'
+                        result.context_reply_text.append(reply)
+                elif context.step == 6:
+                    if message == '浇水':
+                        self.block_transmission = False
+                        user: User = util.get_user(qq, username)
+                        if user.farm.watering_pot.item_name != '':
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.step += 3
+                            flower_dao.insert_context(qq, context)
+                            reply = '浇水成功！\n' \
+                                    '等待可真是难熬，接下来试试“使用加速卡”，来加速你的农场'
+                        else:
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.step += 1
+                            flower_dao.insert_context(qq, context)
+                            reply = '真可惜没有水壶\n' \
+                                    '接下来试试“使用新手水壶”把刚才的水壶装上去吧'
+                            result.context_reply_text.append(reply)
+                elif context.step == 7:
+                    if message == '使用新手水壶':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '很好！\n' \
+                                '接下来再次试试“浇水”'
+                        result.context_reply_text.append(reply)
+                elif context.step == 8:
+                    if message == '浇水':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '浇水成功！\n' \
+                                '等待可真是难熬，接下来试试“使用加速卡”，来加速你的农场'
+                        result.context_reply_text.append(reply)
+                elif context.step == 9:
+                    if message == '使用加速卡':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '你的农场已经被加速了！\n' \
+                                '现在快使用命令“花店农场”去你的农场看看'
+                        result.context_reply_text.append(reply)
+                elif context.step == 10:
+                    if message == '花店农场':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '看！你的种子不出意外的话应该已经成熟了，或者快要成熟。\n' \
+                                '接下来使用命令“收获”来收获成熟的花'
+                        result.context_reply_text.append(reply)
+                elif context.step == 11:
+                    if message == '收获':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '你的花已经到你的仓库里去了！\n' \
+                                '注意花是有不同等级的，只有在成熟阶段才可以收获完美的花！\n' \
+                                '完美的花在完成任务的时候或许有特殊的作用！\n' \
+                                '接下来我们去看看别的指令吧。“花店信箱”！这个指令很有用'
+                        result.context_reply_text.append(reply)
+                elif context.step == 12:
+                    if message == '花店信箱':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+                        context.step += 1
+                        flower_dao.insert_context(qq, context)
+                        reply = '这在里你可以看见每天的信件，有些时候系统会发送补偿信件，有些时候npc也会给你送信\n' \
+                                '一定要及时查看，不然信箱满了就收不到新的信件（系统直接送达可以无视上限）。\n' \
+                                '信箱的其它操作指令可以看“花店帮助”。我们接下来试试“花店人物”'
+                        result.context_reply_text.append(reply)
+                elif context.step == 13:
+                    if message == '花店人物':
+                        self.block_transmission = False
+                        flower_dao.remove_context(qq, origin_list[index])
+
+                        item: DecorateItem = DecorateItem()
+                        item_list: List[DecorateItem] = []
+
+                        # 初始获取初始种子
+                        seed_list = ['野草种子', '野花种子', '小黄花种子', '小红花种子']
+                        for seed in seed_list:
+                            item.item_name = seed
+                            item.number = 5
+                            item_list.append(copy.deepcopy(item))
+                        # 新手道具
+                        item.item_name = '加速卡'
+                        item.number = 5
+                        item.hour = 1
+                        item_list.append(copy.deepcopy(item))
+                        item.item_name = '完美加速卡'
+                        item.number = 5
+                        item.hour = 1
+                        item_list.append(copy.deepcopy(item))
+                        item.item_name = '随机旅行卡'
+                        item.number = 1
+                        item_list.append(copy.deepcopy(item))
+                        item.item_name = '标准肥料'
+                        item.number = 5
+                        item_list.append(copy.deepcopy(item))
+                            
+                        reply = '这里每天都会刷新三位人物，他们会给你带来不同的道具以及种子\n' \
+                                '每天晚上十二点刷新哦~\n' \
+                                '具体的操作指令可以查看“花店帮助”，新手教程就到这里了~我们为你准备了一些新手道具，可以前往仓库查看！'
                         result.context_reply_text.append(reply)
             # 丢弃所有物品
             elif isinstance(context, ThrowAllItemContext):
@@ -3224,44 +3367,33 @@ class FlowerService:
         if user.beginner_pack:
             return user.username + '，你已经领取过初始礼包了'
         user.beginner_pack = True
-        flower_dao.update_user_by_qq(user)
-        util.unlock_user(qq)
         item: DecorateItem = DecorateItem()
         item_list: List[DecorateItem] = []
         
         # 初始获取初始种子
-        seed_list = ['杂草种子', '野草种子', '野花种子', '小黄花种子', '小红花种子']
+        seed_list = ['杂草种子']
         for seed in seed_list:
             item.item_name = seed
             item.number = 5
             item_list.append(copy.deepcopy(item))
-        # 领取化肥
-        item.item_name = '标准肥料'
-        item.number = 5
-        item_list.append(copy.deepcopy(item))
         # 新手道具
         item.item_name = '新手水壶'
         item.number = 1
         item.durability = -1
         item_list.append(copy.deepcopy(item))
-        item.item_name = '随机旅行卡'
-        item.number = 1
-        item_list.append(copy.deepcopy(item))
         item.item_name = '加速卡'
         item.number = 1
-        item.hour = 10
-        item_list.append(copy.deepcopy(item))
-        item.item_name = '完美加速卡'
-        item.number = 1
-        item.hour = 36
+        item.hour = 12
         item_list.append(copy.deepcopy(item))
         
         util.insert_items(user.warehouse, item_list)
         flower_dao.update_user_by_qq(user)
+        util.unlock_user(qq)
         
         context: BeginnerGuideContext = BeginnerGuideContext()
         flower_dao.insert_context(qq, context)
-        return '领取成功！接下来输入“花店签到”试试'
+        return '领取成功！接下来输入“花店签到”试试。\n' \
+               '输入“关闭新手指引”可以关闭。不过你只有完成新手指引才可以领取完整的礼包哦~'
     
     @classmethod
     def view_weather(cls, city_name: str) -> str:
