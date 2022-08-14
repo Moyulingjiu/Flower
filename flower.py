@@ -2581,15 +2581,15 @@ class FlowerService:
             res += '\n能忍受恶劣条件：' + str(flower.withered_time) + '小时'
         if level >= 3:
             res += '\n种子：'
-            if level > 4:
+            if level >= 4:
                 res += '\n\t周期：' + str(flower.seed_time) + '小时'
             res += util.show_conditions(flower.seed_condition)
             res += '\n幼苗：'
-            if level > 4:
+            if level >= 4:
                 res += '\n\t周期：' + str(flower.grow_time) + '小时'
             res += util.show_conditions(flower.grow_condition)
             res += '\n成熟：'
-            if level > 4:
+            if level >= 4:
                 res += '\n\t成熟周期：' + str(flower.mature_time) + '小时'
                 res += '\n\t过熟周期：' + str(flower.overripe_time) + '小时'
             res += util.show_conditions(flower.mature_condition)
