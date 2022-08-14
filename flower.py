@@ -4063,6 +4063,7 @@ class DrawCard:
                 commodity: Commodity = util.random_choice_pool(pool, Relationship())
                 item_obj: Item = flower_dao.select_item_by_id(commodity.item_id)
                 item: DecorateItem = DecorateItem()
+                item.number = 1
                 item.item_id = item_obj.get_id()
                 item.item_name = item_obj.name
                 item.item_type = item_obj.item_type
@@ -4079,11 +4080,15 @@ class DrawCard:
                 if item_obj.item_type == ItemType.accelerate and item.hour < 1:
                     item.hour = 1
                 try:
-                    util.insert_items(user.warehouse, [item])
+                    util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
                     flower_dao.update_user_by_qq(user)
                     return '抽到物品%s' % str(item)
-                except ItemNotFoundException or ItemNegativeNumberException or WareHouseSizeNotEnoughException:
+                except ItemNotFoundException:
+                    return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
+                except ItemNegativeNumberException:
+                    return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
+                except WareHouseSizeNotEnoughException:
                     return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
             return ''
         except UserNotRegisteredException:
