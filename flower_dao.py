@@ -324,7 +324,7 @@ def get_total_gold_rank() -> List[Tuple[str, float]]:
     """
     获取某个人的金币排行
     """
-    return redis_db.zrevrange(redis_user_gold_rank, 0, 10, withscores=True)
+    return redis_db.zrevrange(redis_user_gold_rank, 0, 9, withscores=True)
 
 
 def put_exp_rank(qq: int, exp: int):
@@ -346,7 +346,7 @@ def get_total_exp_rank() -> List[Tuple[str, float]]:
     """
     获取某个人的金币排行
     """
-    return redis_db.zrevrange(redis_user_exp_rank, 0, 10, withscores=True)
+    return redis_db.zrevrange(redis_user_exp_rank, 0, 9, withscores=True)
 
 
 ####################################################################################################

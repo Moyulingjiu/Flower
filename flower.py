@@ -30,6 +30,16 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     :return: 结果
     """
     try:
+        # 面对极端情况可以清除缓存
+        if len(at_list) == 0 and message == '花店清除缓存':
+            util.lock_user(qq)
+            origin_list, context_list = flower_dao.get_context(qq)
+            for context in origin_list:
+                flower_dao.remove_context(qq, context)
+            util.unlock_user(qq)
+            reply: str = '清除成功！'
+            return Result.init(reply_text=reply)
+    
         # 处理上下文需要加锁，避免两个线程同时处理到一个上下文
         util.lock_user(qq)
         context_handler: ContextHandler = ContextHandler()
@@ -202,8 +212,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.user_sign_in(qq, username)
                 result.reply_text.append(reply)
                 return result
-            elif message[:2] == '使用':
-                data = message[2:].strip()
+            elif message[:4] == '花店使用':
+                data = message[4:].strip()
                 try:
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
@@ -248,8 +258,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     raise TypeException('格式错误，格式“使用 【物品名字】 【数量】”')
                 except ItemNotFoundException:
                     raise TypeException('该物品不存在！')
-            elif message[:2] == '丢弃':
-                data = message[2:].strip()
+            elif message[:4] == '花店丢弃':
+                data = message[4:].strip()
                 try:
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
@@ -315,7 +325,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise TypeException('格式错误，格式“浇水 【次数】”。次数可以省略，默认一次。')
-            elif message == '收获':
+            elif message == '花店收获':
                 reply = FlowerService.reward_flower(qq, username)
                 result.reply_text.append(reply)
                 return result
@@ -369,11 +379,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise TypeException('格式错误！格式“领取附件 【序号】”，领取某一封信的附件')
-            elif message[:4] == '购买商品':
-                data = message[4:].strip()
+            elif message[:6] == '花店购买商品':
+                data = message[6:].strip()
                 data_list = data.split(' ')
                 if len(data_list) < 2 or len(data_list) > 3:
-                    raise TypeException('格式错误！格式“购买商品 人物序号 商品序号 数量”数量为1可以省略，'
+                    raise TypeException('格式错误！格式“花店购买商品 人物序号 商品序号 数量”数量为1可以省略，'
                                         '人物序号可以通过命令“花店人物”查看')
                 try:
                     user_person_id: int = int(data_list[0])
@@ -386,13 +396,13 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     result.reply_text.append(reply)
                     return result
                 except ValueError:
-                    raise TypeException('格式错误！格式“购买商品 人物序号 商品序号 数量”数量为1可以省略，'
+                    raise TypeException('格式错误！格式“花店购买商品 人物序号 商品序号 数量”数量为1可以省略，'
                                         '人物序号可以通过命令“花店人物”查看')
-            elif message[:4] == '购买知识':
-                data = message[4:].strip()
+            elif message[:6] == '花店购买知识':
+                data = message[6:].strip()
                 data_list = data.split(' ')
                 if len(data_list) != 2:
-                    raise TypeException('格式错误！格式“购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
+                    raise TypeException('格式错误！格式“花店购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
                 try:
                     user_person_id: int = int(data_list[0])
                     flower_name: str = data_list[1]
@@ -400,9 +410,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     result.reply_text.append(reply)
                     return result
                 except ValueError:
-                    raise TypeException('格式错误！格式“购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
-            elif message[:4] == '出售商品':
-                data = message[4:].strip()
+                    raise TypeException('格式错误！格式“花店购买知识 人物序号 花名”，人物序号可以通过命令“花店人物”查看')
+            elif message[:6] == '花店出售商品':
+                data = message[6:].strip()
                 data_list = data.split(' ')
                 try:
                     if len(data_list) < 1:
@@ -455,18 +465,18 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     result.reply_text.append(reply)
                     return result
                 except TypeException or ValueError:
-                    raise TypeException('格式错误，格式“出售商品 【人物序号】 【物品名字】 【数量】”数量为1可以省略')
+                    raise TypeException('格式错误，格式“花店出售商品 【人物序号】 【物品名字】 【数量】”数量为1可以省略')
                 except ItemNotFoundException:
                     raise TypeException('该物品不存在！')
         else:
-            if message[:2] == '转账':
-                data: str = message[2:]
+            if message[:4] == '花店转账':
+                data: str = message[4:]
                 try:
                     origin_gold: float = float(data)
                     origin_gold *= 100.0
                     gold: int = int(origin_gold)
                 except ValueError:
-                    raise TypeException('格式错误，格式“@xxx 转账 【数字】”')
+                    raise TypeException('格式错误，格式“@xxx 花店转账 【数字】”')
                 reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
                 result.reply_text.append(reply)
                 return result
@@ -2804,6 +2814,8 @@ class FlowerService:
         res += '\n出生地：' + born_city.city_name
         res += '\n所在城市：' + city.city_name
         res += '\n金币：' + util.show_gold(user.gold)
+        gold_rank: int = flower_dao.get_gold_rank(qq) + 1
+        res += '（排名：%d）' % gold_rank
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         res += '\n今日还能抽到物品：' + str(user.draw_card_number)
         res += '\n已在花店%d天' % ((datetime.now() - user.create_time).total_seconds() // global_config.day_second + 1)
