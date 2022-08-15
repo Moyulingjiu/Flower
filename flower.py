@@ -914,6 +914,19 @@ class AdminHandler:
                 raise '格式错误！格式“@xxx 花店知识 【页码】”页码可省略。'
             except UserNotRegisteredException:
                 return '对方未注册'
+        elif message == '花店人物':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店人物”，必须并且只能艾特一人')
+            return FlowerService.view_today_person(at_list[0], username)
+        elif message[:4] == '花店人物':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店人物 序号”，必须并且只能艾特一人')
+            data = message[4:].strip()
+            try:
+                index: int = int(data)
+                return FlowerService.view_today_person_index(at_list[0], username, index)
+            except ValueError:
+                raise TypeException('格式错误，格式“@xxx 花店人物 序号”，必须并且只能艾特一人')
 
         # 游戏管理部分
         elif message == '发送信件':
