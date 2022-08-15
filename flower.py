@@ -3278,7 +3278,7 @@ class FlowerService:
                 util.lock_user(target_qq)
                 target_user: User = util.get_user(target_qq, '')
                 if user.gold < gold:
-                    reply += '\n对' + str(target_qq) + '转账失败，余额不足'
+                    reply += '\n对' + target_user.username + '转账失败，余额不足'
                 else:
                     user.gold -= gold
                     # 转账1个人加一次经验
@@ -3291,13 +3291,13 @@ class FlowerService:
                     elif level <= 30:
                         ration = 0.1 * (1.0 + 0.2 * (random.random() - 0.5))
                     else:
-                        reply += '\n对' + str(target_qq) + '转账失败，等级相差过大'
+                        reply += '\n对' + target_user.username + '转账失败，等级相差过大'
                         continue
 
                     target_user.gold += int(gold * ration)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
-                    reply += '\n对' + str(target_qq) + '转账成功，余额：%.2f，税率%.2f' % (user.gold / 100, 1 - ration)
+                    reply += '\n对' + target_user.username + '转账成功，余额：%.2f，税率%.2f' % (user.gold / 100, 1 - ration)
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
