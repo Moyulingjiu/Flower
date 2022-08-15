@@ -194,19 +194,6 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.user_sign_in(qq, username)
                 result.reply_text.append(reply)
                 return result
-            elif message[:2] == '转账':
-                data: str = message[2:]
-                if len(at_list) == 0:
-                    raise AtListNullException('没有转账对象呢')
-                try:
-                    origin_gold: float = float(data)
-                    origin_gold *= 100.0
-                    gold: int = int(origin_gold)
-                except ValueError:
-                    raise TypeException('格式错误，格式“@xxx 转账 【数字】”')
-                reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
-                result.reply_text.append(reply)
-                return result
             elif message[:2] == '使用':
                 data = message[2:].strip()
                 try:
@@ -463,6 +450,18 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     raise TypeException('格式错误，格式“出售商品 【人物序号】 【物品名字】 【数量】”数量为1可以省略')
                 except ItemNotFoundException:
                     raise TypeException('该物品不存在！')
+        else:
+            if message[:2] == '转账':
+                data: str = message[2:]
+                try:
+                    origin_gold: float = float(data)
+                    origin_gold *= 100.0
+                    gold: int = int(origin_gold)
+                except ValueError:
+                    raise TypeException('格式错误，格式“@xxx 转账 【数字】”')
+                reply = FlowerService.transfer_accounts(qq, username, at_list, gold)
+                result.reply_text.append(reply)
+                return result
 
         # 管理员（admin、master）操作
         user_right: UserRight = util.get_user_right(qq)
@@ -4229,8 +4228,7 @@ class FlowerService:
         flower_dao.insert_context(qq, context)
         if can_bargain:
             return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                   '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                       person.name, gold / 100)
+                                   '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
         else:
             return user.username + '，%s出价单个%.2f，' \
                                    '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
