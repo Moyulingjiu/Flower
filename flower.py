@@ -4224,6 +4224,9 @@ class FlowerService:
                 return user.username + '，对方不接受出售商品'
             if item.item_name in user_person.ban_item:
                 return user.username + '，对方不接受出售商品'
+            if user_person.cancel_sell_times is None:
+                user_person.cancel_sell_times = {}
+                flower_dao.update_user_person(user_person)
             if item.item_name in user_person.cancel_sell_times and user_person.cancel_sell_times[item.item_name] > 5:
                 return user.username + '，对方不接受出售商品'
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
