@@ -916,31 +916,37 @@ def calculation_farm_equipment(user: User):
         user.farm.thermometer.durability -= int((now - user.farm.thermometer.update).days)
         if user.farm.thermometer.durability < 0:
             user.farm.thermometer.durability = 0
+            user.farm.thermometer = DecorateItem()
         user.farm.thermometer.update = now
     if user.farm.weather_station.max_durability > 0 and user.farm.weather_station.durability > 0:
         user.farm.weather_station.durability -= int((now - user.farm.weather_station.update).days)
         if user.farm.weather_station.durability < 0:
             user.farm.weather_station.durability = 0
+            user.farm.weather_station = DecorateItem()
         user.farm.weather_station.update = now
     if user.farm.watering_pot.max_durability > 0 and user.farm.watering_pot.durability > 0:
         user.farm.watering_pot.durability -= int((now - user.farm.watering_pot.update).days)
         if user.farm.watering_pot.durability < 0:
             user.farm.watering_pot.durability = 0
+            user.farm.watering_pot = DecorateItem()
         user.farm.watering_pot.update = now
     if user.farm.mailbox.max_durability > 0 and user.farm.mailbox.durability > 0:
         user.farm.mailbox.durability -= int((now - user.farm.mailbox.update).days)
         if user.farm.mailbox.durability < 0:
             user.farm.mailbox.durability = 0
+            user.farm.mailbox = DecorateItem()
         user.farm.mailbox.update = now
     if user.farm.greenhouse.max_durability > 0 and user.farm.greenhouse.durability > 0:
         user.farm.greenhouse.durability -= int((now - user.farm.greenhouse.update).days)
         if user.farm.greenhouse.durability < 0:
             user.farm.greenhouse.durability = 0
+            user.farm.greenhouse = DecorateItem()
         user.farm.greenhouse.update = now
     if user.farm.warehouse.max_durability > 0 and user.farm.warehouse.durability > 0:
         user.farm.warehouse.durability -= int((now - user.farm.warehouse.update).days)
         if user.farm.warehouse.durability < 0:
             user.farm.warehouse.durability = 0
+            user.farm.warehouse = DecorateItem()
         user.farm.warehouse.update = now
 
 

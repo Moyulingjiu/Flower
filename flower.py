@@ -3261,6 +3261,18 @@ class FlowerService:
             user.sign_continuous = 1
         user.sign_count += 1
         user.last_sign_date = today
+        # 如果连续签到的第七天会额外获得东西
+        item: DecorateItem or None = None
+        if user.sign_continuous % 7 == 0:
+            item = DecorateItem()
+            item.item_name = '加速卡'
+            item.item_type = ItemType.accelerate
+            item.number = 1
+            item.hour = 12
+            try:
+                util.insert_items(user.warehouse, [copy.deepcopy(item)])
+            except MyException:
+                item = None
         # 签到1点经验
         user.exp += 1
         gold = random.randint(100, 500)
@@ -3274,6 +3286,8 @@ class FlowerService:
         res += '\n剩余金币：' + '%.2f' % (user.gold / 100)
         res += '\n连续签到：' + str(user.sign_continuous) + '天'
         res += '\n累计签到：' + str(user.sign_count) + '天'
+        if item is not None:
+            res += '\n额外获得物品：' + str(item)
         flower_dao.update_user_by_qq(user)
         sign_record: SignRecord = SignRecord()
         sign_record.qq = user.qq
