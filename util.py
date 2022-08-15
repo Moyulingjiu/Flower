@@ -236,6 +236,11 @@ def analysis_item(data: str) -> DecorateItem:
     item.number = item_number
 
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+    item.rot_second = item_obj.rot_second  # 腐烂的秒数
+    item.humidity = item_obj.humidity  # 湿度
+    item.nutrition = item_obj.nutrition  # 营养
+    item.temperature = item_obj.temperature  # 温度
+    item.level = item_obj.level
     if not item_obj.valid():
         raise ItemNotFoundException('')
     item.item_type = item_obj.item_type
