@@ -3935,7 +3935,7 @@ class FlowerService:
                 # 产量需要根据bad hour进行计算（最坏的情况产量只有50%）
                 item.number = flower.flower_yield
                 if flower.withered_time > 0:
-                    ratio: float = user.farm.bad_hour / (flower.withered_time * 2)
+                    ratio: float = user.farm.bad_hour / flower.withered_time
                     item.number = int(flower.flower_yield * (1.0 - ratio))
                     if item.number == 0:
                         item.number = 1
