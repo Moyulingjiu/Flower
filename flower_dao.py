@@ -194,6 +194,8 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return dict_to_class(d, Commodity())
     elif d['class_type'] == 'PathModel':
         return dict_to_class(d, PathModel())
+    elif d['class_type'] == 'Clothing':
+        return dict_to_class(d, Clothing())
     return None
 
 
@@ -300,6 +302,51 @@ def unlock(key: str) -> int:
     :return: 是否解锁成功
     """
     return redis_db.delete(key)
+
+
+####################################################################################################
+def put_gold_rank(qq: int, gold: int):
+    """
+    更新金币排行榜
+    """
+    mapping: Dict[str, int] = {str(qq): gold}
+    redis_db.zadd(redis_user_gold_rank, mapping)
+
+
+def get_gold_rank(qq: int) -> int:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrank(redis_user_gold_rank, str(qq))
+
+
+def get_total_gold_rank() -> List[Tuple[str, float]]:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrange(redis_user_gold_rank, 0, 10, withscores=True)
+
+
+def put_exp_rank(qq: int, exp: int):
+    """
+    更新经验排行榜
+    """
+    mapping: Dict[str, int] = {str(qq): exp}
+    redis_db.zadd(redis_user_exp_rank, mapping)
+
+
+def get_exp_rank(qq: int) -> int:
+    """
+    获取某个人的经验排行
+    """
+    return redis_db.zrevrank(redis_user_exp_rank, str(qq))
+
+
+def get_total_exp_rank() -> List[Tuple[str, float]]:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrange(redis_user_exp_rank, 0, 10, withscores=True)
 
 
 ####################################################################################################

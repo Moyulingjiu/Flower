@@ -44,6 +44,11 @@ def get_user(qq: int, username: str = '') -> User:
         raise UserNotRegisteredException('用户' + str(qq) + '未注册')
     if user.auto_get_name and username != '':
         user.username = username
+    if user.clothing is None:
+        user.clothing = Clothing()
+    # 将金币、经验值放入排行榜
+    flower_dao.put_gold_rank(qq, user.gold)
+    flower_dao.put_exp_rank(qq, user.level)
     # 计算耐久度
     calculation_farm_equipment(user)
     # 计算信箱

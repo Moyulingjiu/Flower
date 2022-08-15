@@ -88,6 +88,14 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_weather(data)
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店金币排行榜':
+                reply = FlowerService.view_gold_rank()
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店经验排行榜':
+                reply = FlowerService.view_exp_rank()
+                result.reply_text.append(reply)
+                return result
 
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -3297,7 +3305,8 @@ class FlowerService:
                     target_user.gold += int(gold * ration)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
-                    reply += '\n对' + target_user.username + '转账成功，余额：%.2f，税率%.2f' % (user.gold / 100, 1 - ration)
+                    reply += '\n对' + target_user.username + '转账成功，余额：%.2f，税率%.2f' % (
+                    user.gold / 100, 1 - ration)
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
@@ -4201,7 +4210,7 @@ class FlowerService:
             relationship.value = person.affinity
         if profession.name != '商人' and profession.name != '探险家':
             util.unlock_user(qq)
-            return user.username + '，其不接受出售商品'
+            return user.username + '，对方不接受出售商品'
         if item.item_name in user_person.ban_item:
             util.unlock_user(qq)
             return user.username + '，其不接受出售商品'
@@ -4229,11 +4238,38 @@ class FlowerService:
         if can_bargain:
             return user.username + '，%s出价单个%.2f，是否要议价，' \
                                    '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                   person.name, gold / 100)
+                       person.name, gold / 100)
         else:
             return user.username + '，%s出价单个%.2f，' \
                                    '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
 
+    @classmethod
+    def view_gold_rank(cls) -> str:
+        gold_rank: List[Tuple[str, float]] = flower_dao.get_total_gold_rank()
+        reply = '金币排行榜'
+        reply += '\n' + '-' * 6
+        index: int = 0
+        for target in gold_rank:
+            index += 1
+            target_user: User = util.get_user(int(target[0]))
+            if target_user.auto_get_name:
+                target_user.username = '匿名'
+            reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
+        return reply
+
+    @classmethod
+    def view_exp_rank(cls) -> str:
+        exp_rank: List[Tuple[str, float]] = flower_dao.get_total_exp_rank()
+        reply = '等级排行榜'
+        reply += '\n' + '-' * 6
+        index: int = 0
+        for target in exp_rank:
+            index += 1
+            target_user: User = util.get_user(int(target[0]))
+            if target_user.auto_get_name:
+                target_user.username = '匿名'
+            reply += '\n%d.%s：%d级' % (index, target_user.username, int(target[1]))
+        return reply
 
 class DrawCard:
     """
