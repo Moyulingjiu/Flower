@@ -2645,6 +2645,8 @@ class FlowerService:
         """
         if len(name) > 30:
             return '城市名过长'
+        if len(name) == 0:
+            return '城市名为空'
         city = flower_dao.select_city_by_name(name)
         if city is None or city.city_name != name:
             ans = '没有找到城市' + name
