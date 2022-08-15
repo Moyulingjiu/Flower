@@ -3303,7 +3303,7 @@ class FlowerService:
                     user.gold -= gold
                     # 转账1个人加一次经验
                     user.exp += 1
-                    level = user.level - target_user.level
+                    level = abs(user.level - target_user.level)
                     if level <= 10:
                         ration = 0.8 * (1.0 + 0.2 * (random.random() - 0.5))
                     elif level <= 20:
