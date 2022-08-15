@@ -627,7 +627,17 @@ def select_random_flower(level_list: List[FlowerLevel]) -> Flower:
         index: int = random.randint(0, number - 1)
         result = mongo_flower.find({"is_delete": 0}).skip(index).limit(1)
     else:
-        level = random.choice(level_list)
+        level: FlowerLevel = random.choice(level_list)
+        if level == FlowerLevel.S:
+            level: str = 'S'
+        if level == FlowerLevel.A:
+            level: str = 'A'
+        if level == FlowerLevel.B:
+            level: str = 'B'
+        if level == FlowerLevel.C:
+            level: str = 'C'
+        else:
+            level: str = 'D'
         number: int = mongo_flower.count_documents({"is_delete": 0, "level": level})
         index: int = random.randint(0, number - 1)
         result = mongo_flower.find({"is_delete": 0, "level": level}).skip(index).limit(1)

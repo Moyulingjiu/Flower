@@ -1286,13 +1286,13 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
     for _ in range(3):
         # 商人80%，探险家30%，建筑师10%
         rand: float = random.random()
-        if rand < 0.8:
+        if rand < 0.9:
             profession: Profession = flower_dao.select_profession_by_name('商人')
             item_pool: Dict[str, int] = system_data.merchant_item_pool
-        elif rand < 0.9:
+        elif rand < 0.95:
             profession: Profession = flower_dao.select_profession_by_name('探险家')
             item_pool: Dict[str, int] = system_data.explorer_item_pool
-        elif rand < 0.95:
+        elif rand < 0.97:
             profession: Profession = flower_dao.select_profession_by_name('农民')
             item_pool: Dict[str, int] = {}
         else:
