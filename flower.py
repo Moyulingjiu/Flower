@@ -3297,7 +3297,7 @@ class FlowerService:
                     target_user.gold += int(gold * ration)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
-                    reply += '\n对' + str(target_qq) + '转账成功，余额：%.2f，税率%.2f' % (user.gold / 100, ration)
+                    reply += '\n对' + str(target_qq) + '转账成功，余额：%.2f，税率%.2f' % (user.gold / 100, 1 - ration)
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
@@ -4228,7 +4228,8 @@ class FlowerService:
         flower_dao.insert_context(qq, context)
         if can_bargain:
             return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                   '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
+                                   '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
+                   person.name, gold / 100)
         else:
             return user.username + '，%s出价单个%.2f，' \
                                    '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
