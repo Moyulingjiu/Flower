@@ -1316,7 +1316,7 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
                     user_person.commodities.append(commodity)
         elif profession.name == '农民':
             for _ in range(random.randint(1, 3)):
-                flower: Flower = flower_dao.select_random_flower([FlowerLevel.C, FlowerLevel.B])
+                flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C, FlowerLevel.B])
                 if not flower.valid():
                     continue
                 level: int = random.randint(1, 4)
