@@ -1364,5 +1364,5 @@ def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relati
         if relationship.value > 90:
             random_ratio += 0.1
         gold: int = int(
-            item_obj.gold * (ratio + 0.1 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5)))
+            item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5)))
     return gold
