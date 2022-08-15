@@ -1819,6 +1819,7 @@ class ContextHandler:
                         item.number = 5
                         item.hour = 1
                         item_list.append(copy.deepcopy(item))
+                        item.hour = 0
                         item.item_name = '随机旅行卡'
                         item.number = 1
                         item_list.append(copy.deepcopy(item))
@@ -2793,6 +2794,7 @@ class FlowerService:
         res += '\n所在城市：' + city.city_name
         res += '\n金币：' + util.show_gold(user.gold)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
+        res += '\n今日还能抽到物品：' + str(user.draw_card_number)
         res += '\n已在花店%d天' % ((datetime.now() - user.create_time).total_seconds() // global_config.day_second + 1)
         util.unlock_user(qq)
         return res
@@ -4269,8 +4271,7 @@ class DrawCard:
                 item.item_name = item_obj.name
                 item.item_type = item_obj.item_type
                 item.max_durability = item_obj.max_durability  # 最大耐久度
-                if item.durability < 0:
-                    item.durability = item_obj.max_durability
+                item.durability = item_obj.max_durability
                 item.rot_second = item_obj.rot_second  # 腐烂的秒数
                 item.humidity = item_obj.humidity  # 湿度
                 item.nutrition = item_obj.nutrition  # 营养
