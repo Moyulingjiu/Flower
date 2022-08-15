@@ -838,6 +838,7 @@ def update_all_user() -> None:
             weather: Weather = get_weather(city)
             flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
             update_farm(user, city, soil, weather, flower)
+            flower_dao.update_user_by_qq(user)
     logger.info('更新用户数据完成')
 
 
