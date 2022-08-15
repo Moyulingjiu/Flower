@@ -11,7 +11,7 @@ __all__ = [
     "FlowerLevel", "Flower", "Weather", "ItemType", "FlowerQuality", "Item", "DecorateItem",
     "WareHouse", "Horse", "DecorateHorse", "Dog", "DecorateDog", "Cat", "DecorateCat", "FlowerState",
     "Farm", "SignRecord", "Mail", "MailBox", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
-    "User", "SystemData", "Announcement", "Commodity", "UserPerson", "Clothing"
+    "User", "SystemData", "Announcement", "Commodity", "UserPerson", "Clothing", "UserStatistics"
 ]
 
 
@@ -1242,6 +1242,30 @@ class Clothing(InnerClass):
         self.foot_ring = foot_ring  # 脚链
         self.cape = cape  # 披风
         self.coat = coat  # 外套
+
+
+class UserStatistics(EntityClass):
+    """
+    统计数据
+    """
+
+    def __init__(self, qq: int = 0, watering: int = 0, user_item: Dict[str, int] = None,
+                 plant_flower: Dict[str, int] = None, plant_perfect_flower: Dict[str, int] = None,
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+
+        self.qq = qq  # QQ号
+        self.watering = watering  # 浇水次数
+        if user_item is None:
+            user_item = {}
+        self.user_item = user_item  # 使用过的物品
+        if plant_flower is None:
+            plant_flower = {}
+        self.plant_flower = plant_flower  # 种植的植物
+        if plant_perfect_flower is None:
+            plant_perfect_flower = {}
+        self.plant_perfect_flower = plant_perfect_flower  # 种植的完美植物
 
 
 class User(EntityClass):

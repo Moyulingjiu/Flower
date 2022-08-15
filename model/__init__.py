@@ -10,19 +10,19 @@ __all__ = [
     "Message", "OriginMail", "Response", "Result",
     "InnerClass", "Gender",
     "FixPointNumber",
-    "Region", "Terrain", "Climate", "Soil", "City",
+    "Region", "Terrain", "Climate", "Soil", "City", "UserStatistics",
     "Condition", "Conditions", "ConditionLevel", "FlowerLevel", "Flower", "Horse", "DecorateHorse",
     "Cat", "DecorateCat", "Dog", "DecorateDog", "Commodity", "UserPerson",
     "User", "SignRecord", "Weather", "FlowerState", "Mail", "MailBox", "Clothing",
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
     "SystemData", "Announcement", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",
-    
+
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person", "PathModel",
-    
+
     "TradeRecords", "FlowerPrice",
-    
+
     "WorldTerrain", "WorldArea", "Kingdom", "Relationship", "Person", "Trait", "PersonName", "PersonLastName",
-    
+
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "ChooseContext", "Choice", "RandomTravelContext", "TravelContext", "AnnouncementContext", "AdminSendMailContext",
     "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargaining"

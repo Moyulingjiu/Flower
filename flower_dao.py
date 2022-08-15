@@ -45,6 +45,7 @@ mongo_person = mongo_db['person']  # npc
 mongo_user_person = mongo_db['user_person']  # 玩家每天刷新的npc
 
 mongo_sign_record = mongo_db['sign_record']  # 签到记录
+mongo_user_statistics = mongo_db['user_statistics']  # 统计数据
 
 mongo_person_last_name = mongo_db['person_last_name']  # npc姓氏
 mongo_person_name = mongo_db['person_name']  # npc名
@@ -72,6 +73,7 @@ redis_mail_prefix = redis_global_prefix + 'mail_'  # 信件redis前缀（信件i
 redis_mails_prefix = redis_global_prefix + 'mails'  # 正在投递中的mail
 redis_buff_prefix = redis_global_prefix + 'buff_'  # BUFF
 redis_achievement_prefix = redis_global_prefix + 'achievement_'  # 成就
+redis_user_statistics = redis_global_prefix + 'user_statistics_'  # 统计数据
 
 redis_world_race_prefix = redis_global_prefix + 'world_race_'  # 种族redis前缀
 redis_world_profession_prefix = redis_global_prefix + 'world_profession_'  # 职业redis前缀
@@ -713,6 +715,40 @@ def insert_user(user: User) -> str:
     return str(result.inserted_id)
 
 
+def select_user_statistics_by_qq(qq: int) -> UserStatistics:
+    """
+    查询统计数据
+    """
+    redis_ans = redis_db.get(redis_user_statistics + str(qq))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_user.find_one({"qq": qq, "is_delete": 0})
+        user_statistics: UserStatistics = UserStatistics()
+        dict_to_class(result, user_statistics)
+        redis_db.set(redis_user_statistics + str(qq), serialization(user_statistics), ex=get_random_expire())
+        return user_statistics
+
+
+def update_user_statistics(user_statistics: UserStatistics) -> int:
+    """
+    插入统计信息
+    """
+    result = mongo_user_statistics.update_one({"qq": user_statistics.qq, "is_delete": 0},
+                                              {"$set": class_to_dict(user_statistics)})
+    redis_db.delete(redis_user_statistics + str(user_statistics.qq))
+    return result.modified_count
+
+
+def insert_user_statistics(user_statistics: UserStatistics) -> str:
+    """
+    插入统计信息
+    """
+    result = mongo_user_statistics.insert_one(class_to_dict(user_statistics))
+    redis_db.delete(redis_user_statistics + str(user_statistics.qq))
+    return str(result.inserted_id)
+
+
 def insert_sign_record(sign_record: SignRecord) -> str:
     """
     插入签到数据
@@ -879,7 +915,7 @@ def select_valid_announcement() -> List[Announcement]:
         now: datetime = datetime.now()
         result = mongo_announcement.find(
             {"expire_time": {'$gte': now}, "is_delete": 0})
-        
+
         announcement_list: List[Announcement] = []
         for announcement_result in result:
             announcement: Announcement = Announcement()
