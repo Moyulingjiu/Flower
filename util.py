@@ -1321,9 +1321,11 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
                     continue
                 level: int = random.randint(1, 4)
                 if flower.level == FlowerLevel.B:
-                    gold: int = int(5000 * level * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                    gold: int = int(5000 * level * (level + 1) / 2 * (
+                            1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 else:
-                    gold: int = int(1000 * level * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                    gold: int = int(1000 * level * (level + 1) / 2 * (
+                                1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 user_person.knowledge[flower.name] = (level, gold)
 
         flower_dao.insert_user_person(user_person)
