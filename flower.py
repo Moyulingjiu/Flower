@@ -1819,6 +1819,7 @@ class ContextHandler:
                         item.number = 5
                         item.hour = 1
                         item_list.append(copy.deepcopy(item))
+                        item.hour = 0
                         item.item_name = '随机旅行卡'
                         item.number = 1
                         item_list.append(copy.deepcopy(item))
