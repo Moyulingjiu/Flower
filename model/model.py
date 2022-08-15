@@ -1386,6 +1386,8 @@ class UserPerson(EntityClass):
         if ban_item is None:
             ban_item = []
         self.ban_item = ban_item  # 拒绝出售的商品
+        if cancel_sell_times is None:
+            cancel_sell_times = {}
         self.cancel_sell_times = cancel_sell_times  # 取消出售的次数
 
 
