@@ -1802,10 +1802,10 @@ class ContextHandler:
                         context.step += 1
                         flower_dao.insert_context(qq, context)
                         reply = user.username + '，看！你的种子不出意外的话应该已经成熟了，或者快要成熟。\n' \
-                                                '接下来使用命令“收获”来收获成熟的花'
+                                                '接下来使用命令“花店收获”来收获成熟的花'
                         result.context_reply_text.append(reply)
                 elif context.step == 11:
-                    if message == '收获':
+                    if message == '花店收获':
                         self.block_transmission = False
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
