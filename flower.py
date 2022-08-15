@@ -92,7 +92,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_gold_rank()
                 result.reply_text.append(reply)
                 return result
-            elif message == '花店经验排行榜':
+            elif message == '花店等级排行榜':
                 reply = FlowerService.view_exp_rank()
                 result.reply_text.append(reply)
                 return result
@@ -4192,56 +4192,55 @@ class FlowerService:
         """
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
-        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
-        if len(user_person_list) == 0:
-            util.generate_today_person(user_person_list, qq)
-        if person_index > 0:
-            person_index -= 1
-        if person_index < 0 or person_index >= len(user_person_list):
-            util.unlock_user(qq)
-            return user.username + '，人物序号超限'
-        user_person: UserPerson = user_person_list[person_index]
-        relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
-        person: Person = flower_dao.select_person(user_person.person_id)
-        profession: Profession = flower_dao.select_profession(person.profession_id)
-        if not relationship.valid():
-            relationship.src_person = user_person.person_id
-            relationship.dst_person = str(qq)
-            relationship.value = person.affinity
-        if profession.name != '商人' and profession.name != '探险家':
-            util.unlock_user(qq)
-            return user.username + '，对方不接受出售商品'
-        if item.item_name in user_person.ban_item:
-            util.unlock_user(qq)
-            return user.username + '，其不接受出售商品'
-        item_obj: Item = flower_dao.select_item_by_name(item.item_name)
-        if relationship.value < 10:
-            gold: int = 1
-        else:
-            if item_obj.item_type == ItemType.flower:
-                ratio: float = 1.0
-                if item.flower_quality == FlowerQuality.perfect:
-                    ratio: float = 1.3 + random.random()
+        try:
+            user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+            if len(user_person_list) == 0:
+                util.generate_today_person(user_person_list, qq)
+            if person_index > 0:
+                person_index -= 1
+            if person_index < 0 or person_index >= len(user_person_list):
+                return user.username + '，人物序号超限'
+            user_person: UserPerson = user_person_list[person_index]
+            relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
+            person: Person = flower_dao.select_person(user_person.person_id)
+            profession: Profession = flower_dao.select_profession(person.profession_id)
+            if not relationship.valid():
+                relationship.src_person = user_person.person_id
+                relationship.dst_person = str(qq)
+                relationship.value = person.affinity
+            if profession.name != '商人' and profession.name != '探险家':
+                return user.username + '，对方不接受出售商品'
+            if item.item_name in user_person.ban_item:
+                return user.username + '，对方不接受出售商品'
+            item_obj: Item = flower_dao.select_item_by_name(item.item_name)
+            if relationship.value < 10:
+                gold: int = 1
             else:
-                ratio: float = 0.8
-            gold: int = int(
-                item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
-        can_bargain: bool = relationship.value > 70
-        context: CommodityBargaining = CommodityBargaining(
-            user_person_id=user_person.get_id(),
-            person_id=person.get_id(),
-            item=item,
-            gold=gold,
-            can_bargain=can_bargain
-        )
-        flower_dao.insert_context(qq, context)
-        if can_bargain:
-            return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                   '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                       person.name, gold / 100)
-        else:
-            return user.username + '，%s出价单个%.2f，' \
-                                   '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
+                if item_obj.item_type == ItemType.flower:
+                    ratio: float = 1.0
+                    if item.flower_quality == FlowerQuality.perfect:
+                        ratio: float = 1.3 + random.random()
+                else:
+                    ratio: float = 0.8
+                gold: int = int(
+                    item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
+            can_bargain: bool = relationship.value > 70
+            context: CommodityBargaining = CommodityBargaining(
+                user_person_id=user_person.get_id(),
+                person_id=person.get_id(),
+                item=item,
+                gold=gold,
+                can_bargain=can_bargain
+            )
+            flower_dao.insert_context(qq, context)
+            if can_bargain:
+                return user.username + '，%s出价单个%.2f，是否要议价，' \
+                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
+            else:
+                return user.username + '，%s出价单个%.2f，' \
+                                       '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
+        finally:
+            util.unlock_user(qq)
 
     @classmethod
     def view_gold_rank(cls) -> str:
