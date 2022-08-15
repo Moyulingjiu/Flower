@@ -4282,6 +4282,7 @@ class DrawCard:
                 if item_obj.item_type == ItemType.accelerate and item.hour < 1:
                     item.hour = 1
                 try:
+                    item.durability = -1
                     util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
                     flower_dao.update_user_by_qq(user)
