@@ -3511,6 +3511,12 @@ class FlowerService:
             user.farm.hour = 0
             user.farm.bad_hour = 0
             user.farm.perfect_hour = 0
+            user_statistics: UserStatistics = util.get_user_statistics(qq)
+            if flower_name in user_statistics.plant_flower:
+                user_statistics.plant_flower[flower_name] += 1
+            else:
+                user_statistics.plant_flower[flower_name] = 1
+            flower_dao.update_user_statistics(user_statistics)
             flower_dao.update_user_by_qq(user)
             return user.username + '，种植' + flower_name + '成功！'
         except ItemNotFoundException:
@@ -3553,6 +3559,9 @@ class FlowerService:
         user.gold -= cost_gold
         # 浇水多少次加多少经验值
         user.exp += multiple
+        user_statistics: UserStatistics = util.get_user_statistics(qq)
+        user_statistics.watering += multiple
+        flower_dao.update_user_statistics(user_statistics)
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
         if humidity_change == 0.0:
@@ -3871,6 +3880,12 @@ class FlowerService:
             util.insert_items(user.warehouse, [copy.deepcopy(item)])
             return user.username + '，' + e.message
         finally:
+            user_statistics: UserStatistics = util.get_user_statistics(qq)
+            if item.item_name in user_statistics.use_item:
+                user_statistics.use_item[item.item_name] += item.number
+            else:
+                user_statistics.use_item[item.item_name] = item.number
+            flower_dao.update_user_statistics(user_statistics)
             flower_dao.update_user_by_qq(user)
             util.unlock_user(qq)
 
@@ -3937,6 +3952,13 @@ class FlowerService:
                         user.exp += 50
                     else:
                         user.exp += 10
+                    # 更新统计数据
+                    user_statistics: UserStatistics = util.get_user_statistics(qq)
+                    if flower.name in user_statistics.plant_flower:
+                        user_statistics.plant_perfect_flower[flower.name] += 1
+                    else:
+                        user_statistics.plant_perfect_flower[flower.name] = 1
+                    flower_dao.update_user_statistics(user_statistics)
                     # 更新user
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，收获成功，获得%s-%sx%d' % (

@@ -24,11 +24,11 @@ def async_function(f):
     :param f: 函数
     :return: 包装之后的函数
     """
-    
+
     def wrapper(*args, **kwargs):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
-    
+
     return wrapper
 
 
@@ -54,6 +54,20 @@ def get_user(qq: int, username: str = '') -> User:
     if user.warehouse.check_item():
         flower_dao.update_user_by_qq(user)
     return user
+
+
+def get_user_statistics(qq: int) -> UserStatistics:
+    """
+    获取统计数据
+    """
+    user_statistics: UserStatistics = flower_dao.select_user_statistics_by_qq(qq)
+    if user_statistics is None or user_statistics.qq == 0:
+        get_user(qq)  # 尝试获取用户，如果获取不到，那么证明没有注册有异常，会有flower的handle方法捕获
+        user_statistics: UserStatistics = UserStatistics()
+        user_statistics.qq = qq
+        flower_dao.insert_user_statistics(user_statistics)
+        user_statistics: UserStatistics = flower_dao.select_user_statistics_by_qq(qq)
+    return user_statistics
 
 
 ####################################################################################################
@@ -215,7 +229,7 @@ def analysis_item(data: str) -> DecorateItem:
     item: DecorateItem = DecorateItem()
     item.item_name = item_name
     item.number = item_number
-    
+
     item_obj: Item = flower_dao.select_item_by_name(item.item_name)
     if not item_obj.valid():
         raise ItemNotFoundException('')
@@ -449,7 +463,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_humidity_max_change_hour = 0
         user.farm.soil_humidity_min_change_hour = 0
-    
+
     if user.farm.nutrition < soil.min_change_nutrition:
         user.farm.soil_nutrition_min_change_hour += 1
         user.farm.soil_nutrition_max_change_hour = 0
@@ -459,7 +473,7 @@ def update_farm_soil(user: User, soil: Soil, cal_datetime: datetime) -> Soil:
     else:
         user.farm.soil_nutrition_max_change_hour = 0
         user.farm.soil_nutrition_min_change_hour = 0
-    
+
     # 改变土壤（如果被buff锁定了，那么就无法改变）
     total_buff: DecorateBuff = user.get_total_buff(cal_datetime)
     if not total_buff.lock_soil:
@@ -614,7 +628,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.bad_hour += 1 * (1.0 + total_buff.bad_hour_coefficient)
         else:
             user.farm.perfect_hour = 0
-        
+
         # 根据条件不同，每小时增长的小时不同
         if condition_level == ConditionLevel.PERFECT:
             if flower.level == FlowerLevel.S:
@@ -645,7 +659,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                 user.farm.hour += 0.6 * (1.0 + total_buff.hour_coefficient)
             else:
                 user.farm.hour += 0.7 * (1.0 + total_buff.hour_coefficient)
-        
+
         # 根据条件来查看花的状态
         if user.farm.bad_hour >= flower.withered_time:
             user.farm.flower_state = FlowerState.withered
@@ -671,12 +685,12 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
     """
     now: datetime = datetime.now()
     start_time: datetime = user.farm.last_check_time + timedelta(hours=1)
-    
+
     seed_time: int = flower.seed_time
     grow_time: int = seed_time + flower.grow_time
     mature_time: int = grow_time + flower.mature_time
     overripe_time: int = mature_time + flower.overripe_time
-    
+
     real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
     if real_time_weather.city_id != city.get_id():
         real_time_weather = weather
@@ -684,11 +698,11 @@ def update_farm(user: User, city: City, soil: Soil, weather: Weather, flower: Fl
         soil = update_farm_soil(user, soil, start_time)
         if user.farm.flower_id != '':
             check_farm_soil_climate_condition(user, flower)
-        
+
         update_farm_condition(user, flower, real_time_weather, start_time, soil, start_time)
         if user.farm.flower_id != '' and user.farm.flower_state != FlowerState.withered:
             check_farm_condition(user, flower, seed_time, grow_time, mature_time, overripe_time, start_time)
-        
+
         start_time += timedelta(hours=1)
         if start_time.date() != weather.create_time.date():
             real_time_weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), start_time)
@@ -1274,7 +1288,7 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
         user_person: UserPerson = UserPerson()
         user_person.qq = qq
         user_person.person_id = person.get_id()
-        
+
         relationship: Relationship = flower_dao.select_relationship_by_pair(person.get_id(), str(qq))
         if not relationship.valid():
             relationship: Relationship = Relationship()
@@ -1311,6 +1325,6 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
                 else:
                     gold: int = int(1000 * level * (1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 user_person.knowledge[flower.name] = (level, gold)
-        
+
         flower_dao.insert_user_person(user_person)
         user_person_list.append(user_person)
