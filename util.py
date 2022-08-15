@@ -1330,8 +1330,39 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
                             1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 else:
                     gold: int = int(1000 * level * (level + 1) / 2 * (
-                                1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                            1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 user_person.knowledge[flower.name] = (level, gold)
 
         flower_dao.insert_user_person(user_person)
         user_person_list.append(user_person)
+
+
+def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relationship,
+                        random_ratio: float = 0.1) -> int:
+    """
+    计算商品价格
+    """
+    if relationship.value < 10:
+        gold: int = 1
+    else:
+        if item_obj.item_type == ItemType.flower:
+            ratio: float = 1.0
+            if item.flower_quality == FlowerQuality.perfect:
+                flower: Flower = flower_dao.select_flower_by_name(item_obj.name)
+                if flower.level == FlowerLevel.S:
+                    ratio: float = 2.0
+                elif flower.level == FlowerLevel.A:
+                    ratio: float = 1.5
+                elif flower.level == FlowerLevel.B:
+                    ratio: float = 1.2
+                elif flower.level == FlowerLevel.C:
+                    ratio: float = 1.15
+                else:
+                    ratio: float = 1.1
+        else:
+            ratio: float = 0.8
+        if relationship.value > 90:
+            random_ratio += 0.1
+        gold: int = int(
+            item_obj.gold * (ratio + 0.1 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5)))
+    return gold

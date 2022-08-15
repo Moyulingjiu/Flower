@@ -2619,18 +2619,8 @@ class ContextHandler:
                             relationship: Relationship = flower_dao.select_relationship_by_pair(context.person_id,
                                                                                                 str(qq))
                             person: Person = flower_dao.select_person(context.person_id)
-                            if item_obj.item_type == ItemType.flower:
-                                ratio: float = 1.0
-                                if context.item.flower_quality == FlowerQuality.perfect:
-                                    ratio: float = 1.3 + random.random()
-                            else:
-                                ratio: float = 0.8
-                            max_gold: int = int(
-                                item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.2 * (
-                                        random.random() - 0.5)))
-
-                            if relationship.value > 95:
-                                max_gold *= 1.0 + random.random()
+                            max_gold: int = util.calculate_item_gold(context.item, item_obj, relationship,
+                                                                     random_ratio=0.2)
                             flower_dao.remove_context(qq, origin_list[index])
                             context.bargain_times += 1
                             if gold > max_gold:
@@ -4230,17 +4220,7 @@ class FlowerService:
             if item.item_name in user_person.cancel_sell_times and user_person.cancel_sell_times[item.item_name] > 5:
                 return user.username + '，对方不接受出售商品'
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
-            if relationship.value < 10:
-                gold: int = 1
-            else:
-                if item_obj.item_type == ItemType.flower:
-                    ratio: float = 1.0
-                    if item.flower_quality == FlowerQuality.perfect:
-                        ratio: float = 1.3 + random.random()
-                else:
-                    ratio: float = 0.8
-                gold: int = int(
-                    item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + 0.1 * (random.random() - 0.5)))
+            gold: int = util.calculate_item_gold(item, item_obj, relationship)
             can_bargain: bool = relationship.value > 70
             context: CommodityBargaining = CommodityBargaining(
                 user_person_id=user_person.get_id(),
@@ -4252,7 +4232,8 @@ class FlowerService:
             flower_dao.insert_context(qq, context)
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
+                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
+                       person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
