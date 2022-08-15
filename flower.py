@@ -4211,14 +4211,14 @@ class FlowerService:
                 relationship.dst_person = str(qq)
                 relationship.value = person.affinity
             if profession.name != '商人' and profession.name != '探险家':
-                return user.username + '，对方不接受出售商品'
+                return user.username + '，对方不接受出售该商品'
             if item.item_name in user_person.ban_item:
-                return user.username + '，对方不接受出售商品'
+                return user.username + '，对方不接受出售该商品'
             if user_person.cancel_sell_times is None:
                 user_person.cancel_sell_times = {}
                 flower_dao.update_user_person(user_person)
             if item.item_name in user_person.cancel_sell_times and user_person.cancel_sell_times[item.item_name] > 5:
-                return user.username + '，对方不接受出售商品'
+                return user.username + '，对方不接受出售该商品'
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
             gold: int = util.calculate_item_gold(item, item_obj, relationship)
             can_bargain: bool = relationship.value > 70
