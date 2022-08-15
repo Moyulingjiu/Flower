@@ -2534,12 +2534,24 @@ class ContextHandler:
                         del_context_list.append(origin_list[index])
                         reply = '已为您取消出售'
                         result.context_reply_text.append(reply)
+                        user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
+                        if context.item.item_name in user_person.cancel_sell_times:
+                            user_person.cancel_sell_times[context.item.item_name] += 1
+                        else:
+                            user_person.cancel_sell_times[context.item.item_name] = 1
+                        flower_dao.update_user_person(user_person)
                         continue
                     else:
                         del_context_list.append(origin_list[index])
                         if message != '是':
                             reply = '已为您取消出售'
                             result.context_reply_text.append(reply)
+                            user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
+                            if context.item.item_name in user_person.cancel_sell_times:
+                                user_person.cancel_sell_times[context.item.item_name] += 1
+                            else:
+                                user_person.cancel_sell_times[context.item.item_name] = 1
+                            flower_dao.update_user_person(user_person)
                             continue
                         # 出售物品
                         user: User = util.get_user(qq, username)
@@ -3306,7 +3318,7 @@ class FlowerService:
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
                     reply += '\n对' + target_user.username + '转账成功，余额：%.2f，税率%.2f' % (
-                    user.gold / 100, 1 - ration)
+                        user.gold / 100, 1 - ration)
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
@@ -4212,6 +4224,8 @@ class FlowerService:
                 return user.username + '，对方不接受出售商品'
             if item.item_name in user_person.ban_item:
                 return user.username + '，对方不接受出售商品'
+            if item.item_name in user_person.cancel_sell_times and user_person.cancel_sell_times[item.item_name] > 5:
+                return user.username + '，对方不接受出售商品'
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
             if relationship.value < 10:
                 gold: int = 1
@@ -4269,6 +4283,7 @@ class FlowerService:
                 target_user.username = '匿名'
             reply += '\n%d.%s：%d级' % (index, target_user.username, int(target[1]))
         return reply
+
 
 class DrawCard:
     """
