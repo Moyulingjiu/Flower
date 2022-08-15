@@ -2794,6 +2794,7 @@ class FlowerService:
         res += '\n所在城市：' + city.city_name
         res += '\n金币：' + util.show_gold(user.gold)
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
+        res += '\n今日还能抽到物品：' + str(user.draw_card_number)
         res += '\n已在花店%d天' % ((datetime.now() - user.create_time).total_seconds() // global_config.day_second + 1)
         util.unlock_user(qq)
         return res
