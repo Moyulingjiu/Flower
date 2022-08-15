@@ -1367,6 +1367,7 @@ class UserPerson(EntityClass):
     
     def __init__(self, qq: int = 0, person_id: str = '', commodities: List[Commodity] = None, news: List[str] = None,
                  send_mail_price: int = 0, knowledge: Dict[str, Tuple[int, int]] = None, ban_item: List[str] = None,
+                 cancel_sell_times: Dict[str, int] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -1385,6 +1386,7 @@ class UserPerson(EntityClass):
         if ban_item is None:
             ban_item = []
         self.ban_item = ban_item  # 拒绝出售的商品
+        self.cancel_sell_times = cancel_sell_times  # 取消出售的次数
 
 
 class SystemData:

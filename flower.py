@@ -1614,7 +1614,7 @@ class ContextHandler:
                     continue
                 if context.step == 0:
                     city: City = flower_dao.select_city_by_name(message)
-                    if city is None or city.city_name != message:
+                    if city is None or city.city_name != message or not city.valid():
                         reply = FlowerService.query_city(message) + '\n请选择一座城市，只支持地级市（你可以输入“取消”来取消初始化账户）。'
                         result.context_reply_text.append(reply)
                         continue
