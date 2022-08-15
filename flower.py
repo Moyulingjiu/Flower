@@ -3255,7 +3255,7 @@ class FlowerService:
         if user.last_sign_date.date() == today.date():
             util.unlock_user(qq)
             return user.username + '，今天已经签到过了'
-        if user.last_sign_date + timedelta(days=1) == today:
+        if user.last_sign_date.date() + timedelta(days=1) == today:
             user.sign_continuous += 1
         else:
             user.sign_continuous = 1
