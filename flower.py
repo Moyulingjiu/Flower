@@ -4081,6 +4081,10 @@ class FlowerService:
         user_person: UserPerson = user_person_list[index]
         person: Person = flower_dao.select_person(user_person.person_id)
         reply: str = person.name + '（%s）' % person.get_id()
+        if person.gender == Gender.male:
+            reply += '【男】'
+        elif person.gender == Gender.female:
+            reply += '【女】'
         reply += '\n' + '-' * 6
         if len(user_person.news) > 0:
             reply += '\n可以打听小道消息'
