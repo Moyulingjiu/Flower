@@ -559,7 +559,7 @@ class AdminHandler:
                 return '成功给予金币给' + str(update_number) + '人'
             else:
                 return '未能给予任何人金币，请检查是否注册'
-        if message[:4] == '修改金币':
+        elif message[:4] == '修改金币':
             data: str = message[4:].strip()
             try:
                 origin_gold: float = float(data)
@@ -1019,6 +1019,9 @@ class AdminHandler:
             if global_config.get_all_weather:
                 return '线程仍然在进行“爬取所有城市天气”的活动'
             return '当前没有进行“爬取所有城市天气”'
+        elif message == '花店玩家数量':
+            number: int = flower_dao.select_all_user_number()
+            return '玩家总数：%d' % number
         return ''
 
     @classmethod
