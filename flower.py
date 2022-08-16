@@ -4163,7 +4163,7 @@ class FlowerService:
             util.insert_items(user.warehouse, [copy.deepcopy(item)])
             user.gold -= commodity.gold * number
             # 经验
-            exp: int = int(commodity.gold * number / 5)
+            exp: int = int(commodity.gold * number / 500)
             if exp <= 0:
                 exp = 1
             user.exp += exp
@@ -4217,7 +4217,7 @@ class FlowerService:
             return user.username + '，你已经有了更高级别的该知识'
         user.gold -= gold
         # 经验
-        exp: int = int(gold / 5)
+        exp: int = int(gold / 500)
         if exp <= 0:
             exp = 1
         user.exp += exp
