@@ -1380,6 +1380,9 @@ def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relati
 
 
 def show_knowledge_level(level: int) -> str:
+    """
+    显示知识等级
+    """
     if level >= 3:
         return '大师'
     elif level == 3:
@@ -1390,3 +1393,17 @@ def show_knowledge_level(level: int) -> str:
         return '菜鸟'
     else:
         return '不认识'
+
+
+def calculate_user_level(user: User):
+    """
+    计算用户等级
+    """
+    level = user.level
+    system_data = get_system_data()
+    for i in range(level, len(system_data.exp_level)):
+        if user.exp >= system_data.exp_level[i]:
+            level = i + 1
+            send_system_mail(user, '升级奖励', '玩家角色达到%d级' % level, [], i * 10)
+            user.level = level
+            flower_dao.update_user_by_qq(user)

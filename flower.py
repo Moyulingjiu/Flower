@@ -2818,13 +2818,9 @@ class FlowerService:
         if user.auto_get_name:
             res += '（自动获取）'
         res += '\n等级：'
+        util.calculate_user_level(user)
         level = user.level
         system_data = util.get_system_data()
-        for i in range(level, len(system_data.exp_level)):
-            if user.exp >= system_data.exp_level[i]:
-                level = i + 1
-                user.level = i + 1
-                flower_dao.update_user_by_qq(user)
         res += str(level) + '（%d/%d）' % (user.exp, system_data.exp_level[level])
         res += '\n角色性别：' + user.gender.show()
         res += '\n出生地：' + born_city.city_name
@@ -4308,7 +4304,10 @@ class FlowerService:
         index: int = 0
         for target in exp_rank:
             index += 1
+            util.lock_user(int(target[0]))
             target_user: User = util.get_user(int(target[0]))
+            util.calculate_user_level(target_user)
+            util.unlock_user(int(target[0]))
             if target_user.auto_get_name:
                 target_user.username = '匿名'
             reply += '\n%d.%s：%d级' % (index, target_user.username, target_user.level)
