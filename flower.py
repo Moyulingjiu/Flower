@@ -3921,6 +3921,16 @@ class FlowerService:
                     humidity: float = item.humidity * item.number
                     humidity = util.add_humidity(user.farm, humidity)
                     return user.username + '，湿度%.2f' % humidity
+                elif item.item_name == '随机加速卡':
+                    hour: int = random.randint(item.number, 12 * item.number)
+                    user.farm.last_check_time -= timedelta(hours=hour)
+                    user.accelerate_buff(seconds=global_config.hour_second * hour)
+                    city: City = flower_dao.select_city_by_id(user.city_id)
+                    flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
+                    soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+                    weather: Weather = util.get_weather(city)
+                    util.update_farm(user, city, soil, weather, flower)
+                    return user.username + '，成功加速农场%d小时' % hour
             raise UseFailException(user.username + '，该物品不可以使用')
         except ItemNotFoundException:
             return user.username + '，没有该物品'
