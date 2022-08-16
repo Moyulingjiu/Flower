@@ -2569,12 +2569,13 @@ class ContextHandler:
                         if message != '是':
                             reply = '已为您取消出售'
                             result.context_reply_text.append(reply)
-                            user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
-                            if context.item.item_name in user_person.cancel_sell_times:
-                                user_person.cancel_sell_times[context.item.item_name] += 1
-                            else:
-                                user_person.cancel_sell_times[context.item.item_name] = 1
-                            flower_dao.update_user_person(user_person)
+                            if isinstance(context.user_person_id, str):
+                                user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
+                                if context.item.item_name in user_person.cancel_sell_times:
+                                    user_person.cancel_sell_times[context.item.item_name] += 1
+                                else:
+                                    user_person.cancel_sell_times[context.item.item_name] = 1
+                                flower_dao.update_user_person(user_person)
                             continue
                         # 出售物品
                         user: User = util.get_user(qq, username)
