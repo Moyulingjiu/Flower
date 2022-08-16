@@ -1070,11 +1070,11 @@ class DecorateBuff(InnerClass):
         if self.lock_soil:
             reply += '、锁定土壤'
         if self.change_humidity != 0.0:
-            reply += '、湿度%.2f' % self.change_humidity
+            reply += '、湿度%.2f/小时' % self.change_humidity
         if self.change_nutrition != 0.0:
-            reply += '、营养%.2f' % self.change_nutrition
+            reply += '、营养%.2f/小时' % self.change_nutrition
         if self.change_temperature != 0.0:
-            reply += '、温度%.2f' % self.change_temperature
+            reply += '、温度%.2f/小时' % self.change_temperature
         if self.perfect_coefficient != 0.0:
             reply += '、完美时长增幅%.2f%%' % (self.perfect_coefficient * 100)
         if self.hour_coefficient != 0.0:
