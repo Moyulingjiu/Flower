@@ -3334,11 +3334,11 @@ class FlowerService:
                     # 转账1个人加一次经验
                     user.exp += 1
                     level = abs(user.level - target_user.level)
-                    if level <= 10:
+                    if level <= 5:
                         ration = 0.8 * (1.0 + 0.2 * (random.random() - 0.5))
-                    elif level <= 20:
+                    elif level <= 10:
                         ration = 0.4 * (1.0 + 0.2 * (random.random() - 0.5))
-                    elif level <= 30:
+                    elif level <= 15:
                         ration = 0.1 * (1.0 + 0.2 * (random.random() - 0.5))
                     else:
                         reply += '\n对' + target_user.username + '转账失败，等级相差过大'
