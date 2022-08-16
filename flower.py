@@ -521,7 +521,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
     except ResourceNotFound as e:
         return Result.init(reply_text=e.message)
     except Exception as e:
-        logger.error('未知错误')
+        logger.error('未知错误，触发原因：%s@<%s>(%d)' % (message, username, qq))
         logger.error(str(e))
     finally:
         util.unlock_user(qq)
@@ -1759,17 +1759,17 @@ class ContextHandler:
                             context.step = 9
                             flower_dao.insert_context(qq, context)
                             reply = user.username + '，浇水成功！\n' \
-                                                    '等待可真是难熬，接下来试试“使用加速卡”，来加速你的农场'
+                                                    '等待可真是难熬，接下来试试“花店使用加速卡”，来加速你的农场'
                             result.context_reply_text.append(reply)
                         else:
                             flower_dao.remove_context(qq, origin_list[index])
                             context.step += 1
                             flower_dao.insert_context(qq, context)
                             reply = user.username + '，真可惜没有水壶\n' \
-                                                    '接下来试试“使用新手水壶”把刚才的水壶装上去吧'
+                                                    '接下来试试“花店使用新手水壶”把刚才的水壶装上去吧'
                             result.context_reply_text.append(reply)
                 elif context.step == 7:
-                    if message == '使用新手水壶':
+                    if message == '花店使用新手水壶':
                         self.block_transmission = False
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
@@ -1784,10 +1784,10 @@ class ContextHandler:
                         context.step += 1
                         flower_dao.insert_context(qq, context)
                         reply = user.username + '，浇水成功！\n' \
-                                                '等待可真是难熬，接下来试试“使用加速卡”，来加速你的农场'
+                                                '等待可真是难熬，接下来试试“花店使用加速卡”，来加速你的农场'
                         result.context_reply_text.append(reply)
                 elif context.step == 9:
-                    if message == '使用加速卡':
+                    if message == '花店使用加速卡':
                         self.block_transmission = False
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
