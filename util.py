@@ -1383,7 +1383,7 @@ def show_knowledge_level(level: int) -> str:
     """
     显示知识等级
     """
-    if level >= 3:
+    if level >= 4:
         return '大师'
     elif level == 3:
         return '熟悉'
