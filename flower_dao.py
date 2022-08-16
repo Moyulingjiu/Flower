@@ -1659,7 +1659,7 @@ def select_user_person_by_qq(qq: int, select_time: datetime = datetime.now()) ->
         today: datetime = datetime(select_time.year, select_time.month, select_time.day)
         tomorrow: datetime = today + timedelta(days=1)
         result = mongo_user_person.find(
-            {"qq": qq, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0}).sort([('_id', 1)])
+            {"qq": qq, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0}).sort([('create_time', 1)])
         user_person_list: List[UserPerson] = []
         for user_person_result in result:
             user_person: UserPerson = UserPerson()

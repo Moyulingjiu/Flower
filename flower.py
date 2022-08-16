@@ -406,6 +406,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 try:
                     user_person_id: int = int(data_list[0])
                     flower_name: str = data_list[1]
+                    if '-' in flower_name:
+                        flower_name = flower_name[:flower_name.rindex('-')]
                     reply = FlowerService.buy_knowledge(qq, username, user_person_id, flower_name)
                     result.reply_text.append(reply)
                     return result
@@ -909,7 +911,7 @@ class AdminHandler:
                     page: int = int(data) - 1
                 else:
                     page: int = 0
-                return FlowerService.view_knowledge(at_list[0], username, page)
+                return FlowerService.view_knowledge(at_list[0], '', page)
             except ValueError:
                 raise '格式错误！格式“@xxx 花店知识 【页码】”页码可省略。'
             except UserNotRegisteredException:
@@ -917,14 +919,14 @@ class AdminHandler:
         elif message == '花店人物':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 花店人物”，必须并且只能艾特一人')
-            return FlowerService.view_today_person(at_list[0], username)
+            return FlowerService.view_today_person(at_list[0], '')
         elif message[:4] == '花店人物':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 花店人物 序号”，必须并且只能艾特一人')
             data = message[4:].strip()
             try:
                 index: int = int(data)
-                return FlowerService.view_today_person_index(at_list[0], username, index)
+                return FlowerService.view_today_person_index(at_list[0], '', index)
             except ValueError:
                 raise TypeException('格式错误，格式“@xxx 花店人物 序号”，必须并且只能艾特一人')
 
@@ -3219,17 +3221,7 @@ class FlowerService:
                 continue
             elif index > (page + 1) * page_size:
                 break
-            reply += '\n' + str(flower_name)
-            if user.knowledge[flower_name] >= 3:
-                reply += '大师'
-            elif user.knowledge[flower_name] == 3:
-                reply += '熟悉'
-            elif user.knowledge[flower_name] == 2:
-                reply += '了解'
-            elif user.knowledge[flower_name] == 1:
-                reply += '菜鸟'
-            else:
-                reply += '不认识'
+            reply += '\n' + str(flower_name) + '-' + util.show_knowledge_level(user.knowledge[flower_name])
         total = len(user.knowledge)
         if total > page_size:
             total_page = total // page_size
@@ -4104,18 +4096,9 @@ class FlowerService:
             for knowledge in user_person.knowledge:
                 index += 1
                 level = user_person.knowledge[knowledge][0]
-                if level >= 3:
-                    level_str = '大师'
-                elif level == 3:
-                    level_str = '熟悉'
-                elif level == 2:
-                    level_str = '了解'
-                elif level == 1:
-                    level_str = '菜鸟'
-                else:
-                    level_str = '不认识'
+                level_str = util.show_knowledge_level(level)
                 price = user_person.knowledge[knowledge][1]
-                reply += '\n%d.%s%s：%.2f金币' % (index, knowledge, level_str, price / 100)
+                reply += '\n%d.%s-%s：%.2f金币' % (index, knowledge, level_str, price / 100)
             reply += '\n' + '-' * 6
         util.unlock_user(qq)
         return reply

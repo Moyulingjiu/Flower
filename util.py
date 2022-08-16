@@ -1378,3 +1378,16 @@ def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relati
         gold: int = int(
             item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5)))
     return gold
+
+
+def show_knowledge_level(level: int) -> str:
+    if level >= 3:
+        return '大师'
+    elif level == 3:
+        return '熟悉'
+    elif level == 2:
+        return '了解'
+    elif level == 1:
+        return '菜鸟'
+    else:
+        return '不认识'
