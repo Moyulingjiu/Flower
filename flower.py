@@ -4164,7 +4164,8 @@ class FlowerService:
                 item.flower_quality = FlowerQuality.normal
             util.insert_items(user.warehouse, [copy.deepcopy(item)])
             user.gold -= commodity.gold * number
-            user.exp += 1
+            # 经验
+            user.exp += int(commodity.gold * number / 5)
             if profession.name == '商人':
                 if random.randint(0, 100) < person.affinity:
                     relationship.value += 1
@@ -4214,6 +4215,8 @@ class FlowerService:
             util.unlock_user(qq)
             return user.username + '，你已经有了更高级别的该知识'
         user.gold -= gold
+        # 经验
+        user.exp += int(gold / 5)
         user.knowledge[flower_name] = level
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
@@ -4302,7 +4305,7 @@ class FlowerService:
             target_user: User = util.get_user(int(target[0]))
             if target_user.auto_get_name:
                 target_user.username = '匿名'
-            reply += '\n%d.%s：%d级' % (index, target_user.username, int(target[1]))
+            reply += '\n%d.%s：%d级' % (index, target_user.username, target_user.level)
         return reply
 
 

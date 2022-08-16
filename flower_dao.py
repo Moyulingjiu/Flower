@@ -305,6 +305,11 @@ def unlock(key: str) -> int:
 
 
 ####################################################################################################
+def put_user_rank(user: User):
+    put_gold_rank(user.qq, user.gold)
+    put_exp_rank(user.qq, user.exp)
+
+
 def put_gold_rank(qq: int, gold: int):
     """
     更新金币排行榜
@@ -755,6 +760,7 @@ def update_user_by_qq(user: User) -> int:
     :return: 更新结果
     """
     result = mongo_user.update_one({"qq": user.qq, "is_delete": 0}, {"$set": class_to_dict(user)})
+    put_user_rank(user)
     redis_db.set(redis_user_prefix + str(user.qq), serialization(user), ex=get_random_expire())
     redis_db.delete(redis_username_prefix + str(user.username))
     return result.modified_count

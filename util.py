@@ -47,8 +47,7 @@ def get_user(qq: int, username: str = '') -> User:
     if user.clothing is None:
         user.clothing = Clothing()
     # 将金币、经验值放入排行榜
-    flower_dao.put_gold_rank(qq, user.gold)
-    flower_dao.put_exp_rank(qq, user.level)
+    flower_dao.put_user_rank(user)
     # 计算耐久度
     calculation_farm_equipment(user)
     # 计算信箱
