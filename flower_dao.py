@@ -786,7 +786,7 @@ def select_user_statistics_by_qq(qq: int) -> UserStatistics:
     if redis_ans is not None:
         return deserialize(redis_ans)
     else:
-        result = mongo_user.find_one({"qq": qq, "is_delete": 0})
+        result = mongo_user_statistics.find_one({"qq": qq, "is_delete": 0})
         user_statistics: UserStatistics = UserStatistics()
         dict_to_class(result, user_statistics)
         redis_db.set(redis_user_statistics + str(qq), serialization(user_statistics), ex=get_random_expire())
