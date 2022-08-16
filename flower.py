@@ -4003,7 +4003,9 @@ class FlowerService:
                     elif flower.level == FlowerLevel.C:
                         user.exp += 50
                     else:
-                        user.exp += 10
+                        user.exp += 5
+                    if user.farm.flower_state == FlowerState.perfect:
+                        user.exp *= 2
                     # 更新统计数据
                     user_statistics: UserStatistics = util.get_user_statistics(qq)
                     if flower.name in user_statistics.plant_flower:
