@@ -3843,7 +3843,7 @@ class FlowerService:
                     humidity = util.add_humidity(user.farm, humidity)
                     return user.username + '，湿度+%.2f' % humidity
                 elif item.item_name == '经验卡':
-                    exp: int = 2 * item.number
+                    exp: int = random.randint(item.number, 5 * item.number)
                     user.exp += exp
                     return user.username + '，经验值+%d' % exp
                 elif item.item_name == '缓控释肥' or item.item_name == '烈度缓释肥' or item.item_name == '微量缓释肥':
@@ -4165,7 +4165,10 @@ class FlowerService:
             util.insert_items(user.warehouse, [copy.deepcopy(item)])
             user.gold -= commodity.gold * number
             # 经验
-            user.exp += int(commodity.gold * number / 5)
+            exp: int = int(commodity.gold * number / 5)
+            if exp <= 0:
+                exp = 1
+            user.exp += exp
             if profession.name == '商人':
                 if random.randint(0, 100) < person.affinity:
                     relationship.value += 1
@@ -4216,7 +4219,10 @@ class FlowerService:
             return user.username + '，你已经有了更高级别的该知识'
         user.gold -= gold
         # 经验
-        user.exp += int(gold / 5)
+        exp: int = int(gold / 5)
+        if exp <= 0:
+            exp = 1
+        user.exp += exp
         user.knowledge[flower_name] = level
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
