@@ -1313,20 +1313,20 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
             relationship.dst_person = str(qq)
             relationship.value = person.affinity
             flower_dao.insert_relationship(relationship)
-        # 总计最多有十件商品
-        item_number: int = random.randint(1, 10)
+        # 总计最多有5件商品
+        item_number: int = random.randint(1, 5)
         for _ in range(item_number):
             commodity: Commodity = random_choice_pool(item_pool, relationship)
             if commodity.item_id != '':
                 user_person.commodities.append(commodity)
         if profession.name == '商人':
-            seed_number = random.randint(1, 10)
+            seed_number = random.randint(1, 5)
             for _ in range(seed_number):
                 commodity: Commodity = random_choice_pool(system_data.merchant_seed_pool, relationship)
                 if commodity.item_id != '':
                     user_person.commodities.append(commodity)
         elif profession.name == '探险家':
-            seed_number = random.randint(1, 10)
+            seed_number = random.randint(1, 5)
             for _ in range(seed_number):
                 commodity: Commodity = random_choice_pool(system_data.explorer_seed_pool, relationship)
                 if commodity.item_id != '':
