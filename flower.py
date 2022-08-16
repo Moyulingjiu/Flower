@@ -559,6 +559,26 @@ class AdminHandler:
                 return '成功给予金币给' + str(update_number) + '人'
             else:
                 return '未能给予任何人金币，请检查是否注册'
+        if message[:4] == '修改金币':
+            data: str = message[4:].strip()
+            try:
+                origin_gold: float = float(data)
+                origin_gold *= 100.0
+                gold: int = int(origin_gold)
+            except ValueError:
+                raise TypeException('格式错误，格式“@xxx 修改金币 【数字】”')
+            update_number: int = 0
+            if len(at_list) == 0:
+                if cls.give_gold(qq, qq, gold, replace=True):
+                    update_number += 1
+            else:
+                for target_qq in at_list:
+                    if cls.give_gold(target_qq, qq, gold, replace=True):
+                        update_number += 1
+            if update_number > 0:
+                return '成功修改金币' + str(update_number) + '人'
+            else:
+                return '未能修改任何人金币，请检查是否注册'
         elif message[:4] == '给予物品':
             data: str = message[4:].strip()
             try:
@@ -1002,18 +1022,22 @@ class AdminHandler:
         return ''
 
     @classmethod
-    def give_gold(cls, qq: int, operator_id: int, gold: int) -> bool:
+    def give_gold(cls, qq: int, operator_id: int, gold: int, replace: bool = False) -> bool:
         """
         给予金币
         :param qq: qq号
         :param operator_id: 操作员id
         :param gold: 金币数量（单位：0.01）
+        :param replace: 是否为替换
         :return:
         """
         util.lock_user(qq)
         try:
             user: User = util.get_user(qq, '')
-            user.gold += gold
+            if not replace:
+                user.gold += gold
+            else:
+                user.gold = gold
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
