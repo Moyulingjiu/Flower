@@ -339,7 +339,7 @@ def put_total_gold_rank(qq: int, total_gold: int) -> int:
     获取某个人的金币排行
     """
     mapping: Dict[str, int] = {str(qq): total_gold}
-    return redis_db.zrevrank(redis_user_total_gold_rank, str(qq))
+    redis_db.zadd(redis_user_total_gold_rank, mapping)
 
 
 def get_total_gold_rank(qq: int) -> int:
