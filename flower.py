@@ -4036,7 +4036,7 @@ class FlowerService:
                         user.exp *= 2
                     # 更新统计数据
                     user_statistics: UserStatistics = util.get_user_statistics(qq)
-                    if flower.name in user_statistics.plant_flower:
+                    if flower.name in user_statistics.plant_perfect_flower:
                         user_statistics.plant_perfect_flower[flower.name] += 1
                     else:
                         user_statistics.plant_perfect_flower[flower.name] = 1
