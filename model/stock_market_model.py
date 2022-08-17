@@ -7,6 +7,7 @@ from enum import Enum
 from typing import List
 
 from model.base_model import *
+from model.model import DecorateItem
 
 __all__ = [
     "TradeType", "TradeRecords", "FlowerPrice"
@@ -32,7 +33,7 @@ class TradeType(Enum):
     @classmethod
     def get_level(cls, trade_type: str):
         if not trade_type.startswith('TradeType.'):
-            level = 'TradeType.' + trade_type
+            trade_type = 'TradeType.' + trade_type
         if trade_type == str(cls.buy):
             return cls.buy
         if trade_type == str(cls.sell):
@@ -80,3 +81,59 @@ class FlowerPrice(EntityClass):
             price = []
         # 价格从每天早上十点开市，到晚上十点关市
         self.price = price  # 价格记录
+
+
+class Stock(InnerClass):
+    """
+    股票、期货
+    """
+
+    def __init__(self, flower_id: str = '', number: int = 0):
+        super().__init__('Stock')
+
+        self.flower_id = flower_id  # 花的id
+        self.number = number  # 数量
+
+
+class Debt(InnerClass):
+    """
+    债务
+    """
+
+    def __init__(self, gold: int = 0, borrowing_time: datetime = datetime.now(),
+                 repayment_date: datetime = datetime.now(), daily_interest_rate: float = 0.0,
+                 rolling_interest: bool = False, minimum_interest: int = 0,
+                 pawn: List[DecorateItem] = None):
+        super().__init__('Debt')
+
+        self.gold = gold  # 借款金币
+        self.borrowing_time = borrowing_time  # 借款时间
+        self.repayment_date = repayment_date  # 还款时间
+
+        self.daily_interest_rate = daily_interest_rate  # 日利率
+        self.rolling_interest = rolling_interest  # 是否是利滚利（即是否以前一天加上利率的价格算今天的利率）
+        self.minimum_interest = minimum_interest  # 最低利率
+
+        if pawn is None:
+            pawn = []
+        self.pawn = pawn  # 抵押物
+
+
+class UserAccount(EntityClass):
+    """
+    用户账户
+    """
+
+    def __init__(self, qq: int = 0, account_gold: int = 0, hold_stock: List[Stock] = None, debt_list: List[Debt] = None,
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+
+        self.qq = qq  # qq
+        self.account_gold = account_gold  # 账户中的金币
+        if hold_stock is None:
+            hold_stock = []
+        self.hold_stock = hold_stock  # 持有股票、期货
+        if debt_list is None:
+            debt_list = []
+        self.debt_list = debt_list  # 债务
