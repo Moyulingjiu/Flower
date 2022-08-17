@@ -2811,7 +2811,15 @@ class FlowerService:
             level: int = 0
         res = '名字：' + flower.name
         res += '\n等级：' + FlowerLevel.view_level(flower.level)
-
+        if flower.first_user_qq != 0:
+            try:
+                user: User = util.get_user(flower.first_user_qq)
+                if user.auto_get_name:
+                    user.username = '匿名'
+                res += '\n第一个种出完美的人：' + user.username
+            except UserNotRegisteredException:
+                logger.error('第一个种花的人未注册@%d' % flower.first_user_qq)
+        
         if level >= 1:
             if len(flower.climate_id) > 0:
                 res += '\n适宜气候：' + util.get_climate_list(flower.climate_id)
