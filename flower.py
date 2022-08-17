@@ -4310,8 +4310,7 @@ class FlowerService:
             flower_dao.insert_context(qq, context)
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                           person.name, gold / 100)
+                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
