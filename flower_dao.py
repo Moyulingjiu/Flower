@@ -14,6 +14,7 @@ from redis import ConnectionPool, StrictRedis
 from flower_exceptions import *
 from model import *
 import global_config
+from global_config import logger
 
 # MongoDB
 mongo_client = pymongo.MongoClient(global_config.mongo_connection)
@@ -334,7 +335,7 @@ def get_gold_rank_list() -> List[Tuple[str, float]]:
     return redis_db.zrevrange(redis_user_gold_rank, 0, 9, withscores=True)
 
 
-def put_total_gold_rank(qq: int, total_gold: int) -> int:
+def put_total_gold_rank(qq: int, total_gold: int):
     """
     获取某个人的金币排行
     """
@@ -1694,6 +1695,7 @@ def select_user_person_by_qq(qq: int, select_time: datetime = datetime.now()) ->
     """
     查询用户-npc关联关系
     """
+    logger.info('查询今日的人物%s@%d' % (select_time.strftime('%Y_%m_%d'), qq))
     redis_ans = redis_db.get(redis_user_person_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'))
     if redis_ans is not None:
         return deserialize(redis_ans)

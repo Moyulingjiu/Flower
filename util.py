@@ -1282,6 +1282,7 @@ def random_choice_pool(pool: Dict[str, int], relationship: Relationship) -> Comm
 
 
 def generate_today_person(user_person_list: List[UserPerson], qq: int):
+    logger.info('开始更新每日npc@%d' % qq)
     system_data: SystemData = get_system_data()
     for _ in range(3):
         # 商人80%，探险家30%，建筑师10%
