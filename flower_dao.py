@@ -1672,7 +1672,7 @@ def select_user_person_by_qq(qq: int, select_time: datetime = datetime.now()) ->
             dict_to_class(user_person_result, user_person)
             user_person_list.append(user_person)
         redis_db.set(redis_user_person_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'),
-                     serialization(user_person_list), ex=global_config.day_second)
+                     serialization(user_person_list), ex=get_random_expire())
         return user_person_list
 
 
