@@ -1037,7 +1037,7 @@ class AdminHandler:
         try:
             user: User = util.get_user(qq, '')
             if not replace:
-                user.gold += gold
+                user.get_gold(gold)
             else:
                 user.gold = gold
             user.update(operator_id)
@@ -2566,7 +2566,7 @@ class ContextHandler:
                             try:
                                 gold: int = context.gold * context.item.number
                                 util.remove_items(user.warehouse, [context.item])
-                                user.gold += gold
+                                user.get_gold(gold)
                                 flower_dao.update_user_by_qq(user)
                                 reply = user.username + '，出售成功，获得金币%s，余额：%s' % (
                                     util.show_gold(gold),
@@ -2611,7 +2611,7 @@ class ContextHandler:
                         try:
                             gold: int = context.gold * context.item.number
                             util.remove_items(user.warehouse, [context.item])
-                            user.gold += gold
+                            user.get_gold(gold)
                             flower_dao.update_user_by_qq(user)
                             reply = user.username + '，出售成功，获得金币%s，余额：%s' % (
                                 util.show_gold(gold),
@@ -2643,7 +2643,7 @@ class ContextHandler:
                         try:
                             gold: int = context.gold * context.item.number
                             util.remove_items(user.warehouse, [context.item])
-                            user.gold += gold
+                            user.get_gold(gold)
                             flower_dao.update_user_by_qq(user)
                             reply = user.username + '，出售成功，获得金币%s，余额：%s' % (
                                 util.show_gold(gold),
@@ -3142,7 +3142,7 @@ class FlowerService:
             if mail.received:
                 return user.username + '，你已经领取过该附件了。'
             util.insert_items(user.warehouse, copy.deepcopy(mail.appendix))
-            user.gold += mail.gold
+            user.get_gold(mail.gold)
             mail.received = True
             flower_dao.update_mail(mail)
             flower_dao.update_user_by_qq(user)
@@ -3305,7 +3305,7 @@ class FlowerService:
         # 签到1点经验
         user.exp += 1
         gold = random.randint(100, 500)
-        user.gold += gold
+        user.get_gold(gold)
         # 只对于不足次数的补足，有可能有活动之类的额外增加了每日的抽卡次数
         if user.draw_card_number < system_data.draw_card_max_number:
             user.draw_card_number = system_data.draw_card_max_number
@@ -3359,11 +3359,11 @@ class FlowerService:
                         reply += '\n对' + target_user.username + '转账失败，等级相差过大'
                         continue
 
-                    target_user.gold += int(gold * ration)
+                    target_user.get_gold(int(gold * ration))
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
-                    reply += '\n对' + target_user.username + '转账成功，余额：%.2f，税率%.2f' % (
-                        user.gold / 100, 1 - ration)
+                    reply += '\n对' + target_user.username + '转账成功，余额：%s，税率%.2f%%' % (
+                        util.show_gold(user.gold), (1 - ration) * 100)
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
@@ -3834,15 +3834,15 @@ class FlowerService:
                     return user.username + '，请输入一个城市名前往，输入“取消”取消旅行，旅行后你将会失去农场的所有设备（包括仓库）'
                 elif item.item_name == '小金卡':
                     gold = random.randint(50 * item.number, 501 * item.number)
-                    user.gold += gold
+                    user.get_gold(gold)
                     return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '大金卡':
                     gold = random.randint(50 * item.number, 50001 * item.number)
-                    user.gold += gold
+                    user.get_gold(gold)
                     return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '金砖卡':
                     gold = random.randint(50 * item.number, 500001 * item.number)
-                    user.gold += gold
+                    user.get_gold(gold)
                     return user.username + '，获得%.2f金币' % (gold / 100)
                 elif item.item_name == '铲铲卡':
                     if user.farm.flower_id == '':
@@ -4310,7 +4310,8 @@ class FlowerService:
             flower_dao.insert_context(qq, context)
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
+                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
+                       person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
