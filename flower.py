@@ -198,6 +198,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise TypeException('格式错误！格式“花店人物 序号”来查看某个具体的人')
+            elif message == '花店统计数据':
+                reply = FlowerService.view_user_statistics(qq, username)
+                result.reply_text.append(reply)
+                return result
 
             # 操作部分
             elif message == '初始化花店':
@@ -948,6 +952,10 @@ class AdminHandler:
                 return FlowerService.view_today_person_index(at_list[0], '', index)
             except ValueError:
                 raise TypeException('格式错误，格式“@xxx 花店人物 序号”，必须并且只能艾特一人')
+        elif message == '花店统计数据':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店统计数据”，必须并且只能艾特一人')
+            return FlowerService.view_user_statistics(qq, username)
 
         # 游戏管理部分
         elif message == '发送信件':
@@ -1169,6 +1177,9 @@ class AdminHandler:
             util.lock_user(qq)
             user: User = util.get_user(qq, '')
             user.farm.flower_id = ''
+            user_statistics: UserStatistics = util.get_user_statistics(qq)
+            user_statistics.remove_flower += 1
+            flower_dao.update_user_statistics(user_statistics)
             user.update(operator_id)
             flower_dao.update_user_by_qq(user)
             return True
@@ -1939,6 +1950,9 @@ class ContextHandler:
                 user.gold -= system_data.remove_farm_flower_cost_gold
                 user.farm.flower_id = ''
                 user.exp += 1
+                user_statistics: UserStatistics = util.get_user_statistics(qq)
+                user_statistics.remove_flower += 1
+                flower_dao.update_user_statistics(user_statistics)
                 flower_dao.update_user_by_qq(user)
                 reply = user.username + '，成功花费' + '%.2f' % (
                         system_data.remove_farm_flower_cost_gold / 100) + '金币为您铲除花'
@@ -3848,6 +3862,9 @@ class FlowerService:
                     if user.farm.flower_id == '':
                         raise UseFailException(user.username + '，你的农场没有花')
                     user.farm.flower_id = ''
+                    user_statistics: UserStatistics = util.get_user_statistics(qq)
+                    user_statistics.remove_flower += 1
+                    flower_dao.update_user_statistics(user_statistics)
                     return user.username + '，成功铲除花'
                 elif item.item_name == '暖风卡':
                     temperature = item.temperature * item.number
@@ -4311,7 +4328,7 @@ class FlowerService:
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
                                        '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                       person.name, gold / 100)
+                           person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
@@ -4347,6 +4364,31 @@ class FlowerService:
             if target_user.auto_get_name:
                 target_user.username = '匿名'
             reply += '\n%d.%s：%d级' % (index, target_user.username, target_user.level)
+        return reply
+
+    @classmethod
+    def view_user_statistics(cls, qq: int, username: str) -> str:
+        """
+        查看统计数据
+        """
+        user: User = util.get_user(qq, username)
+        user_statistics: UserStatistics = util.get_user_statistics(qq)
+        reply: str = '%s，你的花店统计数据如下：' % user.username
+        reply += '\n赚取的总金币：' + util.show_gold(user.total_gold)
+        reply += '\n浇水：%d次' % user_statistics.watering
+        reply += '\n铲除：%d次' % user_statistics.remove_flower
+        total_item: int = 0
+        for item in user_statistics.use_item:
+            total_item += user_statistics.use_item[item]
+        reply += '\n使用过道具：%d个' % total_item
+        plant_times: int = 0
+        for plant in user_statistics.plant_flower:
+            plant_times += user_statistics.use_item[plant]
+        reply += '\n种植植物：%d次' % plant_times
+        plant_perfect_times: int = 0
+        for plant in user_statistics.plant_perfect_flower:
+            plant_perfect_times += user_statistics.use_item[plant]
+        reply += '\n收获完美植物：%d次' % plant_times
         return reply
 
 

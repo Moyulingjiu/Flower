@@ -1249,7 +1249,8 @@ class UserStatistics(EntityClass):
     统计数据
     """
 
-    def __init__(self, qq: int = 0, watering: int = 0, use_item: Dict[str, int] = None,
+    def __init__(self, qq: int = 0, watering: int = 0, remove_flower: int = 0,
+                 use_item: Dict[str, int] = None,
                  plant_flower: Dict[str, int] = None, plant_perfect_flower: Dict[str, int] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
@@ -1257,6 +1258,7 @@ class UserStatistics(EntityClass):
 
         self.qq = qq  # QQ号
         self.watering = watering  # 浇水次数
+        self.remove_flower = remove_flower  # 铲除次数
         if use_item is None:
             use_item = {}
         self.use_item = use_item  # 使用过的物品
