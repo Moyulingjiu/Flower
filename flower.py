@@ -102,6 +102,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_gold_rank()
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店赚取金币排行榜':
+                reply = FlowerService.view_total_gold_rank()
+                result.reply_text.append(reply)
+                return result
             elif message == '花店等级排行榜':
                 reply = FlowerService.view_exp_rank()
                 result.reply_text.append(reply)
@@ -4057,6 +4061,10 @@ class FlowerService:
                     else:
                         user_statistics.plant_perfect_flower[flower.name] = 1
                     flower_dao.update_user_statistics(user_statistics)
+                    # 更新花店第一人
+                    if flower.first_user_qq == 0 and user.farm.flower_state == FlowerState.perfect:
+                        flower.first_user_qq = qq
+                        flower_dao.update_flower(flower)
                     # 更新user
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，收获成功，获得%s-%sx%d' % (
@@ -4327,8 +4335,7 @@ class FlowerService:
             flower_dao.insert_context(qq, context)
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
-                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                           person.name, gold / 100)
+                                       '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
@@ -4337,7 +4344,7 @@ class FlowerService:
 
     @classmethod
     def view_gold_rank(cls) -> str:
-        gold_rank: List[Tuple[str, float]] = flower_dao.get_total_gold_rank()
+        gold_rank: List[Tuple[str, float]] = flower_dao.get_gold_rank_list()
         reply = '金币排行榜'
         reply += '\n' + '-' * 6
         index: int = 0
@@ -4350,8 +4357,25 @@ class FlowerService:
         return reply
 
     @classmethod
+    def view_total_gold_rank(cls) -> str:
+        exp_rank: List[Tuple[str, float]] = flower_dao.get_total_gold_rank_list()
+        reply = '赚取金币排行榜'
+        reply += '\n' + '-' * 6
+        index: int = 0
+        for target in exp_rank:
+            index += 1
+            util.lock_user(int(target[0]))
+            target_user: User = util.get_user(int(target[0]))
+            util.calculate_user_level(target_user)
+            util.unlock_user(int(target[0]))
+            if target_user.auto_get_name:
+                target_user.username = '匿名'
+            reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
+        return reply
+
+    @classmethod
     def view_exp_rank(cls) -> str:
-        exp_rank: List[Tuple[str, float]] = flower_dao.get_total_exp_rank()
+        exp_rank: List[Tuple[str, float]] = flower_dao.get_exp_rank_list()
         reply = '等级排行榜'
         reply += '\n' + '-' * 6
         index: int = 0

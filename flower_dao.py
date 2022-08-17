@@ -101,6 +101,7 @@ redis_username_lock_prefix = redis_global_prefix + 'username_lock_'  # 用户名
 redis_user_context_prefix = redis_global_prefix + 'user_context_'  # 用户上下文前缀
 
 redis_user_gold_rank = redis_global_prefix + 'user_gold_rank'  # 用户金币排行榜
+redis_user_total_gold_rank = redis_global_prefix + 'user_total_gold_rank'  # 用户金币排行榜
 redis_user_exp_rank = redis_global_prefix + 'user_exp_rank'  # 用户经验排行榜
 
 ####################################################################################################
@@ -308,6 +309,7 @@ def unlock(key: str) -> int:
 def put_user_rank(user: User):
     put_gold_rank(user.qq, user.gold)
     put_exp_rank(user.qq, user.exp)
+    put_total_gold_rank(user.qq, user.total_gold)
 
 
 def put_gold_rank(qq: int, gold: int):
@@ -325,11 +327,33 @@ def get_gold_rank(qq: int) -> int:
     return redis_db.zrevrank(redis_user_gold_rank, str(qq))
 
 
-def get_total_gold_rank() -> List[Tuple[str, float]]:
+def get_gold_rank_list() -> List[Tuple[str, float]]:
     """
     获取某个人的金币排行
     """
     return redis_db.zrevrange(redis_user_gold_rank, 0, 9, withscores=True)
+
+
+def put_total_gold_rank(qq: int, total_gold: int) -> int:
+    """
+    获取某个人的金币排行
+    """
+    mapping: Dict[str, int] = {str(qq): total_gold}
+    return redis_db.zrevrank(redis_user_total_gold_rank, str(qq))
+
+
+def get_total_gold_rank(qq: int) -> int:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrank(redis_user_total_gold_rank, str(qq))
+
+
+def get_total_gold_rank_list() -> List[Tuple[str, float]]:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrange(redis_user_total_gold_rank, 0, 9, withscores=True)
 
 
 def put_exp_rank(qq: int, exp: int):
@@ -347,7 +371,7 @@ def get_exp_rank(qq: int) -> int:
     return redis_db.zrevrank(redis_user_exp_rank, str(qq))
 
 
-def get_total_exp_rank() -> List[Tuple[str, float]]:
+def get_exp_rank_list() -> List[Tuple[str, float]]:
     """
     获取某个人的金币排行
     """
