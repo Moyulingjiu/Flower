@@ -4292,6 +4292,10 @@ class FlowerService:
                 user_person.cancel_sell_times = {}
                 flower_dao.update_user_person(user_person)
             if item.item_name in user_person.cancel_sell_times and user_person.cancel_sell_times[item.item_name] > 5:
+                relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
+                if relationship.valid():
+                    relationship.value -= 1
+                    flower_dao.update_relationship(relationship)
                 return user.username + '，对方不接受出售该商品'
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
             gold: int = util.calculate_item_gold(item, item_obj, relationship)

@@ -1481,7 +1481,7 @@ def select_relationship(_id: str) -> Relationship:
         result = mongo_relationship.find_one({"_id": ObjectId(_id)})
         relationship: Relationship = Relationship()
         dict_to_class(result, relationship)
-        redis_db.set(redis_relationship_prefix + _id, serialization(relationship), ex=get_long_random_expire())
+        redis_db.set(redis_relationship_prefix + _id, serialization(relationship), ex=get_random_expire())
         return relationship
 
 
@@ -1500,7 +1500,7 @@ def select_relationship_by_pair(src_person: str, dst_person: str) -> Relationshi
         relationship: Relationship = Relationship()
         dict_to_class(result, relationship)
         redis_db.set(redis_relationship_prefix + src_person + '_' + dst_person, serialization(relationship),
-                     ex=get_long_random_expire())
+                     ex=get_random_expire())
         return relationship
 
 
@@ -1513,8 +1513,7 @@ def update_relationship(relationship: Relationship) -> int:
     result = mongo_relationship.update_one({"_id": ObjectId(relationship.get_id())},
                                            {"$set": class_to_dict(relationship)})
     redis_db.delete(redis_relationship_prefix + relationship.get_id())
-    redis_db.delete(redis_relationship_prefix + relationship.src_person + '_' + relationship.dst_person,
-                    serialization(relationship))
+    redis_db.delete(redis_relationship_prefix + relationship.src_person + '_' + relationship.dst_person)
     return result.modified_count
 
 
@@ -1526,6 +1525,7 @@ def insert_relationship(relationship: Relationship) -> str:
     """
     result = mongo_relationship.insert_one(class_to_dict(relationship))
     redis_db.delete(redis_relationship_prefix + str(result.inserted_id))
+    redis_db.delete(redis_relationship_prefix + relationship.src_person + '_' + relationship.dst_person)
     return str(result.inserted_id)
 
 
