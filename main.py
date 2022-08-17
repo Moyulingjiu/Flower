@@ -177,7 +177,7 @@ async def add_flower(message: Message):
                     else:
                         announcement.read_list[qq_str] += 1
                     flower_dao.update_announcement(announcement)
-                    reply = '花店公告（由%s编辑）\n------\n%s\n------\n发布日期：%s\n*公告仅会展示三次' % (
+                    reply = '花店公告（由%s编辑）\n------\n%s\n------\n失效日期：%s\n*公告仅会展示三次' % (
                         announcement.username,
                         announcement.text,
                         announcement.expire_time.strftime('%Y-%m-%d %H:%M:%S')

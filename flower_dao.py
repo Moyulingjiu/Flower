@@ -613,6 +613,18 @@ def insert_flower(flower: Flower) -> str:
     return str(result.inserted_id)
 
 
+def update_flower(flower: Flower) -> int:
+    """
+    根据id更新花
+    :param flower: 花
+    :return: 更新结果
+    """
+    result = mongo_flower.update_one({"_id": ObjectId(flower.get_id())}, {"$set": class_to_dict(flower)})
+    redis_db.delete(redis_flower_prefix + flower.get_id())
+    redis_db.delete(redis_flower_prefix + flower.name)
+    return result.modified_count
+
+
 def select_all_flower_number() -> int:
     """
     获取花的数量
