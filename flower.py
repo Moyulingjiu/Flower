@@ -537,7 +537,7 @@ class AdminHandler:
         system_data: SystemData = util.get_system_data()
         # 修改他人数据
         if message == '花店时间':
-            return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            return '当前服务器时间：' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         elif message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
@@ -4157,6 +4157,8 @@ class FlowerService:
             relationship.src_person = user_person.person_id
             relationship.dst_person = str(qq)
             relationship.value = person.affinity
+            flower_dao.insert_relationship(relationship)
+            relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
         if commodity_index > 0:
             commodity_index -= 1
         if commodity_index < 0 or commodity_index >= len(user_person.commodities):
@@ -4195,7 +4197,8 @@ class FlowerService:
                 exp = 1
             user.exp += exp
             if profession.name == '商人':
-                if random.randint(0, 100) < person.affinity:
+                rand: int = random.randint(0, 100)
+                if rand < person.affinity:
                     relationship.value += 1
                     flower_dao.update_relationship(relationship)
             flower_dao.update_user_by_qq(user)
