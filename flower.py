@@ -539,7 +539,9 @@ class AdminHandler:
     def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
         system_data: SystemData = util.get_system_data()
         # 修改他人数据
-        if message[:4] == '给予金币':
+        if message == '花店时间':
+            return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        elif message[:4] == '给予金币':
             data: str = message[4:].strip()
             try:
                 origin_gold: float = float(data)
