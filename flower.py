@@ -1797,7 +1797,7 @@ class ContextHandler:
                                                     '接下来试试“花店使用新手水壶”把刚才的水壶装上去吧'
                             result.context_reply_text.append(reply)
                 elif context.step == 7:
-                    if message == '花店使用新手水壶':
+                    if message == '花店使用新手水壶' or message == '花店使用 新手水壶':
                         self.block_transmission = False
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
@@ -1815,7 +1815,7 @@ class ContextHandler:
                                                 '等待可真是难熬，接下来试试“花店使用加速卡”，来加速你的农场'
                         result.context_reply_text.append(reply)
                 elif context.step == 9:
-                    if message == '花店使用加速卡':
+                    if message == '花店使用加速卡' or message == '花店使用 新手水壶':
                         self.block_transmission = False
                         flower_dao.remove_context(qq, origin_list[index])
                         context.step += 1
