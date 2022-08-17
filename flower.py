@@ -4383,11 +4383,11 @@ class FlowerService:
         reply += '\n使用过道具：%d个' % total_item
         plant_times: int = 0
         for plant in user_statistics.plant_flower:
-            plant_times += user_statistics.use_item[plant]
+            plant_times += user_statistics.plant_flower[plant]
         reply += '\n种植植物：%d次' % plant_times
         plant_perfect_times: int = 0
         for plant in user_statistics.plant_perfect_flower:
-            plant_perfect_times += user_statistics.use_item[plant]
+            plant_perfect_times += user_statistics.plant_perfect_flower[plant]
         reply += '\n收获完美植物：%d次' % plant_times
         return reply
 
