@@ -4389,6 +4389,8 @@ class FlowerService:
         for plant in user_statistics.plant_perfect_flower:
             plant_perfect_times += user_statistics.plant_perfect_flower[plant]
         reply += '\n收获完美植物：%d次' % plant_times
+        reply += '\n抽卡次数：%d次' % user_statistics.draw_times
+        reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
         return reply
 
 
@@ -4407,8 +4409,10 @@ class DrawCard:
         """
         util.lock_user(qq)
         system_data: SystemData = util.get_system_data()
+        user: User = util.get_user(qq, username)
+        user_statistics: UserStatistics = util.get_user_statistics(qq)
         try:
-            user: User = util.get_user(qq, username)
+            user_statistics.draw_times += 1
             if user.draw_card_number <= 0:
                 return ''
             rand: int = random.randint(0, system_data.draw_card_probability_unit)
@@ -4442,18 +4446,20 @@ class DrawCard:
                 try:
                     util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
+                    user_statistics.success_draw_times += 1
                     flower_dao.update_user_by_qq(user)
-                    return '抽到物品%s' % str(item)
+                    return user.username + '，抽到物品%s' % str(item)
                 except ItemNotFoundException:
-                    return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
+                    return user.username + '，抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
                 except ItemNegativeNumberException:
-                    return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
+                    return user.username + '，抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
                 except WareHouseSizeNotEnoughException:
-                    return '抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
+                    return user.username + '，抽到物品%s，但是背包容量不足或该物品已经绝版' % str(item)
             return ''
         except UserNotRegisteredException:
             return ''
         finally:
+            flower_dao.update_user_statistics(user_statistics)
             util.unlock_user(qq)
 
 
