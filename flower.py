@@ -4409,7 +4409,11 @@ class DrawCard:
         """
         util.lock_user(qq)
         system_data: SystemData = util.get_system_data()
-        user: User = util.get_user(qq, username)
+        try:
+            user: User = util.get_user(qq, username)
+        except UserNotRegisteredException:
+            util.unlock_user(qq)
+            return ''
         user_statistics: UserStatistics = util.get_user_statistics(qq)
         try:
             user_statistics.draw_times += 1
