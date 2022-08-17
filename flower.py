@@ -3496,7 +3496,7 @@ class FlowerService:
         item_list.append(copy.deepcopy(item))
         item.item_name = '加速卡'
         item.number = 1
-        item.hour = 12
+        item.hour = 7
         item_list.append(copy.deepcopy(item))
 
         try:
