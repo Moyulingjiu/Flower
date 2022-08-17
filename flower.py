@@ -4092,6 +4092,7 @@ class FlowerService:
         user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
         if len(user_person_list) == 0:
             util.generate_today_person(user_person_list, qq)
+            user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
         reply: str = user.username + '，你今天的人物如下：'
         index: int = 0
         for user_person in user_person_list:

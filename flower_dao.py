@@ -1732,9 +1732,8 @@ def insert_user_person(user_person: UserPerson) -> str:
     :param user_person: npc
     :return: id
     """
-    now: datetime = datetime.now()
     result = mongo_user_person.insert_one(class_to_dict(user_person))
-    redis_db.delete(redis_user_person_prefix + str(user_person.qq) + '_' + now.strftime('%Y_%m_%d'))
+    redis_db.delete(redis_user_person_prefix + str(user_person.qq) + '_' + user_person.create_time.strftime('%Y_%m_%d'))
     return str(result.inserted_id)
 
 

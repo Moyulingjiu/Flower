@@ -1346,7 +1346,6 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
                 user_person.knowledge[flower.name] = (level, gold)
 
         flower_dao.insert_user_person(user_person)
-        user_person_list.append(user_person)
 
 
 def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relationship,
