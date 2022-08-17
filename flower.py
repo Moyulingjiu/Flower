@@ -955,7 +955,7 @@ class AdminHandler:
         elif message == '花店统计数据':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 花店统计数据”，必须并且只能艾特一人')
-            return FlowerService.view_user_statistics(qq, username)
+            return FlowerService.view_user_statistics(at_list[0], '')
 
         # 游戏管理部分
         elif message == '发送信件':
