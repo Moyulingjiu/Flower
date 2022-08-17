@@ -279,7 +279,7 @@ def lock(key: str, wait_time: int = lock_wait_time, try_interval: int = lock_try
     while wait_time > 0:
         if redis_db.setnx(key, 1):
             # 设置过期时间
-            redis_db.expire(key, get_long_random_expire())
+            redis_db.expire(key, global_config.hour_second)
             return
         time.sleep(try_interval / 1000)
         wait_time -= try_interval
