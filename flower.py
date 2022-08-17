@@ -39,7 +39,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             util.unlock_user(qq)
             reply: str = '清除成功！'
             return Result.init(reply_text=reply)
-    
+
         # 处理上下文需要加锁，避免两个线程同时处理到一个上下文
         util.lock_user(qq)
         context_handler: ContextHandler = ContextHandler()
@@ -218,9 +218,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
                     item: DecorateItem = util.analysis_item(data)
-                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
-                            item.item_type == ItemType.accelerate:
+                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or \
+                            item.max_durability > 0 or item.rot_second > 0 or item.item_type == ItemType.accelerate:
                         item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
                         choices: Dict[str, Choice] = {}
                         if len(item_list) > 1:
@@ -264,9 +263,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
                     item: DecorateItem = util.analysis_item(data)
-                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
-                            item.item_type == ItemType.accelerate:
+                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or \
+                            item.max_durability > 0 or item.rot_second > 0 or item.item_type == ItemType.accelerate:
                         item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
                         choices: Dict[str, Choice] = {}
                         if len(item_list) > 1:
@@ -429,9 +427,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     util.lock_user(qq)
                     user: User = util.get_user(qq, username)
                     item: DecorateItem = util.analysis_item(item_origin_name)
-                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or (
-                            item.max_durability > 0 and item.durability == 0) or item.rot_second > 0 or \
-                            item.item_type == ItemType.accelerate:
+                    if (item.item_type == ItemType.flower and item.flower_quality != FlowerQuality.perfect) or \
+                            item.max_durability > 0 or item.rot_second > 0 or item.item_type == ItemType.accelerate:
                         item_list: List[DecorateItem] = util.find_items(user.warehouse, item.item_name)
                         choices: Dict[str, Choice] = {}
                         if len(item_list) > 1:
@@ -4307,7 +4304,7 @@ class FlowerService:
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
                                        '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                       person.name, gold / 100)
+                           person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
