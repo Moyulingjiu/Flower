@@ -2165,6 +2165,7 @@ class ContextHandler:
                         mail.gold = context.gold
                         mail.arrived = True  # 已经抵达
                         mail.status = '由系统直接送达'
+                        mail.create_time = datetime.now()
                         reply = ''
                         update_number: int = 0
                         if context.send_all_user:
@@ -3313,16 +3314,16 @@ class FlowerService:
         system_data: SystemData = util.get_system_data()
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
-        today: datetime = datetime.today()
-        if user.last_sign_date.date() == today.date():
+        now: datetime = datetime.now()
+        if user.last_sign_date.date() == now.date():
             util.unlock_user(qq)
             return user.username + '，今天已经签到过了'
-        if user.last_sign_date.date() + timedelta(days=1) == today:
+        if user.last_sign_date.date() + timedelta(days=1) == now.date():
             user.sign_continuous += 1
         else:
             user.sign_continuous = 1
         user.sign_count += 1
-        user.last_sign_date = today
+        user.last_sign_date = now
         # 如果连续签到的第七天会额外获得东西
         item: DecorateItem or None = None
         if user.sign_continuous % 7 == 0:
@@ -4104,10 +4105,7 @@ class FlowerService:
         """
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
-        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
-        if len(user_person_list) == 0:
-            util.generate_today_person(user_person_list, qq)
-            user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
+        user_person_list: List[UserPerson] = util.get_today_person(qq)
         reply: str = user.username + '，你今天的人物如下：'
         index: int = 0
         for user_person in user_person_list:
@@ -4129,9 +4127,7 @@ class FlowerService:
         """
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
-        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
-        if len(user_person_list) == 0:
-            util.generate_today_person(user_person_list, qq)
+        user_person_list: List[UserPerson] = util.get_today_person(qq)
         if index > 0:
             index -= 1
         if index < 0 or index >= len(user_person_list):
@@ -4182,9 +4178,7 @@ class FlowerService:
         """
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
-        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
-        if len(user_person_list) == 0:
-            util.generate_today_person(user_person_list, qq)
+        user_person_list: List[UserPerson] = util.get_today_person(qq)
         if person_index > 0:
             person_index -= 1
         if person_index < 0 or person_index >= len(user_person_list):
@@ -4267,9 +4261,7 @@ class FlowerService:
         """
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
-        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
-        if len(user_person_list) == 0:
-            util.generate_today_person(user_person_list, qq)
+        user_person_list: List[UserPerson] = util.get_today_person(qq)
         if person_index > 0:
             person_index -= 1
         if person_index < 0 or person_index >= len(user_person_list):
@@ -4310,9 +4302,7 @@ class FlowerService:
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
         try:
-            user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq)
-            if len(user_person_list) == 0:
-                util.generate_today_person(user_person_list, qq)
+            user_person_list: List[UserPerson] = util.get_today_person(qq)
             if person_index > 0:
                 person_index -= 1
             if person_index < 0 or person_index >= len(user_person_list):
@@ -4514,4 +4504,5 @@ class DrawCard:
 
 
 if __name__ == '__main__':
-    pass
+    a = FlowerService.user_sign_in(1597867839, '')
+    print(a)

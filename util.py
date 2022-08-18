@@ -1281,7 +1281,18 @@ def random_choice_pool(pool: Dict[str, int], relationship: Relationship) -> Comm
     return Commodity()
 
 
-def generate_today_person(user_person_list: List[UserPerson], qq: int):
+def get_today_person(qq: int) -> List[UserPerson]:
+    """
+    获取今日人物
+    """
+    user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq, datetime.now())
+    if len(user_person_list) == 0:
+        generate_today_person(qq)
+        user_person_list: List[UserPerson] = flower_dao.select_user_person_by_qq(qq, datetime.now())
+    return user_person_list
+
+
+def generate_today_person(qq: int):
     logger.info('开始更新每日npc@%d' % qq)
     system_data: SystemData = get_system_data()
     for _ in range(3):
@@ -1305,6 +1316,7 @@ def generate_today_person(user_person_list: List[UserPerson], qq: int):
         user_person: UserPerson = UserPerson()
         user_person.qq = qq
         user_person.person_id = person.get_id()
+        user_person.create_time = datetime.now()
 
         relationship: Relationship = flower_dao.select_relationship_by_pair(person.get_id(), str(qq))
         if not relationship.valid():
