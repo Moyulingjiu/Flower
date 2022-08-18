@@ -4222,7 +4222,7 @@ class FlowerService:
             if item_obj.max_durability > 0:
                 item.durability = item_obj.max_durability
             if item_obj.item_type == ItemType.accelerate:
-                item.hour = 1
+                item.hour = random.randint(1, 4)
             elif item_obj.item_type == ItemType.flower:
                 item.flower_quality = FlowerQuality.normal
             util.insert_items(user.warehouse, [copy.deepcopy(item)])
@@ -4483,7 +4483,7 @@ class DrawCard:
                 if item_obj.item_type == ItemType.flower and item.flower_quality == FlowerQuality.not_flower:
                     item.flower_quality = FlowerQuality.normal
                 if item_obj.item_type == ItemType.accelerate and item.hour < 1:
-                    item.hour = 1
+                    item.hour = random.randint(1, 4)
                 try:
                     util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
