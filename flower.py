@@ -543,8 +543,15 @@ class AdminHandler:
     @classmethod
     def handle(cls, message: str, qq: int, username: str, at_list: List[int]) -> str:
         system_data: SystemData = util.get_system_data()
+        # 排行榜部分
+        if message == '调试花店金币排行榜':
+            return FlowerService.view_gold_rank(debug=True)
+        elif message == '调试花店赚取金币排行榜':
+            return FlowerService.view_total_gold_rank(debug=True)
+        elif message == '调试花店等级排行榜':
+            return FlowerService.view_exp_rank(debug=True)
         # 修改他人数据
-        if message == '花店时间':
+        elif message == '花店时间':
             return '当前服务器时间：' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         elif message[:4] == '给予金币':
             data: str = message[4:].strip()
@@ -4352,7 +4359,7 @@ class FlowerService:
             util.unlock_user(qq)
 
     @classmethod
-    def view_gold_rank(cls) -> str:
+    def view_gold_rank(cls, debug: bool = False) -> str:
         gold_rank: List[Tuple[str, float]] = flower_dao.get_gold_rank_list()
         reply = '金币排行榜'
         reply += '\n' + '-' * 6
@@ -4363,10 +4370,12 @@ class FlowerService:
             if target_user.auto_get_name:
                 target_user.username = '匿名'
             reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
+            if debug:
+                reply += '@%d' % target_user.qq
         return reply
 
     @classmethod
-    def view_total_gold_rank(cls) -> str:
+    def view_total_gold_rank(cls, debug: bool = False) -> str:
         exp_rank: List[Tuple[str, float]] = flower_dao.get_total_gold_rank_list()
         reply = '赚取金币排行榜'
         reply += '\n' + '-' * 6
@@ -4380,10 +4389,12 @@ class FlowerService:
             if target_user.auto_get_name:
                 target_user.username = '匿名'
             reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
+            if debug:
+                reply += '@%d' % target_user.qq
         return reply
 
     @classmethod
-    def view_exp_rank(cls) -> str:
+    def view_exp_rank(cls, debug: bool = False) -> str:
         exp_rank: List[Tuple[str, float]] = flower_dao.get_exp_rank_list()
         reply = '等级排行榜'
         reply += '\n' + '-' * 6
@@ -4397,6 +4408,8 @@ class FlowerService:
             if target_user.auto_get_name:
                 target_user.username = '匿名'
             reply += '\n%d.%s：%d级' % (index, target_user.username, target_user.level)
+            if debug:
+                reply += '@%d' % target_user.qq
         return reply
 
     @classmethod
