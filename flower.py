@@ -3383,21 +3383,22 @@ class FlowerService:
                     # 转账1个人加一次经验
                     user.exp += 1
                     level = abs(user.level - target_user.level)
-                    if level <= 5:
-                        ration = 0.8 * (1.0 + 0.2 * (random.random() - 0.5))
-                    elif level <= 10:
-                        ration = 0.4 * (1.0 + 0.2 * (random.random() - 0.5))
-                    elif level <= 15:
-                        ration = 0.1 * (1.0 + 0.2 * (random.random() - 0.5))
+                    if level <= 3:
+                        ration = 0.83 * (1.0 + 0.2 * (random.random() - 0.5) - 0.05 * level)
+                    elif level <= 6:
+                        ration = 0.4 * (1.0 + 0.2 * (random.random() - 0.5) - 0.05 * level)
+                    elif level <= 9:
+                        ration = 0.1 * (1.0 + 0.2 * (random.random() - 0.5) - 0.05 * level)
                     else:
                         reply += '\n对' + target_user.username + '转账失败，等级相差过大'
                         continue
 
-                    target_user.get_gold(int(gold * ration))
+                    result_gold: int = int(gold * ration)
+                    target_user.get_gold(result_gold)
                     target_user.update(qq)
                     flower_dao.update_user_by_qq(target_user)
-                    reply += '\n对' + target_user.username + '转账成功，余额：%s，税率%.2f%%' % (
-                        util.show_gold(user.gold), (1 - ration) * 100)
+                    reply += '\n对' + target_user.username + '转账成功，余额：%s，税率%.2f%%，实际到账：%s' % (
+                        util.show_gold(user.gold), (1 - ration) * 100, util.show_gold(result_gold))
             except ResBeLockedException:
                 reply += '\n对' + str(target_qq) + '转账失败，无法转账或网络波动'
             except UserNotRegisteredException:
