@@ -1383,11 +1383,16 @@ def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relati
                 else:
                     ratio: float = 1.1
         else:
-            ratio: float = 0.8
+            ratio: float = 0.7
         if relationship.value > 90:
             random_ratio += 0.1
-        gold: int = int(
-            item_obj.gold * (ratio + 0.2 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5)))
+        if item_obj.max_durability > 0:
+            duration_ratio: float = item.durability / item_obj.max_durability
+        else:
+            duration_ratio: float = 1.0
+        # 0.7（非花）+0.2关系+0.1的随机数
+        total_ratio: float = (ratio + 0.2 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5))
+        gold: int = int(item_obj.gold * total_ratio * duration_ratio)
     return gold
 
 
