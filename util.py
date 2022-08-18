@@ -85,6 +85,8 @@ def get_soil_list(soil_id_list: List[str]) -> str:
     res = ''
     init: bool = False
     for soil_id in soil_id_list:
+        if soil_id is None:
+            continue
         if init:
             res += '、'
         else:
@@ -147,6 +149,8 @@ def get_climate_list(climate_ids: List[str]) -> str:
     """
     res = ''
     for climate_id in climate_ids:
+        if climate_id is None:
+            continue
         climate = flower_dao.select_climate_by_id(climate_id)
         if climate is not None and climate.name != '':
             res += climate.name + '、'

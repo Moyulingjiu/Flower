@@ -4505,5 +4505,4 @@ class DrawCard:
 
 
 if __name__ == '__main__':
-    a = FlowerService.user_sign_in(1597867839, '')
-    print(a)
+    pass
