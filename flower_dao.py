@@ -438,6 +438,18 @@ def select_terrain_by_id(_id: str) -> Terrain:
         return terrain
 
 
+def update_climate(climate: Climate) -> int:
+    """
+    更新气候
+    :param climate: 气候
+    :return: id
+    """
+    result = mongo_climate.update_one({"_id": ObjectId(climate.get_id())}, {"$set": class_to_dict(climate)})
+    redis_db.delete(redis_climate_prefix + climate.name)
+    redis_db.delete(redis_climate_prefix + climate.get_id())
+    return result.modified_count
+
+
 def insert_climate(climate: Climate) -> str:
     """
     插入气候
