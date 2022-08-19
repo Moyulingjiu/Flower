@@ -1387,7 +1387,7 @@ def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relati
                 else:
                     ratio: float = 1.1
         else:
-            ratio: float = 0.7
+            ratio: float = 0.6
         if relationship.value > 90:
             random_ratio += 0.1
         if item_obj.max_durability > 0:
