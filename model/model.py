@@ -50,6 +50,12 @@ class Climate(EntityClass):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
         self.name = name
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class Soil(EntityClass):
     """
