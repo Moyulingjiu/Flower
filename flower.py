@@ -4060,17 +4060,18 @@ class FlowerService:
                         util.give_achievement(user, flower_master, number)
                     # 增加经验值
                     if flower.level == FlowerLevel.S:
-                        user.exp += 1000
+                        exp = 1000
                     elif flower.level == FlowerLevel.A:
-                        user.exp += 500
+                        exp = 500
                     elif flower.level == FlowerLevel.B:
-                        user.exp += 100
+                        exp = 100
                     elif flower.level == FlowerLevel.C:
-                        user.exp += 50
+                        exp = 50
                     else:
-                        user.exp += 5
+                        exp = 5
                     if user.farm.flower_state == FlowerState.perfect:
-                        user.exp *= 2
+                        exp *= 2
+                    user.exp += exp
                     # 更新统计数据
                     user_statistics: UserStatistics = util.get_user_statistics(qq)
                     if flower.name in user_statistics.plant_perfect_flower:
