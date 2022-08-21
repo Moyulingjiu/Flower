@@ -4214,6 +4214,7 @@ class FlowerService:
             item.item_name = item_obj.name
             item.item_type = item_obj.item_type
             item.rot_second = item_obj.rot_second  # 腐烂的秒数
+            item.create = datetime.now()  # 记录当前的创建时间
             item.humidity = item_obj.humidity  # 湿度
             item.nutrition = item_obj.nutrition  # 营养
             item.temperature = item_obj.temperature  # 温度
@@ -4477,6 +4478,7 @@ class DrawCard:
                 item.max_durability = item_obj.max_durability  # 最大耐久度
                 item.durability = item_obj.max_durability
                 item.rot_second = item_obj.rot_second  # 腐烂的秒数
+                item.create = datetime.now()  # 记录当前的创建时间
                 item.humidity = item_obj.humidity  # 湿度
                 item.nutrition = item_obj.nutrition  # 营养
                 item.temperature = item_obj.temperature  # 温度
