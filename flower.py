@@ -4365,6 +4365,8 @@ class FlowerService:
             reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
             if debug:
                 reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
 
     @classmethod
@@ -4384,6 +4386,8 @@ class FlowerService:
             reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
             if debug:
                 reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
 
     @classmethod
@@ -4403,6 +4407,8 @@ class FlowerService:
             reply += '\n%d.%s：%d级' % (index, target_user.username, target_user.level)
             if debug:
                 reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
 
     @classmethod
