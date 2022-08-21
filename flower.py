@@ -4436,6 +4436,7 @@ class FlowerService:
         reply += '\n收获完美植物：%d次' % plant_times
         reply += '\n抽卡次数：%d次' % user_statistics.draw_times
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
+        reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
         return reply
 
 
