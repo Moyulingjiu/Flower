@@ -420,9 +420,10 @@ def get_weather(city: City, can_wait: bool = False) -> Weather:
     :param can_wait: 爬虫是否等待以尝试再次爬取
     :return: 天气
     """
-    weather: Weather = flower_dao.select_weather_by_city_id(city.get_id())
+    weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), datetime.now())
     if weather.city_id != city.get_id():
         weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id(), can_wait=can_wait)
+        weather.create_time = datetime.now()
         if weather.city_id == city.get_id():
             flower_dao.insert_weather(weather)
     return weather
