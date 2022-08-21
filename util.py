@@ -1426,6 +1426,7 @@ def calculate_user_level(user: User):
     for i in range(level, len(system_data.exp_level)):
         if user.exp >= system_data.exp_level[i]:
             level = i + 1
-            send_system_mail(user, '升级奖励', '玩家角色达到%d级' % level, [], i * 10 * 100)
+            if level != 1:
+                send_system_mail(user, '升级奖励', '玩家角色达到%d级' % level, [], i * 10 * 100)
             user.level = level
             flower_dao.update_user_by_qq(user)
