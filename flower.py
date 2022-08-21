@@ -4496,6 +4496,8 @@ class DrawCard:
                 try:
                     util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
+                    if user.draw_card_number == 0:
+                        user_statistics.all_draw_times += 1
                     user_statistics.success_draw_times += 1
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，抽到物品%s' % str(item)
