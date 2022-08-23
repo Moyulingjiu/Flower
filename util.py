@@ -420,9 +420,10 @@ def get_weather(city: City, can_wait: bool = False) -> Weather:
     :param can_wait: 爬虫是否等待以尝试再次爬取
     :return: 天气
     """
-    weather: Weather = flower_dao.select_weather_by_city_id(city.get_id())
+    weather: Weather = flower_dao.select_weather_by_city_id(city.get_id(), datetime.now())
     if weather.city_id != city.get_id():
         weather: Weather = weather_getter.get_city_weather(city.city_name, city.get_id(), can_wait=can_wait)
+        weather.create_time = datetime.now()
         if weather.city_id == city.get_id():
             flower_dao.insert_weather(weather)
     return weather
@@ -1444,6 +1445,7 @@ def calculate_user_level(user: User):
     for i in range(level, len(system_data.exp_level)):
         if user.exp >= system_data.exp_level[i]:
             level = i + 1
-            send_system_mail(user, '升级奖励', '玩家角色达到%d级' % level, [], i * 10 * 100)
+            if level != 1:
+                send_system_mail(user, '升级奖励', '玩家角色达到%d级' % level, [], i * 10 * 100)
             user.level = level
             flower_dao.update_user_by_qq(user)

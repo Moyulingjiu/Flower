@@ -4060,17 +4060,18 @@ class FlowerService:
                         util.give_achievement(user, flower_master, number)
                     # 增加经验值
                     if flower.level == FlowerLevel.S:
-                        user.exp += 1000
+                        exp = 1000
                     elif flower.level == FlowerLevel.A:
-                        user.exp += 500
+                        exp = 500
                     elif flower.level == FlowerLevel.B:
-                        user.exp += 100
+                        exp = 100
                     elif flower.level == FlowerLevel.C:
-                        user.exp += 50
+                        exp = 50
                     else:
-                        user.exp += 5
+                        exp = 5
                     if user.farm.flower_state == FlowerState.perfect:
-                        user.exp *= 2
+                        exp *= 2
+                    user.exp += exp
                     # 更新统计数据
                     user_statistics: UserStatistics = util.get_user_statistics(qq)
                     if flower.name in user_statistics.plant_perfect_flower:
@@ -4213,6 +4214,7 @@ class FlowerService:
             item.item_name = item_obj.name
             item.item_type = item_obj.item_type
             item.rot_second = item_obj.rot_second  # 腐烂的秒数
+            item.create = datetime.now()  # 记录当前的创建时间
             item.humidity = item_obj.humidity  # 湿度
             item.nutrition = item_obj.nutrition  # 营养
             item.temperature = item_obj.temperature  # 温度
@@ -4363,6 +4365,8 @@ class FlowerService:
             reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
             if debug:
                 reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
 
     @classmethod
@@ -4382,6 +4386,8 @@ class FlowerService:
             reply += '\n%d.%s：%s' % (index, target_user.username, util.show_gold(int(target[1])))
             if debug:
                 reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
 
     @classmethod
@@ -4401,6 +4407,8 @@ class FlowerService:
             reply += '\n%d.%s：%d级' % (index, target_user.username, target_user.level)
             if debug:
                 reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
 
     @classmethod
@@ -4428,6 +4436,7 @@ class FlowerService:
         reply += '\n收获完美植物：%d次' % plant_times
         reply += '\n抽卡次数：%d次' % user_statistics.draw_times
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
+        reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
         return reply
 
 
@@ -4479,6 +4488,7 @@ class DrawCard:
                 item.max_durability = item_obj.max_durability  # 最大耐久度
                 item.durability = item_obj.max_durability
                 item.rot_second = item_obj.rot_second  # 腐烂的秒数
+                item.create = datetime.now()  # 记录当前的创建时间
                 item.humidity = item_obj.humidity  # 湿度
                 item.nutrition = item_obj.nutrition  # 营养
                 item.temperature = item_obj.temperature  # 温度
@@ -4490,6 +4500,8 @@ class DrawCard:
                 try:
                     util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
+                    if user.draw_card_number == 0:
+                        user_statistics.all_draw_times += 1
                     user_statistics.success_draw_times += 1
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，抽到物品%s' % str(item)
