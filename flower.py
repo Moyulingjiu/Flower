@@ -3564,6 +3564,8 @@ class FlowerService:
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
         try:
+            if item.number <= 0:
+                return user.username + '，物品数量不能小于等于0'
             util.remove_items(user.warehouse, [item])
             flower_dao.update_user_by_qq(user)
             return user.username + '，丢弃成功'
@@ -3734,7 +3736,7 @@ class FlowerService:
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
         try:
-            if item.number == 0:
+            if item.number <= 0:
                 return '数量不能为0'
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
             item.item_type = item_obj.item_type
