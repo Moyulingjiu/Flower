@@ -953,6 +953,12 @@ def calculation_farm_equipment(user: User):
             user.farm.warehouse.durability = 0
             user.farm.warehouse = DecorateItem()
         user.farm.warehouse.update = now
+    if user.farm.air_condition.max_durability > 0 and user.farm.air_condition.durability > 0:
+        user.farm.air_condition.durability -= int((now - user.farm.air_condition.update).days)
+        if user.farm.air_condition.durability < 0:
+            user.farm.air_condition.durability = 0
+            user.farm.air_condition = DecorateItem()
+        user.farm.air_condition.update = now
 
 
 def show_temperature(user: User) -> str:

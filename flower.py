@@ -2914,7 +2914,7 @@ class FlowerService:
         reply += '\n土壤：' + soil.name
 
         reply += '\n温度计：' + str(user.farm.thermometer)
-        reply += '\n气象检测站：' + str(user.farm.weather_station)
+        reply += '\n空调：' + str(user.farm.air_condition)
         reply += '\n土壤监控站：' + str(user.farm.soil_monitoring_station)
         reply += '\n浇水壶：' + str(user.farm.watering_pot)
         reply += '\n信箱：' + str(user.farm.mailbox)
@@ -3809,14 +3809,14 @@ class FlowerService:
                     return user.username + '，成功使用%s' % str(item)
                 else:
                     raise UseFailException(user.username + '，该类型物品只能使用一个')
-            # 气象监控站
-            elif item.item_type == ItemType.weather_station:
+            # 空调
+            elif item.item_type == ItemType.air_condition:
                 if item.number == 1:
-                    if user.farm.weather_station.item_name != '':
-                        util.insert_items(user.warehouse, [user.farm.weather_station])
+                    if user.farm.air_condition.item_name != '':
+                        util.insert_items(user.warehouse, [user.farm.air_condition])
                     item.update = datetime.now()
                     item.durability -= 1
-                    user.farm.weather_station = item
+                    user.farm.air_condition = item
                     return user.username + '，成功使用%s' % str(item)
                 else:
                     raise UseFailException(user.username + '，该类型物品只能使用一个')
