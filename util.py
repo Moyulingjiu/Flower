@@ -1330,34 +1330,53 @@ def generate_today_person(qq: int):
             relationship.value = person.affinity
             flower_dao.insert_relationship(relationship)
         # 总计最多有5件商品
-        item_number: int = random.randint(1, 5)
+        item_number: int = random.randint(1, 7)
         for _ in range(item_number):
             commodity: Commodity = random_choice_pool(item_pool, relationship)
             if commodity.item_id != '':
                 user_person.commodities.append(commodity)
         if profession.name == '商人':
-            seed_number = random.randint(1, 5)
+            seed_number = random.randint(1, 15 - item_number)
             for _ in range(seed_number):
                 commodity: Commodity = random_choice_pool(system_data.merchant_seed_pool, relationship)
                 if commodity.item_id != '':
                     user_person.commodities.append(commodity)
         elif profession.name == '探险家':
-            seed_number = random.randint(1, 5)
+            seed_number = random.randint(1, 15 - item_number)
             for _ in range(seed_number):
                 commodity: Commodity = random_choice_pool(system_data.explorer_seed_pool, relationship)
                 if commodity.item_id != '':
                     user_person.commodities.append(commodity)
         elif profession.name == '农民':
             for _ in range(random.randint(1, 3)):
-                flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C, FlowerLevel.B])
+                if random.random() < 0.3:
+                    flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C, FlowerLevel.B])
+                else:
+                    flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C])
                 if not flower.valid():
                     continue
-                level: int = random.randint(1, 4)
-                if flower.level == FlowerLevel.B:
+                if random.random() < 0.6:
+                    level: int = 1
+                elif random.random() < 0.9:
+                    level: int = 2
+                elif random.random() < 0.97:
+                    level: int = 3
+                else:
+                    level: int = 4
+                if flower.level == FlowerLevel.S:  # S级基准价格1级500金币
+                    gold: int = int(50000 * level * (level + 1) / 2 * (
+                            1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                elif flower.level == FlowerLevel.A:  # A级基准价格1级250金币
+                    gold: int = int(25000 * level * (level + 1) / 2 * (
+                            1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                elif flower.level == FlowerLevel.B:  # B级基准价格1级50金币
                     gold: int = int(5000 * level * (level + 1) / 2 * (
                             1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
-                else:
+                elif flower.level == FlowerLevel.C:  # C级基准价格1级10金币
                     gold: int = int(1000 * level * (level + 1) / 2 * (
+                            1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
+                else:  # D级知识不随等级波动
+                    gold: int = int(1000 * (
                             1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 user_person.knowledge[flower.name] = (level, gold)
 

@@ -4462,8 +4462,11 @@ class DrawCard:
             if draw_probability_index < 0:
                 draw_probability_index = 0
             if rand < system_data.draw_card_probability[draw_probability_index]:
-                if random.random() < 0.7:
-                    pool: Dict[str, int] = system_data.draw_item_pool
+                if user.draw_card_number != 1:
+                    if random.random() < 0.8:
+                        pool: Dict[str, int] = system_data.draw_item_pool
+                    else:
+                        pool: Dict[str, int] = system_data.draw_seed_pool
                 else:
                     pool: Dict[str, int] = system_data.draw_seed_pool
                 commodity: Commodity = util.random_choice_pool(pool, Relationship())
