@@ -3545,11 +3545,7 @@ class FlowerService:
             weather: Weather = weather_getter.get_city_weather(city_name, 'none')
         else:
             weather: Weather = util.get_weather(city)
-        reply = weather.city_name + '，' + weather.weather_type
-        reply += '\n最低气温：' + str(weather.min_temperature) + '℃'
-        reply += '\n最高气温：' + str(weather.max_temperature) + '℃'
-        reply += '\n湿度：' + str(weather.humidity) + '%'
-        return reply
+        return str(weather)
 
     @classmethod
     def throw_item(cls, qq: int, username: str, item: DecorateItem) -> str:

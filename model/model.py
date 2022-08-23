@@ -323,16 +323,52 @@ class Weather(EntityClass):
 
     def __init__(self, city_id: str = '', city_name: str = '', weather_type: str = '', min_temperature: int = 0,
                  max_temperature: int = 0, humidity: int = 0,
+                 pm25: float = 0.0, pm10: float = 0.0, air_quality: str = '',
+                 wind_direction: str = '', wind_level: str = '',
+                 source: str = '', aqi: int = 0, advice: str = '', comment: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0',
                  update_time: datetime = datetime.now(), update_id: str = '0', is_delete: int = 0,
                  _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
-        self.city_id = city_id
-        self.city_name = city_name
-        self.weather_type = weather_type
-        self.min_temperature = min_temperature
-        self.max_temperature = max_temperature
-        self.humidity = humidity
+        self.city_id = city_id  # 城市id
+        self.city_name = city_name  # 城市名
+        self.weather_type = weather_type  # 天气类型
+        self.min_temperature = min_temperature  # 最低温度
+        self.max_temperature = max_temperature  # 最高温度
+        self.humidity = humidity  # 湿度
+        self.pm25 = pm25  # PM 2.5
+        self.pm10 = pm10  # PM 10
+        self.air_quality = air_quality  # 空气质量
+        self.wind_direction = wind_direction  # 风方向
+        self.wind_level = wind_level  # 风的级别
+        self.aqi = aqi  # 污染程度
+        self.advice = advice  # 出行建议（对于空气）
+        self.comment = comment  # 天气说明（需要注意什么）
+        self.source = source  # 来源
+
+    def __str__(self):
+        reply = self.city_name + '，' + self.weather_type
+        reply += '\n最低气温：' + str(self.min_temperature) + '℃'
+        reply += '\n最高气温：' + str(self.max_temperature) + '℃'
+        reply += '\n湿度：' + str(self.humidity) + '%'
+        if self.pm25 != 0.0:
+            reply += '\nPM 2.5：%.1f' % self.pm25
+        if self.pm10 != 0.0:
+            reply += '\nPM 10：%.1f' % self.pm10
+        if self.air_quality != '':
+            reply += '\n空气质量：' + self.air_quality
+        if self.wind_direction != '' and self.wind_level != '':
+            reply += '\n风：' + self.wind_direction + self.wind_level
+        if self.advice != '':
+            reply += '\n感冒易发程度：' + self.advice
+        if self.comment != '':
+            reply += '\n说明：' + self.comment
+        if self.source != '':
+            reply += '\n来源：' + self.source
+        return reply
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class ItemType(Enum):
