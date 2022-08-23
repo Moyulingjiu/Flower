@@ -1042,6 +1042,9 @@ class AdminHandler:
         elif message == '花店玩家数量':
             number: int = flower_dao.select_all_user_number()
             return '玩家总数：%d' % number
+        elif message == '锁定花店':
+            util.lock_the_world()
+            return '锁定后，需要手动重启！'
         return ''
 
     @classmethod
