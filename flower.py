@@ -2996,6 +2996,7 @@ class FlowerService:
             if user.farm.hour < grow_time:
                 reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / grow_time)
             elif user.farm.hour < mature_time:
+                reply += '\n成长度：100%'
                 reply += '\n成熟度：' + '%.1f%%' % ((user.farm.hour - mature_time) * 100.0 / mature_time)
         else:
             reply += '无'
