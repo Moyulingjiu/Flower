@@ -3677,19 +3677,23 @@ class FlowerService:
         watering_pot: DecorateItem = user.farm.watering_pot
         if user.farm.watering_pot.max_durability > 0 and user.farm.watering_pot.durability > 0:
             if watering_pot.level == 1:
-                humidity_change = 5.0 * multiple
+                humidity_change = 2.0 * multiple
                 user.farm.humidity += humidity_change
             elif watering_pot.level == 2:
-                humidity_change = 2.5 * multiple
+                humidity_change = 3.0 * multiple
                 user.farm.humidity += humidity_change
             elif watering_pot.level == 3:
-                humidity_change = 1.0 * multiple
+                humidity_change = 5.0 * multiple
                 user.farm.humidity += humidity_change
             elif watering_pot.level == 4:
                 humidity_change = 0.1 * multiple
                 user.farm.humidity += humidity_change
         cost_gold: int = system_data.watering_cost_gold * multiple
         # 设置湿度的上限
+        soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
+        if soil.valid() and user.farm.humidity > soil.max_humidity:
+            humidity_change -= user.farm.humidity - system_data.soil_max_humidity
+            user.farm.humidity = system_data.soil_max_humidity
         if user.farm.humidity > system_data.soil_max_humidity:
             humidity_change -= user.farm.humidity - system_data.soil_max_humidity
             user.farm.humidity = system_data.soil_max_humidity

@@ -1260,6 +1260,19 @@ def select_profession_by_name(name: str) -> Profession:
         return profession
 
 
+def update_profession(profession: Profession) -> int:
+    """
+    更新职业
+    :param profession: 职业
+    :return: id
+    """
+    result = mongo_world_profession.update_one({"_id": ObjectId(profession.get_id())}, {"$set": class_to_dict(profession)})
+    redis_db.delete(redis_world_profession_prefix + profession.get_id())
+    redis_db.delete(redis_world_profession_prefix + profession.name)
+    redis_db.delete(redis_all_profession)
+    return result.modified_count
+
+
 def insert_profession(profession: Profession) -> str:
     """
     插入职业
@@ -1619,6 +1632,28 @@ def select_age_range_person_number(min_age: int, max_age: int) -> int:
 def select_all_profession_person_number(profession_id: str) -> int:
     number: int = mongo_person.count_documents({"is_delete": 0, "profession_id": profession_id, "die": False})
     return number
+
+
+def select_all_alive_person(page: int, page_size: int = 30) -> List[Person]:
+    """
+    查询所有npc
+    :param page: 页码
+    :param page_size: 页面大小
+    :return: npc 的 id数组
+    """
+    redis_ans = redis_db.get(redis_all_person_prefix + '%d_%d' % (page, page_size))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_person.find({"is_delete": 0, "die": False}).limit(page_size).skip(page * page_size)
+        person_list: List[Person] = []
+        for person_result in result:
+            person: Person = Person()
+            dict_to_class(person_result, person)
+            person_list.append(person)
+        redis_db.set(redis_all_person_prefix + '%d_%d' % (page, page_size), serialization(person_list),
+                     ex=get_long_random_expire())
+        return person_list
 
 
 def select_all_person(page: int, page_size: int = 30) -> List[Person]:

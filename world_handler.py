@@ -4,7 +4,7 @@
 """
 import random
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 
@@ -27,6 +27,49 @@ def random_kingdom_area(kingdom: Kingdom) -> WorldArea:
     return area
 
 
+def random_profession() -> Profession:
+    rand = random.random()
+    if rand <= 0.1:
+        profession: Profession = flower_dao.select_profession_by_name('商人')
+    elif rand <= 0.17:
+        profession: Profession = flower_dao.select_profession_by_name('旅行商人')
+    elif rand <= 0.27:
+        profession: Profession = flower_dao.select_profession_by_name('农民')
+    elif rand <= 0.37:
+        profession: Profession = flower_dao.select_profession_by_name('渔夫')
+    elif rand <= 0.38:
+        profession: Profession = flower_dao.select_profession_by_name('建筑师')
+    elif rand <= 0.43:
+        profession: Profession = flower_dao.select_profession_by_name('猎人')
+    elif rand <= 0.48:
+        profession: Profession = flower_dao.select_profession_by_name('伐木工')
+    elif rand <= 0.63:
+        profession: Profession = flower_dao.select_profession_by_name('植物学家')
+    elif rand <= 0.66:
+        profession: Profession = flower_dao.select_profession_by_name('老师')
+    elif rand <= 0.68:
+        profession: Profession = flower_dao.select_profession_by_name('科学家')
+    elif rand <= 0.73:
+        profession: Profession = flower_dao.select_profession_by_name('探险家')
+    elif rand <= 0.78:
+        profession: Profession = flower_dao.select_profession_by_name('交易员')
+    elif rand <= 0.83:
+        profession: Profession = flower_dao.select_profession_by_name('工程师')
+    elif rand <= 0.85:
+        profession: Profession = flower_dao.select_profession_by_name('医生')
+    elif rand <= 0.88:
+        profession: Profession = flower_dao.select_profession_by_name('护士')
+    elif rand <= 0.92:
+        profession: Profession = flower_dao.select_profession_by_name('治安队')
+    elif rand <= 0.95:
+        profession: Profession = flower_dao.select_profession_by_name('邮递员')
+    elif rand <= 0.97:
+        profession: Profession = flower_dao.select_profession_by_name('小偷')
+    else:
+        profession: Profession = flower_dao.select_profession_by_name('无业')
+    return profession
+
+
 def update_world():
     """
     更新世界
@@ -34,7 +77,46 @@ def update_world():
     """
     if not global_config.get_right_update_data:
         return
-    logger.info('开始更新世界')
+    now: datetime = datetime.now()
+    total_number: int = flower_dao.select_all_person_number()
+    alive_number: int = flower_dao.select_all_alive_person_number()
+    die_number = total_number - alive_number
+    profession_list: List[Profession] = flower_dao.select_all_profession()
+    profession_dict: Dict[str, Profession] = {}
+    for profession in profession_list:
+        profession_dict[profession.get_id()] = profession
+    page: int = -1
+    page_size: int = 20
+    logger.info('遍历所有人口，总计数量：%d，页面大小：%d' % (total_number, page_size))
+    while alive_number > 0:
+        alive_number -= page_size
+        page += 1
+        logger.info('当前页：%d，剩余人数：%d' % (page, alive_number))
+        person_list: List[Person] = flower_dao.select_all_alive_person(page, page_size)
+        for person in person_list:
+            age: int = int((now - person.born_time).total_seconds() // global_config.day_second)
+            
+            # 对当前职业进行判断
+            profession: Profession = profession_dict[person.profession_id]
+            if not profession.valid():
+                profession = random_profession()
+            if (profession.name == '无业' or profession.name == '学生') and 25 >= age >= 20:
+                profession = random_profession()
+            elif profession.name == '无业' and age > 25:
+                rand = random.random()
+                if rand < 0.05:
+                    profession = random_profession()
+            elif 20 > age >= 7:
+                profession = flower_dao.select_profession_by_name('学生')
+            if profession.valid():
+                person.profession_id = profession.get_id()
+            
+            # 对适合生育年龄的人进行判断
+            if 20 <= age <= 30:
+                rand = random.random()
+                children_number: int = len(person.children)
+                if children_number < 1 and rand < 0.3:
+                    pass
 
 
 def random_generate_world() -> int:
