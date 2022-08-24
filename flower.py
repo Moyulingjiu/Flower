@@ -4203,9 +4203,15 @@ class FlowerService:
         person: Person = flower_dao.select_person(user_person.person_id)
         reply: str = person.name + '（%s）' % person.get_id()
         if person.gender == Gender.male:
-            reply += '【男】'
+            reply += '\n性别：男'
         elif person.gender == Gender.female:
-            reply += '【女】'
+            reply += '\n性别：女'
+        age: int = int((datetime.now() - person.born_time).total_seconds() // global_config.day_second)
+        reply += '\n年龄：%d' % age
+        race: Race = flower_dao.select_world_race(person.race_id)
+        if race.valid():
+            reply += '\n种族：' + race.name
+        
         reply += '\n' + '-' * 6
         if len(user_person.news) > 0:
             reply += '\n可以打听小道消息'
