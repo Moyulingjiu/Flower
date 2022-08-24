@@ -3964,7 +3964,7 @@ class FlowerService:
                     buff: Buff = flower_dao.select_buff_by_name('祝融')
                     if buff.valid():
                         decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
-                        decorate_buff.change_humidity = item.temperature * item.number
+                        decorate_buff.change_temperature = item.temperature * item.number
                         decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
@@ -3972,7 +3972,7 @@ class FlowerService:
                     buff: Buff = flower_dao.select_buff_by_name('玄武')
                     if buff.valid():
                         decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
-                        decorate_buff.change_humidity = item.temperature * item.number
+                        decorate_buff.change_temperature = item.temperature * item.number
                         decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
