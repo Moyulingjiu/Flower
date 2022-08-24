@@ -2063,7 +2063,6 @@ class ContextHandler:
                     reply = '他对你的好感度为：%d' % relationship.value
                 result.context_reply_text.append(reply)
                 continue
-
             # 发送公告
             elif isinstance(context, AnnouncementContext):
                 if message == '取消':
@@ -2994,8 +2993,10 @@ class FlowerService:
                 reply += '\n阶段：过熟'
             else:
                 reply += '\n阶段：枯萎'
-            total_hour: int = flower.seed_time + flower.grow_time
-            reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / total_hour)
+            if user.farm.hour < grow_time:
+                reply += '\n成长度：' + '%.1f%%' % (user.farm.hour * 100.0 / grow_time)
+            elif user.farm.hour < mature_time:
+                reply += '\n成熟度：' + '%.1f%%' % ((user.farm.hour - mature_time) * 100.0 / mature_time)
         else:
             reply += '无'
         reply += '\n天气：' + weather.weather_type
