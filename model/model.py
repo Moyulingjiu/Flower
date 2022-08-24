@@ -1121,17 +1121,35 @@ class DecorateBuff(InnerClass):
         if self.lock_soil:
             reply += '、锁定土壤'
         if self.change_humidity != 0.0:
-            reply += '、湿度%.2f/小时' % self.change_humidity
+            if self.change_humidity > 0:
+                reply += '、湿度+%.2f/小时' % self.change_humidity
+            else:
+                reply += '、湿度%.2f/小时' % self.change_humidity
         if self.change_nutrition != 0.0:
-            reply += '、营养%.2f/小时' % self.change_nutrition
+            if self.change_nutrition > 0:
+                reply += '、营养+%.2f/小时' % self.change_nutrition
+            else:
+                reply += '、营养%.2f/小时' % self.change_nutrition
         if self.change_temperature != 0.0:
-            reply += '、温度%.2f/小时' % self.change_temperature
+            if self.change_temperature > 0:
+                reply += '、温度+%.2f/小时' % self.change_temperature
+            else:
+                reply += '、温度+%.2f/小时' % self.change_temperature
         if self.perfect_coefficient != 0.0:
-            reply += '、完美时长增幅%.2f%%' % (self.perfect_coefficient * 100)
+            if self.perfect_coefficient > 0:
+                reply += '、完美时长增幅+%.2f%%' % (self.perfect_coefficient * 100)
+            else:
+                reply += '、完美时长增幅%.2f%%' % (self.perfect_coefficient * 100)
         if self.hour_coefficient != 0.0:
-            reply += '、生长时长增幅%.2f%%' % (self.hour_coefficient * 100)
+            if self.hour_coefficient > 0:
+                reply += '、生长时长增幅+%.2f%%' % (self.hour_coefficient * 100)
+            else:
+                reply += '、生长时长增幅%.2f%%' % (self.hour_coefficient * 100)
         if self.bad_hour_coefficient != 0.0:
-            reply += '、糟糕时长增幅%.2f%%' % (self.bad_hour_coefficient * 100)
+            if self.bad_hour_coefficient > 0:
+                reply += '、糟糕时长增幅+%.2f%%' % (self.bad_hour_coefficient * 100)
+            else:
+                reply += '、糟糕时长增幅%.2f%%' % (self.bad_hour_coefficient * 100)
         if reply == '':
             return '无效果或者拥有特殊效果'
         return reply[1:]

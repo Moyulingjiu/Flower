@@ -25,5 +25,5 @@ __all__ = [
 
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "ChooseContext", "Choice", "RandomTravelContext", "TravelContext", "AnnouncementContext", "AdminSendMailContext",
-    "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargaining"
+    "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext", "ViewRelationshipContext"
 ]

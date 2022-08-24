@@ -8,7 +8,8 @@ from model import City, DecorateItem, DecorateBuff
 __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
-    "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargaining"
+    "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
+    "ViewRelationshipContext"
 ]
 
 
@@ -181,7 +182,7 @@ class GiveBuffContext(BaseContext):
         self.expire_seconds = expire_seconds
 
 
-class CommodityBargaining(BaseContext):
+class CommodityBargainingContext(BaseContext):
     """
     议价
     """
@@ -195,3 +196,12 @@ class CommodityBargaining(BaseContext):
         self.gold = gold  # 价格
         self.can_bargain = can_bargain  # 能否议价
         self.bargain_times = bargain_times  # 议价次数
+
+
+class ViewRelationshipContext(BaseContext):
+    """
+    探查npc好感度
+    """
+
+    def __init__(self):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))

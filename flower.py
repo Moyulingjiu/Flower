@@ -2017,8 +2017,7 @@ class ContextHandler:
                 reply = username + '，旅行到了%s，来这里开始新的冒险吧~' % city.city_name
                 result.context_reply_text.append(reply)
             # 定向旅行
-            elif isinstance(context, RandomTravelContext):
-                flower_dao.remove_context(qq, origin_list[index])
+            elif isinstance(context, TravelContext):
                 user: User = util.get_user(qq, username)
                 if message == '取消':
                     item: DecorateItem = DecorateItem()
@@ -2029,18 +2028,42 @@ class ContextHandler:
                     flower_dao.update_user_by_qq(user)
                     reply = '已为你取消旅行'
                     result.context_reply_text.append(reply)
+                    flower_dao.remove_context(qq, origin_list[index])
                     continue
                 city: City = flower_dao.select_city_by_name(message)
                 if city is None or city.city_name != message:
                     reply = FlowerService.query_city(message) + '\n请选择一座城市，输入“取消”来取消本次旅行。'
                     result.context_reply_text.append(reply)
                     continue
+                flower_dao.remove_context(qq, origin_list[index])
                 user.city_id = city.get_id()
                 user.farm = Farm()
                 util.init_user_farm(user, city)
                 flower_dao.update_user_by_qq(user)
                 reply = username + '，旅行到了%s，来这里开始新的冒险吧~' % city.city_name
                 result.context_reply_text.append(reply)
+            # 知己知彼
+            elif isinstance(context, ViewRelationshipContext):
+                flower_dao.remove_context(qq, origin_list[index])
+                user: User = util.get_user(qq, username)
+                if not ObjectId.is_valid(message):
+                    item: DecorateItem = DecorateItem()
+                    item.item_name = '知己知彼'
+                    item.number = 1
+                    item.item_type = ItemType.props
+                    util.insert_items(user.warehouse, [item])
+                    flower_dao.update_user_by_qq(user)
+                    reply = '已为你取消探查'
+                    result.context_reply_text.append(reply)
+                    continue
+                relationship: Relationship = flower_dao.select_relationship_by_pair(message, str(qq))
+                if not relationship.valid():
+                    reply = '不存在该npc或者他还没有遇见你'
+                else:
+                    reply = '他对你的好感度为：%d' % relationship.value
+                result.context_reply_text.append(reply)
+                continue
+
             # 发送公告
             elif isinstance(context, AnnouncementContext):
                 if message == '取消':
@@ -2579,7 +2602,7 @@ class ContextHandler:
                             reply = '格式错误！格式“修改糟糕时长增幅 【数值】”'
                             result.context_reply_text.append(reply)
             # 向npc出售商品议价
-            elif isinstance(context, CommodityBargaining):
+            elif isinstance(context, CommodityBargainingContext):
                 if context.step == 0:
                     if context.can_bargain:
                         if message == '是':
@@ -3616,7 +3639,7 @@ class FlowerService:
                 return user.username + '，您的农场已经有花了'
             flower: Flower = flower_dao.select_flower_by_name(flower_name)
             if flower.name != flower_name:
-                return user.username + '，不存在这种花'
+                return user.username + '，不存在这种花或该花不可以种植'
             item: DecorateItem = DecorateItem()
             item.item_name = flower_name + '种子'
             item.number = 1
@@ -3923,7 +3946,7 @@ class FlowerService:
                     buff: Buff = flower_dao.select_buff_by_name('文鳐')
                     if buff.valid():
                         decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
-                        decorate_buff.change_nutrition = item.nutrition
+                        decorate_buff.change_nutrition = item.nutrition * item.number
                         decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
@@ -3931,7 +3954,23 @@ class FlowerService:
                     buff: Buff = flower_dao.select_buff_by_name('天吴')
                     if buff.valid():
                         decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
-                        decorate_buff.change_humidity = item.humidity
+                        decorate_buff.change_humidity = item.humidity * item.number
+                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
+                        user.buff.append(decorate_buff)
+                        return user.username + '，获得buff：%s' % str(decorate_buff)
+                elif item.item_name == '炭火卡':
+                    buff: Buff = flower_dao.select_buff_by_name('祝融')
+                    if buff.valid():
+                        decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
+                        decorate_buff.change_humidity = item.temperature * item.number
+                        decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
+                        user.buff.append(decorate_buff)
+                        return user.username + '，获得buff：%s' % str(decorate_buff)
+                elif item.item_name == '冰块卡':
+                    buff: Buff = flower_dao.select_buff_by_name('玄武')
+                    if buff.valid():
+                        decorate_buff: DecorateBuff = DecorateBuff().generate(buff)
+                        decorate_buff.change_humidity = item.temperature * item.number
                         decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
@@ -3979,6 +4018,13 @@ class FlowerService:
                         else:
                             return user.username + '，你的花花有点沮丧'
                     return user.username + '，好像什么也没有听见'
+                elif item.item_name == '知己知彼':
+                    if item.number != 1:
+                        raise UseFailException(user.username + '，该类型物品只能使用一个')
+                    context: ViewRelationshipContext = ViewRelationshipContext()
+                    flower_dao.insert_context(qq, context)
+                    return user.username + '，请输入npc的id，你可以输入“花店人物 序号”，npc名字后的括号内一串字母数字就是npc的id。' \
+                                           '其余任何输入表示取消探查。'
                 elif item.item_name == '贫瘠卡':
                     nutrition: float = item.nutrition * item.number
                     nutrition = util.add_nutrition(user.farm, nutrition)
@@ -4346,7 +4392,7 @@ class FlowerService:
             item_obj: Item = flower_dao.select_item_by_name(item.item_name)
             gold: int = util.calculate_item_gold(item, item_obj, relationship)
             can_bargain: bool = relationship.value > 70
-            context: CommodityBargaining = CommodityBargaining(
+            context: CommodityBargainingContext = CommodityBargainingContext(
                 user_person_id=user_person.get_id(),
                 person_id=person.get_id(),
                 item=item,
