@@ -928,6 +928,18 @@ def select_item_like_name(name: str) -> List[Item]:
         return item_list
 
 
+def update_item(item: Item) -> int:
+    """
+    更新物品
+    :param item: 物品
+    :return: id
+    """
+    result = mongo_item.update_one({"_id": ObjectId(item.get_id())}, {"$set": class_to_dict(item)})
+    redis_db.delete(redis_item_prefix + item.get_id())
+    redis_db.delete(redis_item_prefix + item.name)
+    return result.modified_count
+
+
 def insert_item(item: Item) -> str:
     """
     插入物品
@@ -936,6 +948,7 @@ def insert_item(item: Item) -> str:
     """
     result = mongo_item.insert_one(class_to_dict(item))
     redis_db.delete(redis_item_prefix + str(result.inserted_id))
+    redis_db.delete(redis_item_prefix + item.name)
     return str(result.inserted_id)
 
 

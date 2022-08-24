@@ -1134,7 +1134,7 @@ class DecorateBuff(InnerClass):
             if self.change_temperature > 0:
                 reply += '、温度+%.2f/小时' % self.change_temperature
             else:
-                reply += '、温度+%.2f/小时' % self.change_temperature
+                reply += '、温度%.2f/小时' % self.change_temperature
         if self.perfect_coefficient != 0.0:
             if self.perfect_coefficient > 0:
                 reply += '、完美时长增幅+%.2f%%' % (self.perfect_coefficient * 100)
