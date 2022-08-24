@@ -2696,7 +2696,8 @@ class ContextHandler:
                             gold: int = int(float(data) * 100)
                             if context.bargain_times >= 3:
                                 reply = '你已经议价3次了，不能继续议价了，只能输入“成交”/“取消”\n' \
-                                        '当前单价：' + util.show_gold(context.gold)
+                                        '当前单价：' + util.show_gold(context.gold) + '\n' \
+                                        '请注意取消交易，避免无意输入成交时达成了交易。'
                                 result.context_reply_text.append(reply)
                                 continue
                             item_obj: Item = flower_dao.select_item_by_name(context.item.item_name)
@@ -2720,6 +2721,9 @@ class ContextHandler:
                             context.gold = gold
                             flower_dao.insert_context(qq, context)
                             reply = '%s接受了这个价格\n当前单价：%s' % (person.name, util.show_gold(context.gold))
+                            if context.bargain_times >= 3:
+                                reply = '你已经议价3次了，不能继续议价了，只能输入“成交”/“取消”\n' \
+                                        '请注意取消交易，避免无意输入成交时达成了交易。'
                             result.context_reply_text.append(reply)
                             continue
                         except ValueError:
