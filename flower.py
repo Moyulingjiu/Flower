@@ -2712,6 +2712,11 @@ class ContextHandler:
                                 reply = '%s表示自己不能接受这个价格' % person.name
                                 result.context_reply_text.append(reply)
                                 continue
+                            if gold < -max_gold:
+                                flower_dao.insert_context(qq, context)
+                                reply = '%s：这个价格会不会太低了' % person.name
+                                result.context_reply_text.append(reply)
+                                continue
                             context.gold = gold
                             flower_dao.insert_context(qq, context)
                             reply = '%s接受了这个价格\n当前单价：%s' % (person.name, util.show_gold(context.gold))
