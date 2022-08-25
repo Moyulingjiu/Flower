@@ -3710,7 +3710,7 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
         if humidity_change == 0.0:
-            return user.username + '，浇水失败！当前可能没有浇水壶。'
+            return user.username + '，浇水失败！当前可能没有浇水壶，或者湿度已满。'
         return user.username + '，浇水成功！湿度增加%.2f，花费金币%.2f' % (humidity_change, cost_gold / 100)
 
     @classmethod
