@@ -28,6 +28,9 @@ redis_background_db = 2
 redis_db = 1
 redis_password = ''
 
+# 百度登陆的cookie（用于爬取百度的天气，不然不可用）
+baidu_login_cookie = ''
+
 # 全局锁
 get_right_update_data: bool = False
 get_all_weather: bool = False
@@ -122,6 +125,7 @@ def load_config(config_path: str = 'config.yaml'):
     """
     global host, port, center
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
+    global baidu_login_cookie
     
     with open(config_path, 'r', encoding='utf8') as f:
         config_yaml = yaml.safe_load(f.read())
@@ -144,6 +148,9 @@ def load_config(config_path: str = 'config.yaml'):
             redis_db = config_yaml['redis_db']
         if 'redis_password' in config_yaml:
             redis_password = config_yaml['redis_password']
+
+        if 'baidu_login_cookie' in config_yaml:
+            baidu_login_cookie = config_yaml['baidu_login_cookie']
 
 
 def check_config():
@@ -174,6 +181,7 @@ def check_config():
         raise ConfigException('redis_password 配置错误')
 
 
+# 加载配置
 argv = sys.argv[1:]
 if len(argv) == 1:
     load_config(argv[0])

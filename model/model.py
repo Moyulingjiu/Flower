@@ -323,7 +323,7 @@ class Weather(EntityClass):
 
     def __init__(self, city_id: str = '', city_name: str = '', weather_type: str = '', min_temperature: int = 0,
                  max_temperature: int = 0, humidity: int = 0,
-                 pm25: float = 0.0, pm10: float = 0.0, air_quality: str = '',
+                 pm25: float = 0.0, pm10: float = 0.0, air_quality: str = '', air_quality_number: int = 0,
                  wind_direction: str = '', wind_level: str = '',
                  source: str = '', aqi: int = 0, advice: str = '', comment: str = '',
                  create_time: datetime = datetime.now(), create_id: str = '0',
@@ -339,6 +339,7 @@ class Weather(EntityClass):
         self.pm25 = pm25  # PM 2.5
         self.pm10 = pm10  # PM 10
         self.air_quality = air_quality  # 空气质量
+        self.air_quality_number = air_quality_number  # 空气质量数值
         self.wind_direction = wind_direction  # 风方向
         self.wind_level = wind_level  # 风的级别
         self.aqi = aqi  # 污染程度
@@ -357,6 +358,8 @@ class Weather(EntityClass):
             reply += '\nPM 10：%.1f' % self.pm10
         if self.air_quality != '':
             reply += '\n空气质量：' + self.air_quality
+            if self.air_quality_number > 0:
+                reply += '（%d）' % self.air_quality_number
         if self.wind_direction != '' and self.wind_level != '':
             reply += '\n风：' + self.wind_direction + self.wind_level
         if self.advice != '':

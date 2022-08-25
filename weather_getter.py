@@ -7,17 +7,17 @@ import asyncio
 import json
 import random
 import socket  # 用做异常处理
-from typing import List
 from urllib.parse import quote
 
 import requests  # 导入requests包
 from bs4 import BeautifulSoup
 
+import global_config
 from global_config import logger
 from model import Weather
 
 
-def get_html(url, can_wait: bool = False, retries_times: int = 5):
+def get_html(url, can_wait: bool = False, retries_times: int = 5, cookie: str = ''):
     """
     模拟浏览器来获取网页的html代码
     """
@@ -28,6 +28,8 @@ def get_html(url, can_wait: bool = False, retries_times: int = 5):
         'Connection': 'keep-alive',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
     }
+    if cookie != '':
+        header['Cookie'] = cookie
     # 设定超时时间，取随机数是因为防止被网站认为是爬虫
     timeout = random.choice(range(120, 240))
     times: int = 0
@@ -57,7 +59,7 @@ def get_bing_weather(city_name: str, city_id: str, can_wait: bool = False) -> We
             city_name += '市'
         city = city_name + '天气'
         url = "https://cn.bing.com/search?q=" + quote(city) + '&PC=U316&FORM=CHROMN'
-
+        
         response = get_html(url, can_wait)
         soup = BeautifulSoup(response, 'html.parser')
         max_temperature = soup.select(
@@ -68,7 +70,7 @@ def get_bing_weather(city_name: str, city_id: str, can_wait: bool = False) -> We
             '#b_results > li.b_ans.b_top.b_topborder > div > div > div.wtr_hero > div > div.wtr_condition > div.wtr_condiPrimary > div.wtr_condiAttribs > div.wtr_currHumi')
         weather_type = soup.select(
             '#b_results > li.b_ans.b_top.b_topborder > div > div > div.wtr_hero > div > div.wtr_condition > div.wtr_condiSecondary.wtr_nowrap > div.wtr_caption')
-
+        
         weather: Weather = Weather()
         weather.city_id = city_id
         weather.city_name = city_name
@@ -85,50 +87,24 @@ def get_bing_weather(city_name: str, city_id: str, can_wait: bool = False) -> We
     return None
 
 
-def get_baidu_row_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather or None:
-    try:
-        city = city_name + '天气'
-        url = "https://weathernew.pae.baidu.com/weathernew/pc?query=" + quote(city) + "&srcid=4982"
-
-        response = get_html(url, can_wait)
-        soup = BeautifulSoup(response, 'html.parser')
-        temperature = soup.select(
-            '#sfr-app > div > div.rt-body > div > div.weather-main > div > div.weather-banner > div.weather-banner-header > p.weather-banner-header-left > span:nth-child(2) > span:nth-child(1)')
-        humidity = soup.select(
-            '#sfr-app > div > div.rt-body > div > div.weather-main > div > div.weather-banner > div.weather-banner-footer > span:nth-child(1)')
-        weather_type = soup.select(
-            '#sfr-app > div > div.rt-body > div > div.weather-main > div > div.weather-banner > div.weather-banner-content > div.weather-banner-content-right > div.weather-banner-content-wind > span:nth-child(2)')
-
-        weather: Weather = Weather()
-        weather.city_id = city_id
-        weather.city_name = city_name
-        temperature_text = temperature[0].text.replace('°', '').replace('C', '').strip()
-        temperature_data = temperature_text.split('~')
-        weather.min_temperature = int(temperature_data[0])
-        weather.max_temperature = int(temperature_data[1])
-        weather.humidity = int(humidity[0].text.replace('湿度', '').replace('%', '').replace(' ', '').strip())
-        weather.weather_type = weather_type[0].text.strip()
-        weather.source = '百度'
-        return weather
-    except ValueError as e:
-        logger.error(e)
-    except IndexError as e:
-        logger.error(e)
+def get_msn_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather or None:
+    url = "https://www.msn.cn/zh-cn/weather/forecast/in-" + quote(city_name) + "?ocid=ansmsnweather&loc=eyJsIjoi5YyX5Lqs5biCIiwiYyI6IuS4reWNjuS6uuawkeWFseWSjOWbvSIsImkiOiJjbiIsInQiOjEwMiwiZyI6InpoLWNuIiwieCI6IjExNi40MDc0MTciLCJ5IjoiMzkuOTA0MTcyIn0%3D&weadegreetype=C"
     return None
 
 
 def get_baidu_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather or None:
     try:
         city = city_name + '天气'
-        url = "https://www.baidu.com/s?wd=" + quote(city)
-
-        response = get_html(url, can_wait)
+        url = "https://www.baidu.com/s?wd=" + quote(city) + '&rsv_spt=1&rsv_iqid=0xd192674d0009f891&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_enter=1&rsv_dl=ib&rsv_sug3=20&rsv_sug1=7&rsv_sug7=101&rsv_sug2=0&rsv_btype=i&inputT=3571&rsv_sug4=4865'
+        
+        response = get_html(url, can_wait, cookie=global_config.baidu_login_cookie)
         soup = BeautifulSoup(response, 'html.parser')
-        temperature = soup.select(
-            '#\\31  > div.op_weather4_twoicon_container_div > div.op_weather4_twoicon > a.op_weather4_twoicon_today.OP_LOG_LINK > p.op_weather4_twoicon_temp')
-        weather_type = soup.select(
-            '#\\31  > div.op_weather4_twoicon_container_div > div.op_weather4_twoicon > a.op_weather4_twoicon_today.OP_LOG_LINK > p.op_weather4_twoicon_weath')
-
+        
+        temperature = soup.select('#content_left > div:nth-child(1) > div.op_weather4_twoicon_container_div > div.op_weather4_twoicon > a.op_weather4_twoicon_today.OP_LOG_LINK > p.op_weather4_twoicon_temp')
+        weather_type = soup.select('#content_left > div:first-child >  div.op_weather4_twoicon_container_div > div.op_weather4_twoicon > a.op_weather4_twoicon_today.OP_LOG_LINK > p.op_weather4_twoicon_weath')
+        air_condition_number = soup.select('#content_left > div:first-child > div.op_weather4_twoicon_container_div > div.op_weather4_twoicon > a.op_weather4_twoicon_today.OP_LOG_LINK > div.op_weather4_twoicon_realtime_quality_wrap > span > span:nth-child(1)')
+        air_condition = soup.select('#content_left > div:first-child > div.op_weather4_twoicon_container_div > div.op_weather4_twoicon > a.op_weather4_twoicon_today.OP_LOG_LINK > div.op_weather4_twoicon_realtime_quality_wrap > span > span:nth-child(2)')
+        
         weather: Weather = Weather()
         weather.city_id = city_id
         weather.city_name = city_name
@@ -138,6 +114,12 @@ def get_baidu_weather(city_name: str, city_id: str, can_wait: bool = False) -> W
         weather.max_temperature = int(temperature_data[1])
         weather.humidity = 50
         weather.weather_type = weather_type[0].text.strip()
+        # 对于空气质量没有爬到也无所谓
+        try:
+            weather.air_quality_number = int(air_condition_number[0].text.strip())
+        except ValueError:
+            pass
+        weather.air_quality = air_condition[0].text.strip()
         weather.source = '百度'
         return weather
     except ValueError as e:
@@ -168,14 +150,14 @@ def get_weather_com_cn(city_name: str, city_id: str, can_wait: bool = False) -> 
         if len(city_index_data) == 0:
             return None
         city_index: str = city_index_data[0]
-
+        
         url = "http://t.weather.sojson.com/api/weather/city/" + city_index
         response = get_html(url, can_wait)
         ans = json.loads(response)
         if ans['status'] != 200:
             logger.info('未能获取城市<%s>的天气' % city_name)
             return None
-
+        
         weather: Weather = Weather()
         weather.city_id = city_id
         weather.city_name = city_name
@@ -191,7 +173,7 @@ def get_weather_com_cn(city_name: str, city_id: str, can_wait: bool = False) -> 
         weather.wind_level = ans['data']['forecast'][0]['fl']
         weather.advice = ans['data']['ganmao']
         weather.comment = ans['data']['forecast'][0]['notice']
-
+        
         weather.source = '气象局'
         return weather
     except ValueError as e:
@@ -201,16 +183,16 @@ def get_weather_com_cn(city_name: str, city_id: str, can_wait: bool = False) -> 
     return None
 
 
+lock_weather_method = {}
+
+
 def get_city_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather:
-    # weather_com_cn = get_weather_com_cn(city_name, city_id, can_wait)
-    # if weather_com_cn is not None:
-    #     return weather_com_cn
+    weather_com_cn = get_weather_com_cn(city_name, city_id, can_wait)
+    if weather_com_cn is not None:
+        return weather_com_cn
     bing_weather = get_bing_weather(city_name, city_id, can_wait)
     if bing_weather is not None:
         return bing_weather
-    baidu_weather = get_baidu_row_weather(city_name, city_id, can_wait)
-    if baidu_weather is not None:
-        return baidu_weather
     baidu_weather = get_baidu_weather(city_name, city_id, can_wait)
     if baidu_weather is not None:
         return baidu_weather
