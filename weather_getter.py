@@ -7,6 +7,7 @@ import asyncio
 import json
 import random
 import socket  # 用做异常处理
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
 import requests  # 导入requests包
@@ -184,18 +185,34 @@ def get_weather_com_cn(city_name: str, city_id: str, can_wait: bool = False) -> 
 
 
 lock_weather_method = {}
+weather_method_list = [('气象局', get_weather_com_cn), ('微软', get_bing_weather), ('百度', get_baidu_weather)]
 
+
+def timed_get_city_weather(city_name: str, city_id: str, can_wait: bool, method_name: str, func):
+    global lock_weather_method
+    # 对获取天气的行为进行计时，如果有某一个方法在5秒内未能返回，那么一个小时内就不再继续使用
+    start_time = datetime.now()
+    if method_name not in lock_weather_method or lock_weather_method[method_name] >= datetime.now() + timedelta(hours=1):
+        weather = func(city_name, city_id, can_wait)
+        if weather is not None:
+            end_time = datetime.now()
+            seconds: int = (end_time - start_time).seconds
+            if seconds > 5:
+                lock_weather_method[method_name] = datetime.now()
+            logger.info('从%s获得%s的天气，耗时%d秒' % (method_name, city_name, seconds))
+            return weather
+    return None
+    
 
 def get_city_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather:
-    # weather_com_cn = get_weather_com_cn(city_name, city_id, can_wait)
-    # if weather_com_cn is not None:
-    #     return weather_com_cn
-    bing_weather = get_bing_weather(city_name, city_id, can_wait)
-    if bing_weather is not None:
-        return bing_weather
-    baidu_weather = get_baidu_weather(city_name, city_id, can_wait)
-    if baidu_weather is not None:
-        return baidu_weather
+    global weather_method_list
+    logger.info('获取天气：' + city_name)
+    random.shuffle(weather_method_list)
+    for method in weather_method_list:
+        weather = timed_get_city_weather(city_name, city_id, can_wait, method[0], method[1])
+        if weather is not None:
+            return weather
+    logger.error('未能获得%s的天气' % city_name)
     return Weather()
 
 
