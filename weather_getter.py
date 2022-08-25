@@ -169,7 +169,6 @@ def get_weather_com_cn(city_name: str, city_id: str, can_wait: bool = False) -> 
             return None
         city_index: str = city_index_data[0]
 
-        # todo: 动态页面，暂时还有点麻烦
         url = "http://t.weather.sojson.com/api/weather/city/" + city_index
         response = get_html(url, can_wait)
         ans = json.loads(response)
@@ -203,9 +202,9 @@ def get_weather_com_cn(city_name: str, city_id: str, can_wait: bool = False) -> 
 
 
 def get_city_weather(city_name: str, city_id: str, can_wait: bool = False) -> Weather:
-    weather_com_cn = get_weather_com_cn(city_name, city_id, can_wait)
-    if weather_com_cn is not None:
-        return weather_com_cn
+    # weather_com_cn = get_weather_com_cn(city_name, city_id, can_wait)
+    # if weather_com_cn is not None:
+    #     return weather_com_cn
     bing_weather = get_bing_weather(city_name, city_id, can_wait)
     if bing_weather is not None:
         return bing_weather
