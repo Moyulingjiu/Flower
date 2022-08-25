@@ -564,6 +564,15 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     else:
         user.farm.temperature += 0.8 * (now_temperature - user.farm.temperature)
         user.farm.humidity -= 1.0 * (1 - weather.humidity / 100)
+    # 天气所带来的湿度影响
+    if weather.weather_type == '小雨':
+        user.farm.humidity += 0.5
+    elif weather.weather_type == '中雨':
+        user.farm.humidity += 1.0
+    elif weather.weather_type == '大雨' or '阵雨' in weather.weather_type:
+        user.farm.humidity += 1.3
+    elif weather.weather_type == '强雷暴':
+        user.farm.humidity += 1.5
     # 花吸收的水分与营养
     if user.farm.flower_state != FlowerState.withered:
         user.farm.humidity -= flower.water_absorption
