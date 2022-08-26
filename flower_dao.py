@@ -1876,6 +1876,18 @@ def select_achievement_by_name(name: str) -> Achievement:
         return achievement
 
 
+def update_achievement(achievement: Achievement) -> int:
+    """
+    更新成就
+    :param achievement: 成就
+    :return: id
+    """
+    result = mongo_achievement.update_one({"_id": ObjectId(achievement.get_id())}, {"$set": class_to_dict(achievement)})
+    redis_db.delete(redis_achievement_prefix + achievement.get_id())
+    redis_db.delete(redis_achievement_prefix + achievement.name)
+    return result.modified_count
+
+
 def insert_achievement(achievement: Achievement) -> str:
     """
     插入成就
@@ -1884,6 +1896,7 @@ def insert_achievement(achievement: Achievement) -> str:
     """
     result = mongo_achievement.insert_one(class_to_dict(achievement))
     redis_db.delete(redis_achievement_prefix + str(result.inserted_id))
+    redis_db.delete(redis_achievement_prefix + achievement.name)
     return str(result.inserted_id)
 
 
