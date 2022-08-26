@@ -953,10 +953,10 @@ class Farm(InnerClass):
 
     def __init__(self, soil_id: str = '', climate_id: str = '', flower_id: str = '',
                  flower_state: FlowerState = FlowerState.not_flower,
-                 hour: float = 0.0, perfect_hour: float = 0.0,
+                 reality_hour: int = 0,
+                 hour: float = 0.0, perfect_hour: float = 0.0, stop_prefect: int = 0, non_perfect_hour: int = 0,
                  bad_hour: float = 0.0, humidity: float = 0.0, nutrition: float = 0.0, temperature: float = 0.0,
-                 last_check_time: datetime = datetime.now(),
-                 thermometer: DecorateItem = DecorateItem(), weather_station: DecorateItem = DecorateItem(),
+                 last_check_time: datetime = datetime.now(), thermometer: DecorateItem = DecorateItem(),
                  soil_monitoring_station: DecorateItem = DecorateItem(), watering_pot: DecorateItem = DecorateItem(),
                  mailbox: DecorateItem = DecorateItem(), greenhouse: DecorateItem = DecorateItem(),
                  warehouse: DecorateItem = DecorateItem(), air_condition: DecorateItem = DecorateItem(),
@@ -969,8 +969,11 @@ class Farm(InnerClass):
         self.climate_id = climate_id  # 气候id
         self.flower_id = flower_id  # 花的id
         self.flower_state = flower_state  # 花的状态
+        self.reality_hour = reality_hour  # 真实的时间（不吃任何加成，每种植一个小时就是一个小时）
         self.hour = hour  # 植物生长的小时数
         self.perfect_hour = perfect_hour  # 累计的完美的小时数
+        self.stop_prefect = stop_prefect  # 停止完美计时的次数
+        self.non_perfect_hour = non_perfect_hour  # 非完美的小时数
         self.bad_hour = bad_hour  # 糟糕的小时数
         self.humidity = humidity  # 上一次检查的湿度
         self.nutrition = nutrition  # 上一次检查的营养
@@ -978,7 +981,6 @@ class Farm(InnerClass):
         self.last_check_time = last_check_time  # 上一次检查时间
 
         self.thermometer = thermometer  # 农场的温度计
-        self.weather_station = weather_station  # 气象检测站
         self.soil_monitoring_station = soil_monitoring_station  # 农场的土壤检测站
         self.watering_pot = watering_pot  # 农场的浇水壶
         self.mailbox = mailbox  # 信箱

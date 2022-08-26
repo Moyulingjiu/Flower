@@ -3376,6 +3376,8 @@ class FlowerService:
                 util.insert_items(user.warehouse, [copy.deepcopy(item)])
             except MyException:
                 item = None
+        # 查看连续签到的成就奖励
+        util.give_achievement(user, '连续签到', value=user.sign_continuous, cover_old_value=True)
         # 签到1点经验
         user.exp += 1
         gold = random.randint(100, 500)
@@ -3650,9 +3652,12 @@ class FlowerService:
             user.farm.flower_id = flower.get_id()
             user.farm.flower_state = FlowerState.normal
             user.farm.last_check_time = datetime.now()
-            user.farm.hour = 0
-            user.farm.bad_hour = 0
-            user.farm.perfect_hour = 0
+            user.farm.reality_hour = 0
+            user.farm.hour = 0.0
+            user.farm.bad_hour = 0.0
+            user.farm.perfect_hour = 0.0
+            user.farm.stop_prefect = 0
+            user.farm.non_perfect_hour = 0
             user_statistics: UserStatistics = util.get_user_statistics(qq)
             if flower_name in user_statistics.plant_flower:
                 user_statistics.plant_flower[flower_name] += 1
@@ -4147,6 +4152,18 @@ class FlowerService:
                     else:
                         user_statistics.plant_perfect_flower[flower.name] = 1
                     flower_dao.update_user_statistics(user_statistics)
+                    # 心跳时刻（是否是在成熟的那一个小时完美的）
+                    if int(user.farm.perfect_hour) - (int(user.farm.hour) - mature_time) == flower.prefect_time:
+                        util.give_achievement(user, '心跳时刻')
+                    # 虚惊一场（是否bad hour刚好差一个小时）
+                    if int(user.farm.bad_hour) == flower.withered_time - 1:
+                        util.give_achievement(user, '虚惊一场')
+                    # 植物学专家（从头完美到结束）
+                    if user.farm.non_perfect_hour == 0:
+                        util.give_achievement(user, '植物学专家')
+                    # 完美主义者（种植一朵C级及以上完美的花）
+                    if user.farm.flower_state == FlowerState.perfect and flower.level != FlowerLevel.D:
+                        util.give_achievement(user, '完美主义')
                     # 更新花店第一人
                     if flower.first_user_qq == 0 and user.farm.flower_state == FlowerState.perfect:
                         flower.first_user_qq = qq
@@ -4577,8 +4594,11 @@ class DrawCard:
                 try:
                     util.insert_items(user.warehouse, [copy.deepcopy(item)])
                     user.draw_card_number -= 1
+                    # 如果今天抽完了所有的卡片，就将抽卡记录到统计数据
                     if user.draw_card_number == 0:
                         user_statistics.all_draw_times += 1
+                        # 如果抽卡抽完了，还要录入成就
+                        util.give_achievement(user, '欧皇', 1)
                     user_statistics.success_draw_times += 1
                     flower_dao.update_user_by_qq(user)
                     return user.username + '，抽到物品%s' % str(item)

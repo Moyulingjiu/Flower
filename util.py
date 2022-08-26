@@ -644,12 +644,20 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
                                                                                           user.farm.humidity,
                                                                                           user.farm.nutrition)
         # 根据条件不同来计算完美时间和糟糕的时间
+        user.farm.reality_hour += 1
         if condition_level == ConditionLevel.PERFECT:
             user.farm.perfect_hour += 1 * (1.0 + total_buff.perfect_coefficient)
         elif condition_level == ConditionLevel.BAD:
+            # 如果完美时间有计时，并且被打断了，那么就认为其没有一直保持完美
+            if user.farm.perfect_hour > 0:
+                user.farm.stop_prefect += 1
             user.farm.perfect_hour = 0
+            user.farm.non_perfect_hour += 1
             user.farm.bad_hour += 1 * (1.0 + total_buff.bad_hour_coefficient)
         else:
+            if user.farm.perfect_hour > 0:
+                user.farm.stop_prefect += 1
+            user.farm.non_perfect_hour += 1
             user.farm.perfect_hour = 0
 
         # 根据条件不同，每小时增长的小时不同
@@ -689,6 +697,10 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
         elif user.farm.perfect_hour >= flower.prefect_time > 0:
             user.farm.flower_state = FlowerState.perfect
         else:
+            user.farm.flower_state = FlowerState.normal
+            
+        # 对于过熟的花，没有办法完美
+        if mature_time <= user.farm.hour < overripe_time and user.farm.flower_state == FlowerState.perfect:
             user.farm.flower_state = FlowerState.normal
     else:
         # 如果已经超过过熟的时间那么一定是枯萎了
@@ -926,48 +938,82 @@ def calculation_farm_equipment(user: User):
     :return: none
     """
     now: datetime = datetime.now()
+    equipment_number: int = 0
     if user.farm.thermometer.max_durability > 0 and user.farm.thermometer.durability > 0:
-        user.farm.thermometer.durability -= int((now - user.farm.thermometer.update).days)
+        days: int = int((now - user.farm.thermometer.update).total_seconds() // global_config.day_second)
+        user.farm.thermometer.durability -= days
+        if days > 0:
+            user.farm.thermometer.update = now
         if user.farm.thermometer.durability < 0:
             user.farm.thermometer.durability = 0
             user.farm.thermometer = DecorateItem()
-        user.farm.thermometer.update = now
+        if user.farm.thermometer.level >= 3:
+            equipment_number += 1
     if user.farm.weather_station.max_durability > 0 and user.farm.weather_station.durability > 0:
-        user.farm.weather_station.durability -= int((now - user.farm.weather_station.update).days)
+        days: int = int((now - user.farm.weather_station.update).total_seconds() // global_config.day_second)
+        user.farm.weather_station.durability -= days
+        if days > 0:
+            user.farm.weather_station.update = now
         if user.farm.weather_station.durability < 0:
             user.farm.weather_station.durability = 0
             user.farm.weather_station = DecorateItem()
-        user.farm.weather_station.update = now
+        if user.farm.weather_station.level >= 3:
+            equipment_number += 1
     if user.farm.watering_pot.max_durability > 0 and user.farm.watering_pot.durability > 0:
-        user.farm.watering_pot.durability -= int((now - user.farm.watering_pot.update).days)
+        days: int = int((now - user.farm.watering_pot.update).total_seconds() // global_config.day_second)
+        user.farm.watering_pot.durability -= days
+        if days > 0:
+            user.farm.watering_pot.update = now
         if user.farm.watering_pot.durability < 0:
             user.farm.watering_pot.durability = 0
             user.farm.watering_pot = DecorateItem()
-        user.farm.watering_pot.update = now
+        if user.farm.watering_pot.level >= 3:
+            equipment_number += 1
     if user.farm.mailbox.max_durability > 0 and user.farm.mailbox.durability > 0:
-        user.farm.mailbox.durability -= int((now - user.farm.mailbox.update).days)
+        days: int = int((now - user.farm.mailbox.update).total_seconds() // global_config.day_second)
+        user.farm.mailbox.durability -= days
+        if days > 0:
+            user.farm.mailbox.update = now
         if user.farm.mailbox.durability < 0:
             user.farm.mailbox.durability = 0
             user.farm.mailbox = DecorateItem()
-        user.farm.mailbox.update = now
+        if user.farm.mailbox.level >= 3:
+            equipment_number += 1
     if user.farm.greenhouse.max_durability > 0 and user.farm.greenhouse.durability > 0:
-        user.farm.greenhouse.durability -= int((now - user.farm.greenhouse.update).days)
+        days: int = int((now - user.farm.greenhouse.update).total_seconds() // global_config.day_second)
+        user.farm.greenhouse.durability -= days
+        if days > 0:
+            user.farm.greenhouse.update = now
         if user.farm.greenhouse.durability < 0:
             user.farm.greenhouse.durability = 0
             user.farm.greenhouse = DecorateItem()
-        user.farm.greenhouse.update = now
+        if user.farm.greenhouse.level >= 3:
+            equipment_number += 1
     if user.farm.warehouse.max_durability > 0 and user.farm.warehouse.durability > 0:
+        days: int = int((now - user.farm.warehouse.update).total_seconds() // global_config.day_second)
+        user.farm.warehouse.durability -= days
+        if days > 0:
+            user.farm.warehouse.update = now
         user.farm.warehouse.durability -= int((now - user.farm.warehouse.update).days)
         if user.farm.warehouse.durability < 0:
             user.farm.warehouse.durability = 0
             user.farm.warehouse = DecorateItem()
         user.farm.warehouse.update = now
+        if user.farm.warehouse.level >= 3:
+            equipment_number += 1
     if user.farm.air_condition.max_durability > 0 and user.farm.air_condition.durability > 0:
-        user.farm.air_condition.durability -= int((now - user.farm.air_condition.update).days)
+        days: int = int((now - user.farm.air_condition.update).total_seconds() // global_config.day_second)
+        user.farm.air_condition.durability -= days
+        if days > 0:
+            user.farm.air_condition.update = now
         if user.farm.air_condition.durability < 0:
             user.farm.air_condition.durability = 0
             user.farm.air_condition = DecorateItem()
-        user.farm.air_condition.update = now
+        if user.farm.air_condition.level >= 3:
+            equipment_number += 1
+    # 如果有6个以上的三级及以上装备，那么就可以获得装备满满的成就（这里不包含气象监控站，该装备已被移除）
+    if equipment_number >= 6:
+        give_achievement(user, '装备满满', value=1, cover_old_value=True)
 
 
 def show_temperature(user: User) -> str:
@@ -1201,7 +1247,8 @@ def give_achievement(user: User, achievement_name: str, value: int = 1, cover_ol
     else:
         user_achievement.value += value
     # 常规计算类的成就
-    if user_achievement.level < len(achievement.value_list):
+    collection_size: int = len(achievement.collection)
+    if collection_size == 0 and user_achievement.level < len(achievement.value_list):
         if user_achievement.value >= achievement.value_list[user_achievement.level]:
             send_award(
                 user,
@@ -1212,7 +1259,7 @@ def give_achievement(user: User, achievement_name: str, value: int = 1, cover_ol
             user_achievement.achievement_time = datetime.now()
             user_achievement.level += 1
     # 收集类成就
-    elif len(achievement.collection) != 0 and collection is not None:
+    elif collection_size > 0 and collection is not None:
         # 收集类成就需要将收集转为
         achievement.collection = set(achievement.collection)
         user_achievement.collection = set(user_achievement.collection)
