@@ -1724,6 +1724,7 @@ class ContextHandler:
                     user.username = username
                     user.gender = gender
                     user.create_id = str(bot_qq)
+                    user.create_time = datetime.now()
                     user.update(bot_qq)
 
                     city: City = context.city
@@ -3673,7 +3674,6 @@ class FlowerService:
         util.lock_user(qq)
         user: User = util.get_user(qq, username)
 
-        humidity_change: float = 0.0
         watering_pot: DecorateItem = user.farm.watering_pot
         if user.farm.watering_pot.max_durability > 0 and user.farm.watering_pot.durability > 0:
             if watering_pot.level == 1:
@@ -3688,6 +3688,10 @@ class FlowerService:
             elif watering_pot.level == 4:
                 humidity_change = 0.1 * multiple
                 user.farm.humidity += humidity_change
+            else:
+                return user.username + '，浇水失败！当前没有浇水壶或已没有耐久！'
+        else:
+            return user.username + '，浇水失败！当前没有浇水壶或已没有耐久！'
         # 设置湿度的上限
         soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
         if soil.valid() and user.farm.humidity > soil.max_humidity:
@@ -3710,7 +3714,7 @@ class FlowerService:
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
         if humidity_change == 0.0:
-            return user.username + '，浇水失败！当前可能没有浇水壶，或者湿度已满。'
+            return user.username + '，浇水失败！湿度已达到土壤的上限！'
         return user.username + '，浇水成功！湿度增加%.2f，花费金币%.2f' % (humidity_change, cost_gold / 100)
 
     @classmethod
