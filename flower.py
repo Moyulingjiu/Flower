@@ -4310,8 +4310,11 @@ class FlowerService:
             user.exp += exp
             if profession.name == '商人':
                 rand: int = random.randint(0, 100)
-                if rand < person.affinity:
+                if rand < person.affinity and relationship.value < 95:
                     relationship.value += 1
+                    flower_dao.update_relationship(relationship)
+                elif rand < person.affinity and relationship.value >= 95:
+                    relationship.value -= 1
                     flower_dao.update_relationship(relationship)
             flower_dao.update_user_by_qq(user)
             user_person.commodities[commodity_index].stock -= number
