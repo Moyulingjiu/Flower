@@ -4522,7 +4522,7 @@ class FlowerService:
             target_user: User = util.get_user(int(target[0]))
             if target_user.auto_get_name:
                 target_user.username = '匿名'
-            reply += '\n%d.%s：%d级' % (index, target_user.username, int(target[1]))
+            reply += '\n%d.%s：%d次' % (index, target_user.username, int(target[1]))
             if debug:
                 reply += '@%d' % target_user.qq
         reply += '\n' + '-' * 6
@@ -4553,6 +4553,8 @@ class FlowerService:
             plant_perfect_times += user_statistics.plant_perfect_flower[plant]
         reply += '\n收获完美植物：%d次' % plant_times
         reply += '\n抽卡次数：%d次' % user_statistics.draw_times
+        draw_card_rank: int = flower_dao.get_draw_card_rank(qq)
+        reply += '（%d名）' % (draw_card_rank + 1)
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
         reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
         return reply
