@@ -46,8 +46,15 @@ def get_user(qq: int, username: str = '') -> User:
         user.username = username
     if user.clothing is None:
         user.clothing = Clothing()
+    # 维护统计数据
+    user_statistics: UserStatistics = flower_dao.select_user_statistics_by_qq(qq)
+    if user_statistics is None or user_statistics.qq == 0:
+        user_statistics: UserStatistics = UserStatistics()
+        user_statistics.qq = qq
+        flower_dao.insert_user_statistics(user_statistics)
+        user_statistics: UserStatistics = flower_dao.select_user_statistics_by_qq(qq)
     # 将金币、经验值放入排行榜
-    flower_dao.put_user_rank(user)
+    flower_dao.put_user_rank(user, user_statistics)
     # 计算耐久度
     calculation_farm_equipment(user)
     # 计算信箱
@@ -67,9 +74,7 @@ def get_user_statistics(qq: int) -> UserStatistics:
     user_statistics: UserStatistics = flower_dao.select_user_statistics_by_qq(qq)
     if user_statistics is None or user_statistics.qq == 0:
         get_user(qq)  # 尝试获取用户，如果获取不到，那么证明没有注册有异常，会有flower的handle方法捕获
-        user_statistics: UserStatistics = UserStatistics()
-        user_statistics.qq = qq
-        flower_dao.insert_user_statistics(user_statistics)
+        # 在获取用户之后，自动就会创建统计数据
         user_statistics: UserStatistics = flower_dao.select_user_statistics_by_qq(qq)
     return user_statistics
 

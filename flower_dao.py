@@ -104,14 +104,15 @@ redis_user_context_prefix = redis_global_prefix + 'user_context_'  # 用户上�
 redis_user_gold_rank = redis_global_prefix + 'user_gold_rank'  # 用户金币排行榜
 redis_user_total_gold_rank = redis_global_prefix + 'user_total_gold_rank'  # 用户金币排行榜
 redis_user_exp_rank = redis_global_prefix + 'user_exp_rank'  # 用户经验排行榜
+redis_user_draw_card_rank = redis_global_prefix + 'user_draw_card_rank'  # 用户抽卡次数排行榜
 
 ####################################################################################################
 # 全局常量
 expire_time_seconds: int = global_config.minute_second  # 很容易短期改变的值
-long_expire_time_seconds: int = global_config.half_day_second  # 长期才会改变的值
-context_expire_time_seconds: int = global_config.week_second  # 上下文的过期时间
+long_expire_time_seconds: int = global_config.hour_second  # 长期才会改变的值
+context_expire_time_seconds: int = global_config.day_second  # 上下文的过期时间
 
-lock_wait_time = 5000  # 锁等待时间（尝试五秒）
+lock_wait_time = 3000  # 锁等待时间（尝试五秒）
 lock_try_interval = 500  # 锁等待时间（每五百毫秒尝试一次）
 
 
@@ -307,10 +308,11 @@ def unlock(key: str) -> int:
 
 
 ####################################################################################################
-def put_user_rank(user: User):
+def put_user_rank(user: User, user_statistics: UserStatistics):
     put_gold_rank(user.qq, user.gold)
     put_exp_rank(user.qq, user.exp)
     put_total_gold_rank(user.qq, user.total_gold)
+    put_draw_card_rank(user.qq, user_statistics.draw_times)
 
 
 def put_gold_rank(qq: int, gold: int):
@@ -377,6 +379,28 @@ def get_exp_rank_list() -> List[Tuple[str, float]]:
     获取某个人的金币排行
     """
     return redis_db.zrevrange(redis_user_exp_rank, 0, 9, withscores=True)
+
+
+def put_draw_card_rank(qq: int, number: int):
+    """
+    更新抽卡排行榜
+    """
+    mapping: Dict[str, int] = {str(qq): number}
+    redis_db.zadd(redis_user_draw_card_rank, mapping)
+
+
+def get_draw_card_rank(qq: int) -> int:
+    """
+    获取某个人的抽卡排行
+    """
+    return redis_db.zrevrank(redis_user_draw_card_rank, str(qq))
+
+
+def get_draw_card_rank_list() -> List[Tuple[str, float]]:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrange(redis_user_draw_card_rank, 0, 9, withscores=True)
 
 
 ####################################################################################################
