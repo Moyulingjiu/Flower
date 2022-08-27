@@ -3542,7 +3542,7 @@ class FlowerService:
             total_page = int(total_number / page_size)
             if total_number % page_size != 0:
                 total_page += 1
-            if page < 0 or page > total_page:
+            if page < 0 or page >= total_page:
                 raise PageOutOfRangeException('背包页码超限，总计：' + str(total_page))
             index = -1
             for item in user.warehouse.items:
