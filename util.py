@@ -954,16 +954,6 @@ def calculation_farm_equipment(user: User):
             user.farm.thermometer = DecorateItem()
         if user.farm.thermometer.level >= 3:
             equipment_number += 1
-    if user.farm.weather_station.max_durability > 0 and user.farm.weather_station.durability > 0:
-        days: int = int((now - user.farm.weather_station.update).total_seconds() // global_config.day_second)
-        user.farm.weather_station.durability -= days
-        if days > 0:
-            user.farm.weather_station.update = now
-        if user.farm.weather_station.durability < 0:
-            user.farm.weather_station.durability = 0
-            user.farm.weather_station = DecorateItem()
-        if user.farm.weather_station.level >= 3:
-            equipment_number += 1
     if user.farm.watering_pot.max_durability > 0 and user.farm.watering_pot.durability > 0:
         days: int = int((now - user.farm.watering_pot.update).total_seconds() // global_config.day_second)
         user.farm.watering_pot.durability -= days
