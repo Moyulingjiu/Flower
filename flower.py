@@ -165,8 +165,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise '格式错误！格式“花店成就 【页码】”页码可省略。'
-            elif message[:4] == '花店精简成就':
-                data = message[4:].strip()
+            elif message[:6] == '花店精简成就':
+                data = message[6:].strip()
                 try:
                     if len(data) > 0:
                         page: int = int(data) - 1
@@ -942,10 +942,10 @@ class AdminHandler:
                 raise '格式错误！格式“@xxx 花店成就 【页码】”页码可省略。'
             except UserNotRegisteredException:
                 return '对方未注册'
-        elif message[:4] == '花店精简成就':
+        elif message[:6] == '花店精简成就':
             if len(at_list) != 1:
                 raise TypeException('格式错误，格式“@xxx 花店精简成就 【页码】”，页码可省略')
-            data = message[4:].strip()
+            data = message[6:].strip()
             try:
                 if len(data) > 0:
                     page: int = int(data) - 1
