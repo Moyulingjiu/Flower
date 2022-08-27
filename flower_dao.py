@@ -308,11 +308,12 @@ def unlock(key: str) -> int:
 
 
 ####################################################################################################
-def put_user_rank(user: User, user_statistics: UserStatistics):
+def put_user_rank(user: User, user_statistics: UserStatistics = None):
     put_gold_rank(user.qq, user.gold)
     put_exp_rank(user.qq, user.exp)
     put_total_gold_rank(user.qq, user.total_gold)
-    put_draw_card_rank(user.qq, user_statistics.draw_times)
+    if user_statistics is not None:
+        put_draw_card_rank(user.qq, user_statistics.draw_times)
 
 
 def put_gold_rank(qq: int, gold: int):
