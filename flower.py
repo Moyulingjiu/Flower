@@ -2931,7 +2931,7 @@ class FlowerService:
         res += '\n所在城市：' + city.city_name
         res += '\n金币：' + util.show_gold(user.gold)
         gold_rank: int = flower_dao.get_gold_rank(qq) + 1
-        res += '（排名：%d）' % gold_rank
+        res += '（第%d名）' % gold_rank
         res += '\n仓库：' + str(len(user.warehouse.items)) + '/' + str(user.warehouse.max_size)
         res += '\n今日还能抽到物品：' + str(user.draw_card_number)
         res += '\n已在花店%d天' % ((datetime.now() - user.create_time).total_seconds() // global_config.day_second + 1)
@@ -4165,7 +4165,7 @@ class FlowerService:
                     if int(user.farm.bad_hour) == flower.withered_time - 1:
                         util.give_achievement(user, '虚惊一场')
                     # 植物学专家（从头完美到结束）
-                    if user.farm.non_perfect_hour == 0:
+                    if user.farm.non_perfect_hour == 0 and flower.level != FlowerLevel.D:
                         util.give_achievement(user, '植物学专家')
                     # 完美主义者（种植一朵C级及以上完美的花）
                     if user.farm.flower_state == FlowerState.perfect and flower.level != FlowerLevel.D:
@@ -4537,6 +4537,8 @@ class FlowerService:
         user: User = util.get_user(qq, username)
         user_statistics: UserStatistics = util.get_user_statistics(qq)
         reply: str = '%s，你的花店统计数据如下：' % user.username
+        reply += '\n连续签到：%d天' % user.sign_continuous
+        reply += '\n总计签到：%d天' % user.sign_count
         reply += '\n赚取的总金币：' + util.show_gold(user.total_gold)
         reply += '\n浇水：%d次' % user_statistics.watering
         reply += '\n铲除：%d次' % user_statistics.remove_flower
@@ -4554,7 +4556,7 @@ class FlowerService:
         reply += '\n收获完美植物：%d次' % plant_times
         reply += '\n抽卡次数：%d次' % user_statistics.draw_times
         draw_card_rank: int = flower_dao.get_draw_card_rank(qq)
-        reply += '（%d名）' % (draw_card_rank + 1)
+        reply += '（第%d名）' % (draw_card_rank + 1)
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
         reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
         return reply
