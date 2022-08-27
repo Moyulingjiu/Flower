@@ -3544,14 +3544,14 @@ class FlowerService:
                 total_page += 1
             if page < 0 or page > total_page:
                 raise PageOutOfRangeException('背包页码超限，总计：' + str(total_page))
-            index = 0
+            index = -1
             for item in user.warehouse.items:
+                index += 1
                 if index < page * page_size:
                     continue
                 if index > (page + 1) * page_size:
                     break
                 reply += '\n' + str(item)
-                index += 1
             reply += '\n------'
             reply += '\n总计页码：' + str(total_page)
         description = ''
