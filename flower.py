@@ -165,6 +165,18 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     return result
                 except ValueError:
                     raise '格式错误！格式“花店成就 【页码】”页码可省略。'
+            elif message[:4] == '花店精简成就':
+                data = message[4:].strip()
+                try:
+                    if len(data) > 0:
+                        page: int = int(data) - 1
+                    else:
+                        page: int = 0
+                    reply = FlowerService.view_user_simple_achievement(qq, username, page)
+                    result.reply_text.append(reply)
+                    return result
+                except ValueError:
+                    raise '格式错误！格式“花店精简成就 【页码】”页码可省略。'
             elif message[:6].lower() == '花店buff':
                 data = message[6:].strip()
                 try:
@@ -918,7 +930,7 @@ class AdminHandler:
                 raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
         elif message[:4] == '花店成就':
             if len(at_list) != 1:
-                raise TypeException('格式错误，格式“@xxx 花店信箱 【序号】”，省略序号查看整个信箱，必须并且只能艾特一人')
+                raise TypeException('格式错误，格式“@xxx 花店成就 【页码】”，页码可省略')
             data = message[4:].strip()
             try:
                 if len(data) > 0:
@@ -928,6 +940,20 @@ class AdminHandler:
                 return FlowerService.view_user_achievement(at_list[0], '', page)
             except ValueError:
                 raise '格式错误！格式“@xxx 花店成就 【页码】”页码可省略。'
+            except UserNotRegisteredException:
+                return '对方未注册'
+        elif message[:4] == '花店精简成就':
+            if len(at_list) != 1:
+                raise TypeException('格式错误，格式“@xxx 花店精简成就 【页码】”，页码可省略')
+            data = message[4:].strip()
+            try:
+                if len(data) > 0:
+                    page: int = int(data) - 1
+                else:
+                    page: int = 0
+                return FlowerService.view_user_simple_achievement(at_list[0], '', page)
+            except ValueError:
+                raise '格式错误！格式“@xxx 花店精简成就 【页码】”页码可省略。'
             except UserNotRegisteredException:
                 return '对方未注册'
         elif message[:6].lower() == '花店buff':
@@ -3303,6 +3329,41 @@ class FlowerService:
         return reply
     
     @classmethod
+    def view_user_simple_achievement(cls, qq: int, username: str, page: int = 0, page_size: int = 20) -> str:
+        """
+        查看成就
+        :param qq:
+        :param username:
+        :param page:
+        :param page_size:
+        :return:
+        """
+        user: User = util.get_user(qq, username)
+        reply: str = '%s，你的精简成就如下（不包含种植植物的）：' % user.username
+        achievement_list = [user.achievement[achievement_name] for achievement_name in user.achievement if
+                            user.achievement[achievement_name].level > 0]
+        achievement_list = [achievement for achievement in achievement_list if
+                            not achievement.name.startswith('擅长') and not achievement.name.endswith('大师')]
+        if len(achievement_list) == 0:
+            reply += '\n你的精简成就栏看起来还空空如也'
+            return reply
+        index = -1
+        for achievement in achievement_list:
+            index += 1
+            if index < page * page_size:
+                continue
+            elif index > (page + 1) * page_size:
+                break
+            reply += '\n' + str(achievement)
+        total = len(achievement_list)
+        if total > page_size:
+            total_page = total // page_size
+            if total % page_size > 0:
+                total_page += 1
+            reply += '\n------\n当前页码：%d/%d，输入“花店成就 %d”查看下一页' % (page + 1, total_page, page + 2)
+        return reply
+    
+    @classmethod
     def view_knowledge(cls, qq: int, username: str, page: int = 0, page_size: int = 20) -> str:
         """
         查看成就
@@ -3458,7 +3519,7 @@ class FlowerService:
         return reply
     
     @classmethod
-    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 30,
+    def view_warehouse(cls, qq: int, username: str, page: int, page_size: int = 20,
                        remove_description: bool = True) -> Tuple[str, str]:
         """
         查看仓库
