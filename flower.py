@@ -3531,6 +3531,8 @@ class FlowerService:
         :param remove_description: 是否移除描述
         :return: 结果
         """
+        if page > 0:
+            page -= 1
         user: User = util.get_user(qq, username)
         total_number = len(user.warehouse.items)
         reply = user.username + '，你的花店仓库如下：' + str(total_number) + '/' + str(user.warehouse.max_size)
