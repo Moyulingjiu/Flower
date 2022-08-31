@@ -4236,6 +4236,7 @@ class FlowerService:
                     # 更新花店第一人
                     if flower.first_user_qq == 0 and user.farm.flower_state == FlowerState.perfect:
                         flower.first_user_qq = qq
+                        flower.first_user_time = datetime.now()
                         flower_dao.update_flower(flower)
                     # 更新user
                     flower_dao.update_user_by_qq(user)
