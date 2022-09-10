@@ -2900,6 +2900,13 @@ class FlowerService:
                     res += '（%s）' % flower.first_user_time.strftime('%Y-%m-%d %H:%M:%S')
             except UserNotRegisteredException:
                 logger.error('第一个种花的人未注册@%d' % flower.first_user_qq)
+        temp_group_text = ''
+        for group in flower.groups:
+            flower_group = flower_dao.select_flower_group(group)
+            if flower_group.valid():
+                temp_group_text += '、' + flower_group.name
+        if len(temp_group_text) > 0:
+            res += '\n专辑：' + temp_group_text[1:]
         
         if level >= 1:
             if len(flower.climate_id) > 0:
