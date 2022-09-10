@@ -12,7 +12,7 @@ __all__ = [
     "FixPointNumber",
     "Region", "Terrain", "Climate", "Soil", "City", "UserStatistics",
     "Condition", "Conditions", "ConditionLevel", "FlowerLevel", "Flower", "Horse", "DecorateHorse",
-    "Cat", "DecorateCat", "Dog", "DecorateDog", "Commodity", "UserPerson",
+    "Cat", "DecorateCat", "Dog", "DecorateDog", "Commodity", "UserPerson", "FlowerGroup",
     "User", "SignRecord", "Weather", "FlowerState", "Mail", "MailBox", "Clothing",
     "Farm", "Item", "DecorateItem", "WareHouse", "ItemType", "FlowerQuality",
     "SystemData", "Announcement", "Buff", "DecorateBuff", "Achievement", "DecorateAchievement",

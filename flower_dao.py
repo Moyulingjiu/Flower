@@ -28,6 +28,7 @@ mongo_climate = mongo_db['climate']  # 气候
 mongo_soil = mongo_db['soil']  # 土壤
 mongo_city = mongo_db['city']  # 城市
 mongo_flower = mongo_db['flower']  # 花卉
+mongo_flower_group = mongo_db['flower_group']  # 花卉专辑
 mongo_user = mongo_db['user']  # 用户
 mongo_item = mongo_db['item']  # 物品
 mongo_weather = mongo_db['weather']  # 天气
@@ -66,6 +67,7 @@ redis_climate_prefix = redis_global_prefix + 'climate_'  # 气候redis前缀（�
 redis_soil_prefix = redis_global_prefix + 'soil_'  # 土壤redis前缀（土壤id）
 redis_city_prefix = redis_global_prefix + 'city_'  # 城市redis前缀（城市id）
 redis_flower_prefix = redis_global_prefix + 'flower_'  # 花redis前缀（花id）
+redis_flower_group_prefix = redis_global_prefix + 'flower_group'  # 花专辑redis前缀
 redis_user_prefix = redis_global_prefix + 'user_'  # 用户redis前缀（用户qq）
 redis_username_prefix = redis_global_prefix + 'username_'  # 用户名redis前缀（用户qq）
 redis_item_prefix = redis_global_prefix + 'item_'  # 物品redis前缀（物品id）
@@ -763,6 +765,64 @@ def select_flower_by_name(name: str) -> Flower:
         flower.level = FlowerLevel.get_level(str(flower.level))
         redis_db.set(redis_flower_prefix + name, serialization(flower), ex=get_long_random_expire())
         return flower
+
+
+def insert_flower_group(flower_group: FlowerGroup) -> str:
+    """
+    插入花卉专辑
+    :param flower_group: 花卉专辑
+    :return: id
+    """
+    result = mongo_flower_group.insert_one(class_to_dict(flower_group))
+    redis_db.delete(redis_flower_group_prefix + str(result.inserted_id))
+    redis_db.delete(redis_flower_group_prefix + flower_group.name)
+    return str(result.inserted_id)
+
+
+def update_flower_group(flower_group: FlowerGroup) -> int:
+    """
+    修改花卉专辑
+    :param flower_group: 花卉专辑
+    :return: 结果
+    """
+    result = mongo_flower_group.update_one({"_id": ObjectId(flower_group.get_id())}, {"$set": class_to_dict(flower_group)})
+    redis_db.delete(redis_flower_group_prefix + flower_group.get_id())
+    redis_db.delete(redis_flower_group_prefix + flower_group.name)
+    return result.modified_count
+
+
+def select_flower_group(_id: str) -> FlowerGroup:
+    """
+    根据id查询专辑
+    :param _id: id
+    :return: 专辑
+    """
+    redis_ans = redis_db.get(redis_flower_group_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_flower_group.find_one({"_id": ObjectId(_id), "is_delete": 0})
+        flower_group: FlowerGroup = FlowerGroup()
+        dict_to_class(result, flower_group)
+        redis_db.set(redis_flower_group_prefix + _id, serialization(flower_group), ex=get_long_random_expire())
+        return flower_group
+
+
+def select_flower_group_by_name(name: str) -> FlowerGroup:
+    """
+    根据名字查询专辑
+    :param name: name
+    :return: 专辑
+    """
+    redis_ans = redis_db.get(redis_flower_group_prefix + name)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_flower_group.find_one({"name": name, "is_delete": 0})
+        flower_group: FlowerGroup = FlowerGroup()
+        dict_to_class(result, flower_group)
+        redis_db.set(redis_flower_group_prefix + name, serialization(flower_group), ex=get_long_random_expire())
+        return flower_group
 
 
 def select_user_by_qq(qq: int) -> User:
