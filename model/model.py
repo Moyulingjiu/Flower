@@ -263,7 +263,7 @@ class Flower(EntityClass):
                  water_absorption: int = 0, nutrition_absorption: int = 0,
                  seed_time: int = 0, grow_time: int = 0, mature_time: int = 0,
                  overripe_time: int = 0, withered_time: int = 0, prefect_time: int = 0, flower_yield: int = 1,
-                 first_user_qq: int = 0,
+                 first_user_qq: int = 0, first_user_time: datetime = datetime.now(),
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -307,7 +307,12 @@ class Flower(EntityClass):
         self.flower_yield = flower_yield  # 花的产量
         
         self.first_user_qq = first_user_qq  # 第一个种出来的人
+<<<<<<< HEAD
     
+=======
+        self.first_user_time = first_user_time  # 第一次种出完美的时间
+
+>>>>>>> main
     def valid_climate(self, climate_id: str) -> bool:
         """
         检查是否适宜气候

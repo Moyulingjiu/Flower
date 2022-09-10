@@ -2896,6 +2896,8 @@ class FlowerService:
                 if user.auto_get_name:
                     user.username = '匿名'
                 res += '\n第一个种出完美的人：' + user.username
+                if flower.first_user_time != datetime.now():
+                    res += '（%s）' % flower.first_user_time.strftime('%Y-%m-%d %H:%M:%S')
             except UserNotRegisteredException:
                 logger.error('第一个种花的人未注册@%d' % flower.first_user_qq)
         
@@ -4238,6 +4240,7 @@ class FlowerService:
                     # 更新花店第一人
                     if flower.first_user_qq == 0 and user.farm.flower_state == FlowerState.perfect:
                         flower.first_user_qq = qq
+                        flower.first_user_time = datetime.now()
                         flower_dao.update_flower(flower)
                     # 更新user
                     flower_dao.update_user_by_qq(user)

@@ -569,15 +569,26 @@ def update_farm_condition(user: User, flower: Flower, weather: Weather, check_ti
     else:
         user.farm.temperature += 0.8 * (now_temperature - user.farm.temperature)
         user.farm.humidity -= 1.0 * (1 - weather.humidity / 100)
+    # 温室可以削弱天气的影响
+    rain_factor: float = 1.0
+    if user.farm.greenhouse.max_durability == 0 or user.farm.greenhouse.durability > 0:
+        if user.farm.greenhouse.level == 4:
+            rain_factor: float = 0.1
+        elif user.farm.greenhouse.level == 3:
+            rain_factor: float = 0.2
+        elif user.farm.greenhouse.level == 2:
+            rain_factor: float = 0.5
+        elif user.farm.greenhouse.level == 1:
+            rain_factor: float = 0.9
     # 天气所带来的湿度影响
-    if weather.weather_type == '小雨':
-        user.farm.humidity += 0.5
-    elif weather.weather_type == '中雨':
-        user.farm.humidity += 1.0
-    elif weather.weather_type == '大雨' or '阵雨' in weather.weather_type:
-        user.farm.humidity += 1.3
-    elif weather.weather_type == '强雷暴':
-        user.farm.humidity += 1.5
+    if '强雷暴' in weather.weather_type:
+        user.farm.humidity += 1.2 * rain_factor
+    elif '大雨' in weather.weather_type or '阵雨' in weather.weather_type:
+        user.farm.humidity += 0.7 * rain_factor
+    elif '中雨' in weather.weather_type:
+        user.farm.humidity += 0.4 * rain_factor
+    elif '小雨' in weather.weather_type:
+        user.farm.humidity += 0.1 * rain_factor
     # 花吸收的水分与营养
     if user.farm.flower_state != FlowerState.withered:
         user.farm.humidity -= flower.water_absorption
@@ -1464,14 +1475,14 @@ def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relati
                 else:
                     ratio: float = 1.1
         else:
-            ratio: float = 0.6
+            ratio: float = 0.5
         if relationship.value > 90:
             random_ratio += 0.1
         if item_obj.max_durability > 0:
             duration_ratio: float = item.durability / item_obj.max_durability
         else:
             duration_ratio: float = 1.0
-        # 0.7（非花）+0.2关系+0.1的随机数
+        # 0.5（非花）+0.2关系+0.1的随机数
         total_ratio: float = (ratio + 0.2 * (relationship.value - 50) / 50 + random_ratio * (random.random() - 0.5))
         gold: int = int(item_obj.gold * total_ratio * duration_ratio)
     return gold
