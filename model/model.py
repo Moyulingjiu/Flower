@@ -307,12 +307,8 @@ class Flower(EntityClass):
         self.flower_yield = flower_yield  # 花的产量
         
         self.first_user_qq = first_user_qq  # 第一个种出来的人
-<<<<<<< HEAD
-    
-=======
         self.first_user_time = first_user_time  # 第一次种出完美的时间
 
->>>>>>> main
     def valid_climate(self, climate_id: str) -> bool:
         """
         检查是否适宜气候
