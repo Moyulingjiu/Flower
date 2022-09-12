@@ -248,6 +248,9 @@ class FlowerGroup(EntityClass):
         self.description = description  # 描述
         self.is_activity = is_activity  # 是否是活动
 
+    def __str__(self):
+        return '专辑：%s\n介绍：%s' % (self.name, self.description)
+
 
 class Flower(EntityClass):
     """

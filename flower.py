@@ -74,8 +74,12 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.query_flower(qq, username, name)
                 result.reply_text.append(reply)
                 return result
-            elif message[:4] == '查询专辑':
-                pass
+            elif message[:5] == '查询花专辑':
+                name: str = message[5:].strip()
+                if len(name) > 0:
+                    reply = FlowerService.view_flower_group(name)
+                    result.reply_text.append(reply)
+                    return result
             elif message[:4] == '查询成就':
                 name: str = message[4:].strip()
                 if len(name) == 0 or ObjectId.is_valid(name):
@@ -3158,7 +3162,14 @@ class FlowerService:
         if mail.received:
             reply += '（已领取附件）'
         return reply
-    
+
+    @classmethod
+    def view_flower_group(cls, name: str) -> str:
+        flower_group: FlowerGroup = flower_dao.select_flower_group_by_name(name)
+        if flower_group.valid():
+            return str(flower_group)
+        return '未找到专辑：' + name
+
     @classmethod
     def view_achievement(cls, achievement_name: str) -> str:
         """
