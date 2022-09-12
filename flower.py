@@ -67,6 +67,12 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.query_soil(name)
                 result.reply_text.append(reply)
                 return result
+            elif message[:5] == '查询花专辑':
+                name: str = message[5:].strip()
+                if len(name) > 0:
+                    reply = FlowerService.view_flower_group(name)
+                    result.reply_text.append(reply)
+                    return result
             elif message[:3] == '查询花':
                 name: str = message[3:].strip()
                 if len(name) == 0 or ObjectId.is_valid(name):
@@ -74,12 +80,6 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.query_flower(qq, username, name)
                 result.reply_text.append(reply)
                 return result
-            elif message[:5] == '查询花专辑':
-                name: str = message[5:].strip()
-                if len(name) > 0:
-                    reply = FlowerService.view_flower_group(name)
-                    result.reply_text.append(reply)
-                    return result
             elif message[:4] == '查询成就':
                 name: str = message[4:].strip()
                 if len(name) == 0 or ObjectId.is_valid(name):
