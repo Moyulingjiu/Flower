@@ -4080,7 +4080,7 @@ class FlowerService:
                         decorate_buff.expired_time = datetime.now() + timedelta(seconds=global_config.hour_second * 6)
                         user.buff.append(decorate_buff)
                         return user.username + '，获得buff：%s' % str(decorate_buff)
-                elif item.item_name == '花语卡':
+                elif item.item_name == '花语卡' or item.item_name == '2022中秋花语卡':
                     if item.number != 1:
                         raise UseFailException(user.username + '，该类型物品只能使用一个')
                     if user.farm.flower_id == '':
@@ -4124,7 +4124,7 @@ class FlowerService:
                         else:
                             return user.username + '，你的花花有点沮丧'
                     return user.username + '，好像什么也没有听见'
-                elif item.item_name == '知己知彼':
+                elif item.item_name == '知己知彼' or item.item_name == '2022中秋知己知彼':
                     if item.number != 1:
                         raise UseFailException(user.username + '，该类型物品只能使用一个')
                     context: ViewRelationshipContext = ViewRelationshipContext()
