@@ -90,10 +90,24 @@ async def calibration():
 
 @app.get("/help")
 async def download_help():
+    """
+    下载帮助
+    """
     filename = "doc/帮助.png"
     return FileResponse(
             filename,  # 要下载的文件
             filename="flower_help.png"
+        )
+
+
+async def download_guide():
+    """
+    指南下载
+    """
+    filename = "doc/新手指南.png"
+    return FileResponse(
+            filename,  # 要下载的文件
+            filename="flower_guide.png"
         )
 
 
