@@ -533,34 +533,6 @@ class ItemType(Enum):
         elif item_type == str(cls.coat):
             return cls.coat
         return cls.unknown
-    
-    @classmethod
-    def get_number(cls, item_type) -> int:
-        if item_type == cls.seed:
-            return 1
-        elif item_type == cls.flower:
-            return 2
-        elif item_type == cls.fertilizer:
-            return 3
-        elif item_type == cls.accelerate:
-            return 4
-        elif item_type == cls.props:
-            return 5
-        elif item_type == cls.thermometer:
-            return 6
-        elif item_type == cls.soil_monitoring_station:
-            return 7
-        elif item_type == cls.watering_pot:
-            return 8
-        elif item_type == cls.weather_station:
-            return 9
-        elif item_type == cls.mailbox:
-            return 10
-        elif item_type == cls.greenhouse:
-            return 11
-        elif item_type == cls.warehouse:
-            return 12
-        return 0
 
 
 class FlowerQuality(Enum):
@@ -591,14 +563,6 @@ class FlowerQuality(Enum):
         elif flower_quality == str(cls.normal):
             return cls.normal
         return cls.not_flower
-    
-    @classmethod
-    def get_number(cls, flower_quality) -> int:
-        if flower_quality == cls.perfect:
-            return 1
-        elif flower_quality == cls.normal:
-            return 2
-        return 0
 
 
 class Item(EntityClass):
@@ -739,12 +703,12 @@ class DecorateItem(InnerClass):
             if self.max_durability > 0:
                 return self.durability > other.durability
             if self.flower_quality != FlowerQuality.not_flower:
-                return FlowerQuality.get_number(self.flower_quality) > FlowerQuality.get_number(other.flower_quality)
+                return self.flower_quality > other.flower_quality
             if self.hour > 0 or other.hour > 0:
                 return self.hour < other.hour
             return self.number < other.number
         if self.item_type != other.item_type:
-            return ItemType.get_number(self.item_type) > ItemType.get_number(other.item_type)
+            return self.item_type > other.item_type
         return self.item_name > other.item_name
     
     def __ge__(self, other):
@@ -757,12 +721,12 @@ class DecorateItem(InnerClass):
             if self.max_durability > 0:
                 return self.durability < other.durability
             if self.flower_quality != FlowerQuality.not_flower:
-                return FlowerQuality.get_number(self.flower_quality) < FlowerQuality.get_number(other.flower_quality)
+                return self.flower_quality < other.flower_quality
             if self.hour > 0 or other.hour > 0:
                 return self.hour > other.hour
             return self.number > other.number
         if self.item_type != other.item_type:
-            return ItemType.get_number(self.item_type) < ItemType.get_number(other.item_type)
+            return self.item_type < other.item_type
         return self.item_name < other.item_name
     
     def __le__(self, other):
