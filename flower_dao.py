@@ -107,6 +107,7 @@ redis_user_gold_rank = redis_global_prefix + 'user_gold_rank'  # 用户金币排
 redis_user_total_gold_rank = redis_global_prefix + 'user_total_gold_rank'  # 用户金币排行榜
 redis_user_exp_rank = redis_global_prefix + 'user_exp_rank'  # 用户经验排行榜
 redis_user_draw_card_rank = redis_global_prefix + 'user_draw_card_rank'  # 用户抽卡次数排行榜
+redis_user_sign_rank = redis_global_prefix + 'user_sign_rank'  # 用户签到次数排行榜
 
 ####################################################################################################
 # 全局常量
@@ -316,6 +317,7 @@ def put_user_rank(user: User, user_statistics: UserStatistics = None):
     put_total_gold_rank(user.qq, user.total_gold)
     if user_statistics is not None:
         put_draw_card_rank(user.qq, user_statistics.draw_times)
+    put_sign_rank(user.qq, user.sign_continuous)
 
 
 def put_gold_rank(qq: int, gold: int):
@@ -404,6 +406,28 @@ def get_draw_card_rank_list() -> List[Tuple[str, float]]:
     获取某个人的金币排行
     """
     return redis_db.zrevrange(redis_user_draw_card_rank, 0, 9, withscores=True)
+
+
+def put_sign_rank(qq: int, number: int):
+    """
+    更新抽卡排行榜
+    """
+    mapping: Dict[str, int] = {str(qq): number}
+    redis_db.zadd(redis_user_sign_rank, mapping)
+
+
+def get_sign_rank(qq: int) -> int:
+    """
+    获取某个人的抽卡排行
+    """
+    return redis_db.zrevrank(redis_user_sign_rank, str(qq))
+
+
+def get_sign_rank_list() -> List[Tuple[str, float]]:
+    """
+    获取某个人的金币排行
+    """
+    return redis_db.zrevrange(redis_user_sign_rank, 0, 9, withscores=True)
 
 
 ####################################################################################################

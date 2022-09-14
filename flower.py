@@ -120,6 +120,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_draw_card_rank()
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店签到排行榜':
+                reply = FlowerService.view_sign_rank()
+                result.reply_text.append(reply)
+                return result
             
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -576,6 +580,8 @@ class AdminHandler:
             return FlowerService.view_exp_rank(debug=True)
         elif message == '调试花店抽卡排行榜':
             return FlowerService.view_draw_card_rank(debug=True)
+        elif message == '调试花店签到排行榜':
+            return FlowerService.view_sign_rank(debug=True)
         # 修改他人数据
         elif message == '花店时间':
             return '当前服务器时间：' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -2902,6 +2908,8 @@ class FlowerService:
                 res += '\n第一个种出完美的人：' + user.username
                 if flower.first_user_time != datetime.now():
                     res += '（%s）' % flower.first_user_time.strftime('%Y-%m-%d %H:%M:%S')
+                    if qq == flower.first_user_qq:
+                        res += '【你自己】'
             except UserNotRegisteredException:
                 logger.error('第一个种花的人未注册@%d' % flower.first_user_qq)
         temp_group_text = ''
@@ -4614,6 +4622,24 @@ class FlowerService:
         reply += '\n' + '-' * 6
         reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
         return reply
+
+    @classmethod
+    def view_sign_rank(cls, debug: bool = False) -> str:
+        sign_rank: List[Tuple[str, float]] = flower_dao.get_sign_rank_list()
+        reply = '连续签到排行榜'
+        reply += '\n' + '-' * 6
+        index: int = 0
+        for target in sign_rank:
+            index += 1
+            target_user: User = util.get_user(int(target[0]))
+            if target_user.auto_get_name:
+                target_user.username = '匿名'
+            reply += '\n%d.%s：连续签到%d天' % (index, target_user.username, int(target[1]))
+            if debug:
+                reply += '@%d' % target_user.qq
+        reply += '\n' + '-' * 6
+        reply += '\n排行榜为动态生成，更新将会导致排行榜重置，只需要使用任一指令即可参与排行榜计算'
+        return reply
     
     @classmethod
     def view_user_statistics(cls, qq: int, username: str) -> str:
@@ -4623,7 +4649,8 @@ class FlowerService:
         user: User = util.get_user(qq, username)
         user_statistics: UserStatistics = util.get_user_statistics(qq)
         reply: str = '%s，你的花店统计数据如下：' % user.username
-        reply += '\n连续签到：%d天' % user.sign_continuous
+        sign_rank: int = flower_dao.get_sign_rank(qq)
+        reply += '\n连续签到：%d天（第%d名）' % (user.sign_continuous, sign_rank + 1)
         reply += '\n总计签到：%d天' % user.sign_count
         reply += '\n赚取的总金币：' + util.show_gold(user.total_gold)
         reply += '\n浇水：%d次' % user_statistics.watering
