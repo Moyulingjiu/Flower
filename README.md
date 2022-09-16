@@ -14,7 +14,7 @@
 
 ## 启动
 
-首先安装`Python3`。然后运行`build-dev`，如果是Linux系统运行sh文件，windows系统运行cmd文件。
+首先安装`Python3`。然后安装requirements.txt的依赖。
 
 等待环境安装完成后，就可以直接运行了。
 
@@ -60,6 +60,8 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 >    TrustedHostMiddleware, allowed_hosts=["example.com","*.example.com"] 
 > )
 > ```
+
+更推荐运行的方式是使用docker，项目中有dockerfile，可以直接使用`docker build`命令，也可以自己写compose的配置文件。
 
 ## 版权申明
 
