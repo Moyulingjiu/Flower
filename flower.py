@@ -4219,6 +4219,8 @@ class FlowerService:
                 # 过熟阶段没法拿到完美的花
                 if user.farm.flower_state == FlowerState.perfect and user.farm.hour <= mature_time:
                     item.flower_quality = FlowerQuality.perfect
+                item.create = datetime.now()
+                item.update = datetime.now()
                 try:
                     # 将花插入背包
                     number = item.number
