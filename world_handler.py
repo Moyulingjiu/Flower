@@ -96,27 +96,46 @@ def update_world():
         for person in person_list:
             age: int = int((now - person.born_time).total_seconds() // global_config.day_second)
             
-            # 对当前职业进行判断
+            # 对当前职业进行判断（如果是无业或者学生那么就有概率变成有职业的人）
             profession: Profession = profession_dict[person.profession_id]
             if not profession.valid():
                 profession = random_profession()
+                logger.info('npc<%s>(%s)原职业已失效获得新职业：%s' % (person.name, person.get_id(), profession.name))
             if (profession.name == '无业' or profession.name == '学生') and 25 >= age >= 20:
                 profession = random_profession()
+                logger.info('npc<%s>(%s)从无业或学生获得新职业：%s' % (person.name, person.get_id(), profession.name))
             elif profession.name == '无业' and age > 25:
                 rand = random.random()
                 if rand < 0.05:
                     profession = random_profession()
+                    logger.info('npc<%s>(%s)从无业获得新职业：%s' % (person.name, person.get_id(), profession.name))
             elif 20 > age >= 7:
                 profession = flower_dao.select_profession_by_name('学生')
+                logger.info('npc<%s>(%s)到达上学年纪获得新职业：%s' % (person.name, person.get_id(), profession.name))
             if profession.valid():
                 person.profession_id = profession.get_id()
             
             # 对适合生育年龄的人进行判断
-            if 20 <= age <= 30:
+            if 22 <= age <= 35 and person.gender == Gender.male:
                 rand = random.random()
                 children_number: int = len(person.children)
-                if children_number < 1 and rand < 0.3:
-                    pass
+                # 每年有30%概率生第一胎
+                if children_number < 1 and rand < 0.5:
+                    new_child(person)
+                elif children_number < 2 and rand < 0.3:
+                    new_child(person)
+                elif children_number < 3 and rand < 0.01:
+                    new_child(person)
+                elif rand < 0.00001:
+                    new_child(person)
+
+
+def new_child(person: Person):
+    area: WorldArea = flower_dao.select_world_area(person.born_area_id)
+    child: Person = random_person(born_area=area, age=0)
+    child_id: str = flower_dao.insert_person(child)
+    person.children.append(child_id)
+    logger.info('npc<%s>(%s)生了一个孩子' % (person.name, person.get_id()))
 
 
 def random_generate_world() -> int:
