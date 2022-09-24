@@ -124,6 +124,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_sign_rank()
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店期货列表':
+                pass
             
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -501,6 +503,30 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     raise TypeException('格式错误，格式“花店出售商品 【人物序号】 【物品名字】 【数量】”数量为1可以省略')
                 except ItemNotFoundException:
                     raise TypeException('该物品不存在！')
+            elif message[:4] == '花店送信':
+                data = message[4:].strip()
+                try:
+                    person_number: int = int(data)
+                except ValueError:
+                    raise TypeException('格式错误，格式“花店送信 【人物序号】”')
+            elif message[:4] == '花店开户':
+                data = message[4:].strip()
+                try:
+                    person_number: int = int(data)
+                except ValueError:
+                    raise TypeException('格式错误，格式“花店开户 【人物序号】”')
+            elif message[:6] == '花店买入期货':
+                data = message[6:].strip()
+                try:
+                    pass
+                except ValueError:
+                    raise TypeException('格式错误，格式“花店买入期货 【货品名】 【数量】”，数量为1可以省略')
+            elif message[:6] == '花店卖出期货':
+                data = message[6:].strip()
+                try:
+                    pass
+                except ValueError:
+                    raise TypeException('格式错误，格式“花店卖出期货 【货品名】 【数量】”，数量为1可以省略')
         else:
             if message[:4] == '花店转账':
                 data: str = message[4:]
@@ -3811,7 +3837,7 @@ class FlowerService:
                     system_data.watering_cost_gold / 100)
         user.gold -= cost_gold
         # 浇水多少次加多少经验值
-        user.exp += multiple
+        user.exp += 1
         user_statistics: UserStatistics = util.get_user_statistics(qq)
         user_statistics.watering += multiple
         flower_dao.update_user_statistics(user_statistics)
