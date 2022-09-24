@@ -3839,7 +3839,7 @@ class FlowerService:
         # 浇水多少次加多少经验值
         user.exp += 1
         user_statistics: UserStatistics = util.get_user_statistics(qq)
-        user_statistics.watering += multiple
+        user_statistics.watering += 1
         flower_dao.update_user_statistics(user_statistics)
         flower_dao.update_user_by_qq(user)
         util.unlock_user(qq)
