@@ -1723,7 +1723,7 @@ class WorldControlHandler:
                 reply += '\n%s：%d' % (profession.name, profession_number[profession_id])
             return reply
         elif message[:7] == '花店投放npc':
-            data = message[7:]
+            data = message[7:].strip()
             data_list = data.split(' ')
             if len(data_list) == 1:
                 number: int = 1
