@@ -1722,6 +1722,23 @@ class WorldControlHandler:
                 profession: Profession = flower_dao.select_profession(profession_id)
                 reply += '\n%s：%d' % (profession.name, profession_number[profession_id])
             return reply
+        elif message[:7] == '花店投放npc':
+            data = message[7:]
+            data_list = data.split(' ')
+            if len(data_list) == 1:
+                number: int = 1
+            elif len(data_list) == 2 and data_list[1].isdigit():
+                number: int = int(data_list[1])
+            else:
+                raise TypeException('格式错误！格式“花店投放npc 职业名 数量”')
+            profession: Profession = flower_dao.select_profession_by_name(data_list[0])
+            if not profession.valid():
+                raise TypeException('格式错误！%s不存在' % data_list[0])
+            logger.info('管理员%d创建了npc：%sx%d' % (qq, data_list[0], number))
+            for i in range(number):
+                person: Person = world_handler.random_person(born_profession=profession, min_age=20)
+                flower_dao.insert_person(person)
+            return '创建完成！'
         return ''
 
 
