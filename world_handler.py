@@ -129,6 +129,14 @@ def update_world():
                 elif rand < 0.00001:
                     new_child(person)
 
+            # 如果年龄太大，就有概率死亡（并且不死人也不会死亡）
+            if age >= person.max_age and not person.immortal:
+                rand = random.random()
+                if rand < 0.3:
+                    person.die_time = datetime.now()
+                    person.die = True
+                    person.die_reason = '衰老'
+
 
 def new_child(person: Person):
     area: WorldArea = flower_dao.select_world_area(person.born_area_id)
