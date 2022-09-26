@@ -714,7 +714,7 @@ def check_farm_condition(user: User, flower: Flower, seed_time: int, grow_time: 
             user.farm.flower_state = FlowerState.perfect
         else:
             user.farm.flower_state = FlowerState.normal
-            
+
         # 对于过熟的花，没有办法完美
         if mature_time <= user.farm.hour < overripe_time and user.farm.flower_state == FlowerState.perfect:
             user.farm.flower_state = FlowerState.normal
@@ -1371,18 +1371,27 @@ def generate_today_person(qq: int):
     for _ in range(3):
         # 商人80%，探险家30%，建筑师10%
         rand: float = random.random()
-        if rand < 0.9:
+        if rand < 0.8:
             profession: Profession = flower_dao.select_profession_by_name('商人')
             item_pool: Dict[str, int] = system_data.merchant_item_pool
-        elif rand < 0.95:
+        elif rand < 0.85:
             profession: Profession = flower_dao.select_profession_by_name('探险家')
             item_pool: Dict[str, int] = system_data.explorer_item_pool
-        elif rand < 0.97:
+        elif rand < 0.9:
             profession: Profession = flower_dao.select_profession_by_name('农民')
             item_pool: Dict[str, int] = {}
-        else:
+        elif rand < 0.91:
             profession: Profession = flower_dao.select_profession_by_name('建筑师')
             item_pool: Dict[str, int] = system_data.architect_item_pool
+        elif rand < 0.92:
+            profession: Profession = flower_dao.select_profession_by_name('植物学家')
+            item_pool: Dict[str, int] = {}
+        elif rand < 0.95:
+            profession: Profession = flower_dao.select_profession_by_name('交易员')
+            item_pool: Dict[str, int] = {}
+        else:
+            profession: Profession = flower_dao.select_profession_by_name('邮递员')
+            item_pool: Dict[str, int] = {}
         person: Person = flower_dao.select_random_person_by_profession(profession.get_id())
         if not person.valid():
             continue
@@ -1416,12 +1425,21 @@ def generate_today_person(qq: int):
                 commodity: Commodity = random_choice_pool(system_data.explorer_seed_pool, relationship)
                 if commodity.item_id != '':
                     user_person.commodities.append(commodity)
-        elif profession.name == '农民':
+        elif profession.name == '农民' or profession.name == '植物学家':
             for _ in range(random.randint(1, 3)):
-                if random.random() < 0.3:
-                    flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C, FlowerLevel.B])
+                # 植物学家可以刷新比农民更高等级植物的经验
+                if profession.name == '农民':
+                    if random.random() < 0.3:
+                        flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C, FlowerLevel.B])
+                    else:
+                        flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C])
                 else:
-                    flower: Flower = flower_dao.select_random_flower([FlowerLevel.D, FlowerLevel.C])
+                    if random.random() < 0.01:
+                        flower: Flower = flower_dao.select_random_flower([FlowerLevel.A, FlowerLevel.S])
+                    elif random.random() < 0.3:
+                        flower: Flower = flower_dao.select_random_flower([FlowerLevel.B, FlowerLevel.A])
+                    else:
+                        flower: Flower = flower_dao.select_random_flower([FlowerLevel.C, FlowerLevel.B])
                 if not flower.valid():
                     continue
                 if random.random() < 0.6:
@@ -1448,6 +1466,18 @@ def generate_today_person(qq: int):
                     gold: int = int(1000 * (
                             1.0 - 0.3 * (relationship.value - 50 + random.randint(-5, 5)) / 50))
                 user_person.knowledge[flower.name] = (level, gold)
+        elif profession.name == '邮递员':
+            # 基准税率在10~100，根据关系的好坏最多还有20%的波动
+            user_person.send_mail_price = random.randint(5000, 10000)
+            if relationship.value < 10:
+                user_person.send_mail_price = 1000000
+            elif relationship.value > 90:
+                user_person.send_mail_price = 1000
+            else:
+                user_person.send_mail_price = int(
+                    user_person.send_mail_price * (1.0 - 0.2 * (relationship.value - 10) / 80))
+        elif profession.name == '交易员':
+            user_person.can_create_market_account = True
 
         flower_dao.insert_user_person(user_person)
 

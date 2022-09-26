@@ -9,7 +9,7 @@ __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
     "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
-    "ViewRelationshipContext"
+    "ViewRelationshipContext", "UserSendMailContext"
 ]
 
 
@@ -147,6 +147,28 @@ class AdminSendMailContext(BaseContext):
         self.addressee = addressee  # 收件人QQ号
         self.send_all_user = send_all_user  # 是否发送给所有人
         self.gold = gold  # 附赠的金币
+
+
+class UserSendMailContext(BaseContext):
+    """
+    发送公告的上下文
+    """
+
+    def __init__(self, title: str = '', text: str = '', appendix: List[DecorateItem] = None, username: str = '',
+                 addressee: int = 0, gold: int = 0, postman_name: str = '', postman_id: str = '',
+                 user_person_id: str = ''):
+        super().__init__(3, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        self.title = title  # 标题
+        self.text = text  # 正文
+        if not isinstance(appendix, list):
+            appendix = []
+        self.appendix = appendix  # 附件
+        self.username = username  # 发件人
+        self.addressee = addressee  # 收件人QQ号
+        self.gold = gold  # 附赠的金币
+        self.postman_name = postman_name  # 邮递员姓名
+        self.postman_id = postman_id  # 邮递员id
+        self.user_person_id = user_person_id  # 用户，person关联的id
 
 
 class ClearMailBoxContext(BaseContext):
