@@ -1,7 +1,7 @@
 # coding=utf-8
 import copy
 import random
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from typing import Dict, List, Tuple
 
 from bson import ObjectId
@@ -2460,6 +2460,9 @@ class ContextHandler:
                     flower_dao.insert_context(qq, context)
             # 玩家发送信件
             elif isinstance(context, UserSendMailContext):
+                if context.valid_date != date.today():
+                    del_context_list.append(origin_list[index])
+                    continue
                 if message == '取消':
                     del_context_list.append(origin_list[index])
                     reply = '已为您取消发送信件'
@@ -2502,9 +2505,9 @@ class ContextHandler:
                     reply = '很好！你可以输入以下内容：\n' \
                             '1.“追加附件 物品 数量 【小时数/品质/耐久】”来追加物品\n' \
                             '2.“删除附件 序号”来删除一个附件\n' \
-                            '3.“修改金币 数量”来修改附件附赠的金币\n' \
-                            '4.“修改收件人 QQ号”来修改收件人\n' \
-                            '5.“预览信件”来预览整个信件\n' \
+                            '3.“修改收件人 QQ号”来修改收件人\n' \
+                            '4.“预览信件”来预览整个信件\n' \
+                            '5.“预览账单”来预览发送信件的开销\n' \
                             '6.“确认”发送信件，注意必须要有一个收件人！\n' \
                             '7.“取消”来取消发送'
                     result.context_reply_text.append(reply)
@@ -2521,29 +2524,42 @@ class ContextHandler:
                         mail.text = context.text
                         mail.username = context.username
                         mail.appendix = context.appendix
-                        mail.gold = context.gold
+                        mail.gold = 0
                         mail.arrived = True  # 已经抵达
                         mail.status = '由邮递员%s（%s）送达' % (context.postman_name, context.postman_id)
                         mail.create_time = datetime.now()
                         reply = ''
-
+                        user: User = flower_dao.select_user_by_qq(qq)
                         try:
-                            # 这里目前送信是直接到达，后续要做成延迟到达
                             util.lock_user(context.target_qq)
-                            user: User = util.get_user(context.target_qq)
+                            target_user: User = util.get_user(context.target_qq)
+                            user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
+                            # 扣除用户自己的物品和金币
+                            level_dis: int = abs(target_user.level - user.level)
+                            cost_gold, _ = util.calculate_item_mail_price(level_dis, context.appendix)
+
+                            util.remove_items(user.warehouse, context.appendix)
+                            total_gold: int = cost_gold + user_person.send_mail_price
+                            if total_gold > user.gold:
+                                raise GoldNotEnough('金币不足')
+                            user.gold -= total_gold
+                            flower_dao.update_user_by_qq(user)
+
+                            # 这里目前送信是直接到达，后续要做成延迟到达
                             mail.target_qq = context.target_qq
                             mail_id: str = flower_dao.insert_mail(mail)
-                            user.mailbox.mail_list.append(mail_id)
-                            flower_dao.update_user_by_qq(user)
+                            target_user.mailbox.mail_list.append(mail_id)
+                            flower_dao.update_user_by_qq(target_user)
                             # 送信一次后就不允许送信第二次了
-                            user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
-                            user_person.send_mail_price = 0
+                            user_person.send_mail_price = -1
                             flower_dao.update_user_person(user_person)
                             reply = '送信给%d成功\n目前送信是马上到达，请注意后续版本会改为延迟到达，路上还会遇见事件' % context.target_qq
                         except UserNotRegisteredException:
-                            reply = str(context.target_qq) + '，未注册\n'
+                            reply = str(context.target_qq) + '，未注册'
                         except ResBeLockedException:
-                            reply = str(context.target_qq) + '，无法发送信件\n'
+                            reply = str(context.target_qq) + '，无法发送信件'
+                        except ItemNotEnoughException or ItemNotFoundException or GoldNotEnough:
+                            reply = '物品不足或金币，无法发送信件'
                         finally:
                             if reply == '':
                                 reply = '由于未知原因送信可能失败了！'
@@ -2556,14 +2572,21 @@ class ContextHandler:
                         reply += context.text
                         reply += '\n------\n'
                         reply += '来自：%s' % context.username
-                        if len(context.appendix) > 0 and context.gold > 0:
-                            reply += '\n附件：' + util.show_items(context.appendix) + '、金币（%.2f）' % (
-                                    context.gold / 100)
-                        elif len(context.appendix) > 0:
+                        if len(context.appendix) > 0:
                             reply += '\n附件：' + util.show_items(context.appendix)
-                        elif context.gold > 0:
-                            reply += '\n附件：金币（%.2f）' % (context.gold / 100)
                         reply += '\n收件人：' + str(context.target_qq)
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message == '预览账单':
+                        user: User = flower_dao.select_user_by_qq(qq)
+                        target_user: User = util.get_user(context.target_qq)
+                        user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
+                        level_dis: int = abs(target_user.level - user.level)
+                        cost_gold, bill = util.calculate_item_mail_price(level_dis, context.appendix)
+                        reply = bill + '\n基础运费：%.2f\n------\n合计：%.2f' % (
+                            user_person.send_mail_price / 100,
+                            (cost_gold + user_person.send_mail_price) / 100
+                        )
                         result.context_reply_text.append(reply)
                         continue
                     elif message[:5] == '修改收件人':
@@ -2590,7 +2613,16 @@ class ContextHandler:
                         try:
                             data = message[4:].strip()
                             item: DecorateItem = util.analysis_item(data)
-                            if item.number < 1:
+                            origin_item: Item = flower_dao.select_item_by_name(item.item_name)
+                            if not origin_item.valid():
+                                reply = '物品不存在'
+                                result.context_reply_text.append(reply)
+                                continue
+                            elif origin_item.rot_second > 0:
+                                reply = '不可以邮寄会腐烂的东西'
+                                result.context_reply_text.append(reply)
+                                continue
+                            elif item.number < 1:
                                 reply = '格式错误！格式“追加附件 物品 数量 【小时数/品质/耐久】”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略'
                                 result.context_reply_text.append(reply)
                                 continue
@@ -2623,19 +2655,6 @@ class ContextHandler:
                             reply = '格式错误！格式“删除附件 【附件序号】”'
                             result.context_reply_text.append(reply)
                             continue
-                    elif message[:4] == '修改金币':
-                        try:
-                            gold: int = int(float(message[4:].strip()) * 100)
-                            flower_dao.remove_context(qq, origin_list[index])
-                            context.gold = gold
-                            flower_dao.insert_context(qq, context)
-                            reply = '修改金币为：%.2f' % (gold / 100)
-                            result.context_reply_text.append(reply)
-                        except ValueError:
-                            reply = '格式错误！格式“修改金币 数量”'
-                            result.context_reply_text.append(reply)
-                            continue
-
             # 删除信件
             elif isinstance(context, DeleteMailContext):
                 del_context_list.append(origin_list[index])
@@ -4771,7 +4790,7 @@ class FlowerService:
             if can_bargain:
                 return user.username + '，%s出价单个%.2f，是否要议价，' \
                                        '“是”表示需要议价，“否”表示不需要直接出售，其余输入表示取消' % (
-                       person.name, gold / 100)
+                           person.name, gold / 100)
             else:
                 return user.username + '，%s出价单个%.2f，' \
                                        '“是”表示确认出售，其余输入表示取消' % (person.name, gold / 100)
@@ -4799,6 +4818,7 @@ class FlowerService:
             context.user_person_id = user_person.get_id()
             context.postman_name = person.name
             context.postman_id = person.get_id()
+            context.valid_date = date.today()
             flower_dao.insert_context(qq, context)
             return '请问信件的标题是什么？只可以包含文字。'
         finally:

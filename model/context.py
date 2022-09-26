@@ -155,8 +155,8 @@ class UserSendMailContext(BaseContext):
     """
 
     def __init__(self, title: str = '', text: str = '', appendix: List[DecorateItem] = None, username: str = '',
-                 target_qq: int = 0, gold: int = 0, postman_name: str = '', postman_id: str = '',
-                 user_person_id: str = ''):
+                 target_qq: int = 0, postman_name: str = '', postman_id: str = '', user_person_id: str = '',
+                 valid_date: datetime.date = datetime.date.today()):
         super().__init__(3, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
         self.title = title  # 标题
         self.text = text  # 正文
@@ -165,10 +165,10 @@ class UserSendMailContext(BaseContext):
         self.appendix = appendix  # 附件
         self.username = username  # 发件人
         self.target_qq = target_qq  # 收件人QQ号
-        self.gold = gold  # 附赠的金币
         self.postman_name = postman_name  # 邮递员姓名
         self.postman_id = postman_id  # 邮递员id
         self.user_person_id = user_person_id  # 用户，person关联的id
+        self.valid_date = valid_date  # 有效日期
 
 
 class ClearMailBoxContext(BaseContext):

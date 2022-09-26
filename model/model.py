@@ -662,7 +662,7 @@ class DecorateItem(InnerClass):
         if self.flower_quality != FlowerQuality.not_flower:
             ans += '—' + FlowerQuality.view_name(self.flower_quality)
         if self.max_durability > 0:
-            ans += '（耐久' + '%.1f%%' % (self.durability * 100 / self.max_durability) + '）'
+            ans += '（耐久' + '%d/%d）' % (self.durability, self.max_durability)
         if self.rot_second > 0:
             critical_time: datetime = self.create + timedelta(seconds=self.rot_second)
             ans += '（将在' + critical_time.strftime('%Y-%m-%d %H:%M:%S') + '腐烂）'

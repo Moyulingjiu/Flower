@@ -961,7 +961,6 @@ def calculation_farm_equipment(user: User):
         if days > 0:
             user.farm.thermometer.update = now
         if user.farm.thermometer.durability < 0:
-            user.farm.thermometer.durability = 0
             user.farm.thermometer = DecorateItem()
         if user.farm.thermometer.level >= 3:
             equipment_number += 1
@@ -971,7 +970,6 @@ def calculation_farm_equipment(user: User):
         if days > 0:
             user.farm.watering_pot.update = now
         if user.farm.watering_pot.durability < 0:
-            user.farm.watering_pot.durability = 0
             user.farm.watering_pot = DecorateItem()
         if user.farm.watering_pot.level >= 3:
             equipment_number += 1
@@ -981,7 +979,6 @@ def calculation_farm_equipment(user: User):
         if days > 0:
             user.farm.mailbox.update = now
         if user.farm.mailbox.durability < 0:
-            user.farm.mailbox.durability = 0
             user.farm.mailbox = DecorateItem()
         if user.farm.mailbox.level >= 3:
             equipment_number += 1
@@ -991,7 +988,6 @@ def calculation_farm_equipment(user: User):
         if days > 0:
             user.farm.greenhouse.update = now
         if user.farm.greenhouse.durability < 0:
-            user.farm.greenhouse.durability = 0
             user.farm.greenhouse = DecorateItem()
         if user.farm.greenhouse.level >= 3:
             equipment_number += 1
@@ -1002,7 +998,6 @@ def calculation_farm_equipment(user: User):
             user.farm.warehouse.update = now
         user.farm.warehouse.durability -= int((now - user.farm.warehouse.update).days)
         if user.farm.warehouse.durability < 0:
-            user.farm.warehouse.durability = 0
             user.farm.warehouse = DecorateItem()
         user.farm.warehouse.update = now
         if user.farm.warehouse.level >= 3:
@@ -1013,7 +1008,6 @@ def calculation_farm_equipment(user: User):
         if days > 0:
             user.farm.air_condition.update = now
         if user.farm.air_condition.durability < 0:
-            user.farm.air_condition.durability = 0
             user.farm.air_condition = DecorateItem()
         if user.farm.air_condition.level >= 3:
             equipment_number += 1
@@ -1386,9 +1380,9 @@ def generate_today_person(qq: int):
         elif rand < 0.92:
             profession: Profession = flower_dao.select_profession_by_name('植物学家')
             item_pool: Dict[str, int] = {}
-        elif rand < 0.95:
-            profession: Profession = flower_dao.select_profession_by_name('交易员')
-            item_pool: Dict[str, int] = {}
+        # elif rand < 0.95:
+        #     profession: Profession = flower_dao.select_profession_by_name('交易员')
+        #     item_pool: Dict[str, int] = {}
         else:
             profession: Profession = flower_dao.select_profession_by_name('邮递员')
             item_pool: Dict[str, int] = {}
@@ -1399,6 +1393,7 @@ def generate_today_person(qq: int):
         user_person.qq = qq
         user_person.person_id = person.get_id()
         user_person.create_time = datetime.now()
+        user_person.update_time = datetime.now()
 
         relationship: Relationship = flower_dao.select_relationship_by_pair(person.get_id(), str(qq))
         if not relationship.valid():
@@ -1547,3 +1542,23 @@ def calculate_user_level(user: User):
                 send_system_mail(user, '升级奖励', '玩家角色达到%d级' % level, [], i * 10 * 100)
             user.level = level
             flower_dao.update_user_by_qq(user)
+
+
+def calculate_item_mail_price(level_dis: int, item_list: List[DecorateItem]) -> Tuple[int, str]:
+    """
+    计算物品邮递费用
+    """
+    cost_gold: int = 0
+    bill: str = ''
+    for item in item_list:
+        origin_item: Item = flower_dao.select_item_by_name(item.item_name)
+        if origin_item.item_type == ItemType.seed:
+            gold: int = int(origin_item.gold * (0.1 + 0.14 * level_dis))
+        elif origin_item.item_type == ItemType.props or origin_item.item_type == ItemType.accelerate or \
+                origin_item.item_type == ItemType.fertilizer:
+            gold: int = int(origin_item.gold * (0.4 + 0.1 * level_dis))
+        else:
+            gold: int = int(origin_item.gold * (0.1 + 0.33 * level_dis))
+        cost_gold += gold
+        bill += '物品%s的费用：%.2f\n' % (item.item_name, gold / 100)
+    return cost_gold, bill[:-1]

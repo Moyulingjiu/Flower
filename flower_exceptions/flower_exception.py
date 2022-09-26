@@ -4,7 +4,7 @@ __all__ = [
     "MyException", "ConfigException", "UserNotRegisteredException", "ItemNegativeNumberException",
     "ItemNotFoundException", "ItemNotEnoughException", "WareHouseSizeNotEnoughException",
     "ResBeLockedException", "AtListNullException", "TypeException", "PageOutOfRangeException",
-    "FunctionArgsException", "UseFailException", "ResourceNotFound"
+    "FunctionArgsException", "UseFailException", "ResourceNotFound", "GoldNotEnough"
 ]
 
 
@@ -124,6 +124,15 @@ class UseFailException(MyException):
 class ResourceNotFound(MyException):
     """
     资源未找到
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
+class GoldNotEnough(MyException):
+    """
+    金币不足
     """
 
     def __init__(self, message):
