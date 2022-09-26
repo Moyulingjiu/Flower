@@ -2538,7 +2538,7 @@ class ContextHandler:
                             level_dis: int = abs(target_user.level - user.level)
                             cost_gold, _ = util.calculate_item_mail_price(level_dis, context.appendix)
 
-                            util.remove_items(user.warehouse, context.appendix)
+                            util.remove_items(user.warehouse, copy.deepcopy(context.appendix))
                             total_gold: int = cost_gold + user_person.send_mail_price
                             if total_gold > user.gold:
                                 raise GoldNotEnough('金币不足')
