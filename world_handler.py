@@ -95,7 +95,7 @@ def update_world():
         person_list: List[Person] = flower_dao.select_all_alive_person(page, page_size)
         for person in person_list:
             age: int = int((now - person.born_time).total_seconds() // global_config.day_second)
-            
+
             # 对当前职业进行判断（如果是无业或者学生那么就有概率变成有职业的人）
             profession: Profession = profession_dict[person.profession_id]
             if not profession.valid():
@@ -114,7 +114,7 @@ def update_world():
                 logger.info('npc<%s>(%s)到达上学年纪获得新职业：%s' % (person.name, person.get_id(), profession.name))
             if profession.valid():
                 person.profession_id = profession.get_id()
-            
+
             # 对适合生育年龄的人进行判断
             if 22 <= age <= 35 and person.gender == Gender.male:
                 rand = random.random()
@@ -136,6 +136,9 @@ def update_world():
                     person.die_time = datetime.now()
                     person.die = True
                     person.die_reason = '衰老'
+
+            # 更新npc
+            flower_dao.update_person(person)
 
 
 def new_child(person: Person):
@@ -351,7 +354,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
     last_name_list: List[PersonLastName] = flower_dao.select_all_person_last_name()
     person_name: PersonName = flower_dao.select_random_person_name(Gender.male)
     person.name = random.choice(last_name_list).value + person_name.value
-    
+
     # 给予身高
     if person.gender == Gender.male:
         person.height = random.random() * (2.1 - 1.5) + 1.5
@@ -363,7 +366,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
     else:
         bmi: float = random.random() * (27 - 18) + 18
     person.weight = bmi * (person.height * person.height)
-    
+
     # 出生地
     if born_area is None:
         area_list: List[WorldArea] = flower_dao.select_all_world_area()
@@ -380,7 +383,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
     else:
         race: Race = flower_dao.select_world_race(area.race_id)
         person.race_id = area.race_id
-    
+
     # 该地区所在的帝国为其祖国
     kingdom_list: List[Kingdom] = flower_dao.select_all_kingdom()
     for kingdom in kingdom_list:
@@ -389,7 +392,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
             break
     if person.motherland == '':
         person.motherland = random.choice(kingdom_list).get_id()
-    
+
     # 获取职业，随机职业
     if born_profession is None:
         profession_list: List[Profession] = flower_dao.select_all_profession()
@@ -397,7 +400,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
     else:
         profession = born_profession
     person.profession_id = profession.get_id()
-    
+
     # 角色的各项属性
     person.wisdom = int(np.random.normal(50, 15, 1)[0])
     person.leadership = int(np.random.normal(50, 15, 1)[0])
@@ -470,7 +473,7 @@ def random_person(born_area: WorldArea = None, born_profession: Profession = Non
         person.wisdom = person.wisdom * get_random_ratio(0.8)
         person.affinity = person.affinity * get_random_ratio(1.2)
         person.bravery_or_cowardly = person.bravery_or_cowardly * get_random_ratio(-0.8)
-    
+
     # 根据健康值来确定角色的最大年龄
     if person.health < 20:
         person.max_age = random.randint(1, 30)
