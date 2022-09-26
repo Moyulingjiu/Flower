@@ -1380,9 +1380,9 @@ def generate_today_person(qq: int):
         elif rand < 0.92:
             profession: Profession = flower_dao.select_profession_by_name('植物学家')
             item_pool: Dict[str, int] = {}
-        # elif rand < 0.95:
-        #     profession: Profession = flower_dao.select_profession_by_name('交易员')
-        #     item_pool: Dict[str, int] = {}
+        elif rand < 0.95:
+            profession: Profession = flower_dao.select_profession_by_name('交易员')
+            item_pool: Dict[str, int] = {}
         else:
             profession: Profession = flower_dao.select_profession_by_name('邮递员')
             item_pool: Dict[str, int] = {}

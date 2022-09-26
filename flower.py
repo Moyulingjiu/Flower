@@ -2548,7 +2548,8 @@ class ContextHandler:
                             # 这里目前送信是直接到达，后续要做成延迟到达
                             mail.target_qq = context.target_qq
                             mail_id: str = flower_dao.insert_mail(mail)
-                            target_user.mailbox.mail_list.append(mail_id)
+                            if len(target_user.mailbox.mail_list) < target_user.mailbox.max_size:
+                                target_user.mailbox.mail_list.append(mail_id)
                             flower_dao.update_user_by_qq(target_user)
                             # 送信一次后就不允许送信第二次了
                             user_person.send_mail_price = -1
@@ -4603,9 +4604,9 @@ class FlowerService:
         if user_person.send_mail_price > 0:
             reply += '\n可以送信，基本费用：%.2f' % (user_person.send_mail_price / 100)
             reply += '\n' + '-' * 6
-        if user_person.can_create_market_account:
-            reply += '\n可以给期货市场开户'
-            reply += '\n' + '-' * 6
+        # if user_person.can_create_market_account:
+        #     reply += '\n可以给期货市场开户'
+        #     reply += '\n' + '-' * 6
         util.unlock_user(qq)
         return reply
 
