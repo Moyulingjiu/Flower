@@ -844,9 +844,9 @@ class AdminHandler:
         elif message == '给予buff':
             context: GiveBuffContext = GiveBuffContext()
             if len(at_list) > 0:
-                context.target_qq = at_list
+                context.target_qq_list = at_list
             else:
-                context.target_qq.append(qq)
+                context.target_qq_list.append(qq)
             flower_dao.insert_context(qq, context)
             return '请问buff名字是什么？（输入“取消”来取消）'
         elif message[:8] == '删除花店buff':
@@ -2510,7 +2510,7 @@ class ContextHandler:
                     result.context_reply_text.append(reply)
                 elif context.step == 3:
                     if message == '确认':
-                        if context.addressee == 0:
+                        if context.target_qq == 0:
                             reply = '没有任何收件人！请修改收件人'
                             result.context_reply_text.append(reply)
                             continue
@@ -2529,9 +2529,9 @@ class ContextHandler:
 
                         try:
                             # 这里目前送信是直接到达，后续要做成延迟到达
-                            util.lock_user(context.addressee)
-                            user: User = util.get_user(context.addressee)
-                            mail.target_qq = context.addressee
+                            util.lock_user(context.target_qq)
+                            user: User = util.get_user(context.target_qq)
+                            mail.target_qq = context.target_qq
                             mail_id: str = flower_dao.insert_mail(mail)
                             user.mailbox.mail_list.append(mail_id)
                             flower_dao.update_user_by_qq(user)
@@ -2539,15 +2539,15 @@ class ContextHandler:
                             user_person: UserPerson = flower_dao.select_user_person(context.user_person_id)
                             user_person.send_mail_price = 0
                             flower_dao.update_user_person(user_person)
-                            reply = '送信给%d成功\n目前送信是马上到达，请注意后续版本会改为延迟到达，路上还会遇见事件' % context.addressee
+                            reply = '送信给%d成功\n目前送信是马上到达，请注意后续版本会改为延迟到达，路上还会遇见事件' % context.target_qq
                         except UserNotRegisteredException:
-                            reply = str(context.addressee) + '，未注册\n'
+                            reply = str(context.target_qq) + '，未注册\n'
                         except ResBeLockedException:
-                            reply = str(context.addressee) + '，无法发送信件\n'
+                            reply = str(context.target_qq) + '，无法发送信件\n'
                         finally:
                             if reply == '':
                                 reply = '由于未知原因送信可能失败了！'
-                            util.unlock_user(context.addressee)
+                            util.unlock_user(context.target_qq)
                         result.context_reply_text.append(reply)
                         continue
                     elif message == '预览信件':
@@ -2563,7 +2563,7 @@ class ContextHandler:
                             reply += '\n附件：' + util.show_items(context.appendix)
                         elif context.gold > 0:
                             reply += '\n附件：金币（%.2f）' % (context.gold / 100)
-                        reply += '\n收件人：' + str(context.addressee)
+                        reply += '\n收件人：' + str(context.target_qq)
                         result.context_reply_text.append(reply)
                         continue
                     elif message[:5] == '修改收件人':
@@ -2572,11 +2572,11 @@ class ContextHandler:
                             flower_dao.remove_context(qq, origin_list[index])
                             if target_qq == qq:
                                 reply = '不可以送信给自己！'
-                            elif target_qq != context.addressee:
+                            elif target_qq != context.target_qq:
                                 try:
                                     util.get_user(target_qq)
                                     reply = '成功修改收件人！'
-                                    context.addressee = target_qq
+                                    context.target_qq = target_qq
                                 except UserNotRegisteredException:
                                     reply = '对方未注册！'
                             else:
@@ -2726,7 +2726,7 @@ class ContextHandler:
                         result.context_reply_text.append(reply)
                         continue
                     context.buff.expired_time = datetime.now() + timedelta(seconds=context.expire_seconds)
-                    for target_qq in context.target_qq:
+                    for target_qq in context.target_qq_list:
                         if target_qq != qq:
                             util.lock_user(target_qq)
                         target_user: User = util.get_user(target_qq)
@@ -2740,7 +2740,7 @@ class ContextHandler:
                 elif context.step == 3:
                     if message == '确认':
                         context.buff.expired_time = datetime.now() + timedelta(seconds=context.expire_seconds)
-                        for target_qq in context.target_qq:
+                        for target_qq in context.target_qq_list:
                             if target_qq != qq:
                                 util.lock_user(target_qq)
                             target_user: User = util.get_user(target_qq)

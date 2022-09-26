@@ -155,7 +155,7 @@ class UserSendMailContext(BaseContext):
     """
 
     def __init__(self, title: str = '', text: str = '', appendix: List[DecorateItem] = None, username: str = '',
-                 addressee: int = 0, gold: int = 0, postman_name: str = '', postman_id: str = '',
+                 target_qq: int = 0, gold: int = 0, postman_name: str = '', postman_id: str = '',
                  user_person_id: str = ''):
         super().__init__(3, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
         self.title = title  # 标题
@@ -164,7 +164,7 @@ class UserSendMailContext(BaseContext):
             appendix = []
         self.appendix = appendix  # 附件
         self.username = username  # 发件人
-        self.addressee = addressee  # 收件人QQ号
+        self.target_qq = target_qq  # 收件人QQ号
         self.gold = gold  # 附赠的金币
         self.postman_name = postman_name  # 邮递员姓名
         self.postman_id = postman_id  # 邮递员id
@@ -195,11 +195,11 @@ class GiveBuffContext(BaseContext):
     给予buff
     """
     
-    def __init__(self, target_qq: List[int] = None, buff: DecorateBuff = DecorateBuff(), expire_seconds: int = 0):
+    def __init__(self, target_qq_list: List[int] = None, buff: DecorateBuff = DecorateBuff(), expire_seconds: int = 0):
         super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
-        if target_qq is None:
-            target_qq = []
-        self.target_qq = target_qq
+        if target_qq_list is None:
+            target_qq_list = []
+        self.target_qq_list = target_qq_list
         self.buff = buff
         self.expire_seconds = expire_seconds
 
