@@ -100,6 +100,7 @@ async def download_help():
         )
 
 
+@app.get("/guide")
 async def download_guide():
     """
     指南下载
