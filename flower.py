@@ -526,9 +526,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 data = message[4:].strip()
                 try:
                     person_index: int = int(data)
-                    reply = FlowerService.create_account(qq, username, person_index)
-                    result.reply_text.append(reply)
-                    return result
+                    # reply = FlowerService.create_account(qq, username, person_index)
+                    # result.reply_text.append(reply)
+                    # return result
                 except ValueError:
                     raise TypeException('格式错误，格式“花店开户 【人物序号】”')
             elif message[:6] == '花店买入期货':

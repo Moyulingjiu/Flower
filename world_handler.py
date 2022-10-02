@@ -116,17 +116,17 @@ def update_world():
                 person.profession_id = profession.get_id()
 
             # 对适合生育年龄的人进行判断
-            if 22 <= age <= 35 and person.gender == Gender.male:
+            if 22 <= age <= 40 and person.gender == Gender.male:
                 rand = random.random()
                 children_number: int = len(person.children)
                 # 每年有30%概率生第一胎
-                if children_number < 1 and rand < 0.5:
+                if children_number < 1 and rand <= 0.8:
                     new_child(person)
-                elif children_number < 2 and rand < 0.3:
+                elif children_number < 2 and rand < 0.6:
                     new_child(person)
-                elif children_number < 3 and rand < 0.01:
+                elif children_number < 3 and rand < 0.1:
                     new_child(person)
-                elif rand < 0.00001:
+                elif rand < 0.0001:
                     new_child(person)
 
             # 如果年龄太大，就有概率死亡（并且不死人也不会死亡）
