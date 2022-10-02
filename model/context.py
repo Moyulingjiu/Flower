@@ -9,7 +9,7 @@ __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
     "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
-    "ViewRelationshipContext", "UserSendMailContext"
+    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm"
 ]
 
 
@@ -223,6 +223,15 @@ class CommodityBargainingContext(BaseContext):
 class ViewRelationshipContext(BaseContext):
     """
     探查npc好感度
+    """
+
+    def __init__(self):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+
+
+class CreateAccountConfirm(BaseContext):
+    """
+    确认开通账户
     """
 
     def __init__(self):

@@ -52,6 +52,12 @@ mongo_user_statistics = mongo_db['user_statistics']  # 统计数据
 mongo_person_last_name = mongo_db['person_last_name']  # npc姓氏
 mongo_person_name = mongo_db['person_name']  # npc名
 
+mongo_user_account = mongo_db['user_account']  # 花店账户
+mongo_debt = mongo_db['debt']  # 花店欠款
+mongo_stock = mongo_db['stock']  # 花店股票
+mongo_flower_price = mongo_db['flower_price']  # 花店花的价格
+mongo_trade_records = mongo_db['trade_records']  # 交易记录
+
 # Redis
 redis_pool = ConnectionPool(host=global_config.redis_host, port=global_config.redis_port, db=global_config.redis_db,
                             password=global_config.redis_password, decode_responses=True)
@@ -93,6 +99,12 @@ redis_all_profession = redis_global_prefix + 'all_profession'  # 所有职业的
 redis_all_disease = redis_global_prefix + 'all_disease'  # 所有疾病的redis前缀
 redis_all_kingdom = redis_global_prefix + 'all_kingdom'  # 所有帝国的redis前缀
 redis_user_person_prefix = redis_global_prefix + 'user_person_'  # 用户-npc关系
+
+redis_user_account_prefix = redis_global_prefix + 'user_account_'  # 花店仓库
+redis_debt_prefix = redis_global_prefix + 'debt_'  # 花店欠款
+redis_stock_prefix = redis_global_prefix + 'stock_'  # 花店股票
+redis_flower_price_prefix = redis_global_prefix + 'flower_price_'  # 花店花的价格
+redis_trade_records_prefix = redis_global_prefix + 'trade_records_'  # 交易记录
 
 redis_all_city_prefix = redis_global_prefix + 'city_all'  # 所有城市的前缀
 redis_city_like_prefix = redis_global_prefix + 'city_like_'  # 城市模糊匹配前缀
@@ -202,6 +214,10 @@ def dict_to_inner_class(d: Dict) -> object or None:
         return dict_to_class(d, PathModel())
     elif d['class_type'] == 'Clothing':
         return dict_to_class(d, Clothing())
+    elif d['class_type'] == 'Debt':
+        return dict_to_class(d, Debt())
+    elif d['class_type'] == 'Stock':
+        return dict_to_class(d, Stock())
     return None
 
 
@@ -809,7 +825,8 @@ def update_flower_group(flower_group: FlowerGroup) -> int:
     :param flower_group: 花卉专辑
     :return: 结果
     """
-    result = mongo_flower_group.update_one({"_id": ObjectId(flower_group.get_id())}, {"$set": class_to_dict(flower_group)})
+    result = mongo_flower_group.update_one({"_id": ObjectId(flower_group.get_id())},
+                                           {"$set": class_to_dict(flower_group)})
     redis_db.delete(redis_flower_group_prefix + flower_group.get_id())
     redis_db.delete(redis_flower_group_prefix + flower_group.name)
     return result.modified_count
@@ -1375,7 +1392,8 @@ def update_profession(profession: Profession) -> int:
     :param profession: 职业
     :return: id
     """
-    result = mongo_world_profession.update_one({"_id": ObjectId(profession.get_id())}, {"$set": class_to_dict(profession)})
+    result = mongo_world_profession.update_one({"_id": ObjectId(profession.get_id())},
+                                               {"$set": class_to_dict(profession)})
     redis_db.delete(redis_world_profession_prefix + profession.get_id())
     redis_db.delete(redis_world_profession_prefix + profession.name)
     redis_db.delete(redis_all_profession)
@@ -2064,6 +2082,43 @@ def insert_person_name(person_name: PersonName) -> str:
     :return: id
     """
     result = mongo_person_name.insert_one(class_to_dict(person_name))
+    return str(result.inserted_id)
+
+
+####################################################################################################
+# 交易
+
+def select_user_account_by_qq(qq: int) -> UserAccount:
+    """
+    根据qq选择用户账户
+    """
+    redis_ans = redis_db.get(redis_user_account_prefix + str(qq))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_user_account.find_one({"qq": qq})
+        user_account: UserAccount = UserAccount()
+        dict_to_class(result, user_account)
+        redis_db.set(redis_user_account_prefix + str(qq), serialization(user_account), ex=get_random_expire())
+        return user_account
+
+
+def update_user_account(user_account: UserAccount) -> int:
+    """
+    更新用户账户
+    """
+    result = mongo_user_account.update_one({"_id": ObjectId(user_account.get_id())},
+                                           {"$set": class_to_dict(user_account)})
+    redis_db.delete(redis_user_account_prefix + str(user_account.qq))
+    return result.modified_count
+
+
+def insert_user_account(user_account: UserAccount) -> str:
+    """
+    插入用户账户
+    """
+    result = mongo_user_account.insert_one(class_to_dict(user_account))
+    redis_db.delete(redis_user_account_prefix + str(user_account.qq))
     return str(result.inserted_id)
 
 

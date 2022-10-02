@@ -234,6 +234,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_user_statistics(qq, username)
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店账户':
+                reply = FlowerService.view_user_account(qq, username)
+                result.reply_text.append(reply)
+                return result
 
             # 操作部分
             elif message == '初始化花店':
@@ -515,7 +519,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             elif message[:4] == '花店开户':
                 data = message[4:].strip()
                 try:
-                    person_number: int = int(data)
+                    person_index: int = int(data)
+                    reply = FlowerService.create_account(qq, username, person_index)
+                    result.reply_text.append(reply)
+                    return result
                 except ValueError:
                     raise TypeException('格式错误，格式“花店开户 【人物序号】”')
             elif message[:6] == '花店买入期货':
@@ -530,6 +537,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     pass
                 except ValueError:
                     raise TypeException('格式错误，格式“花店卖出期货 【货品名】 【数量】”，数量为1可以省略')
+            elif message == '花店交易状态':
+                pass
         else:
             if message[:4] == '花店转账':
                 data: str = message[4:]
@@ -3042,6 +3051,31 @@ class ContextHandler:
                                     '注意价格是单价'
                             result.context_reply_text.append(reply)
                             continue
+            # 确认开户
+            elif isinstance(context, CreateAccountConfirm):
+                del_context_list.append(origin_list[index])
+                user: User = util.get_user(qq, username)
+                if message == '确认':
+                    if user.gold >= 1000 * 100:
+                        user.gold -= 1000 * 100
+                        user_account: UserAccount = UserAccount()
+                        user_account.qq = qq
+                        user_account.account_gold = 0
+                        user_account.create_time = datetime.now()
+                        user_account.update_time = datetime.now()
+                        flower_dao.insert_user_account(user_account)
+                        flower_dao.update_user_by_qq(user)
+                        reply = user.username + '，开户成功！'
+                        attention: str = '注意事项：\n' \
+                                         '1.花店股市（期货）交易与现实无关，请勿代入现实，投资有风险须谨慎操作\n' \
+                                         '2.如果你在股市中资不抵债，可以申请破产，“花店申请破产”，你将会失去一切东西，包括农场' \
+                                         '的道具、花、仓库中的道具、所有的金币'
+                        result.context_reply_text.append(attention)
+                    else:
+                        reply = user.username + '，金币不足，无法开户'
+                else:
+                    reply = user.username + '，已取消开户'
+                result.context_reply_text.append(reply)
 
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
@@ -4604,9 +4638,9 @@ class FlowerService:
         if user_person.send_mail_price > 0:
             reply += '\n可以送信，基本费用：%.2f' % (user_person.send_mail_price / 100)
             reply += '\n' + '-' * 6
-        # if user_person.can_create_market_account:
-        #     reply += '\n可以给期货市场开户'
-        #     reply += '\n' + '-' * 6
+        if user_person.can_create_market_account:
+            reply += '\n可以给期货市场开户'
+            reply += '\n' + '-' * 6
         util.unlock_user(qq)
         return reply
 
@@ -4824,6 +4858,43 @@ class FlowerService:
             return '请问信件的标题是什么？只可以包含文字。'
         finally:
             util.unlock_user(qq)
+
+    @classmethod
+    def create_account(cls, qq: int, username: str, person_index: int) -> str:
+        """
+        花店开户
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        try:
+            user_person_list: List[UserPerson] = util.get_today_person(qq)
+            if person_index > 0:
+                person_index -= 1
+            if person_index < 0 or person_index >= len(user_person_list):
+                return user.username + '，人物序号超限'
+            user_person: UserPerson = user_person_list[person_index]
+            if not user_person.can_create_market_account:
+                return user.username + '，对方不能帮你开户'
+            user_account: UserAccount = util.get_user_account(qq)
+            if user_account.valid():
+                return user.username + '，你已经开过户了'
+            context: CreateAccountConfirm = CreateAccountConfirm()
+            flower_dao.insert_context(qq, context)
+            return user.username + '，开户将会花费1000金币，确定要开户吗？\n输入“确认”表示确认，其余任何输入表示取消'
+        finally:
+            util.unlock_user(qq)
+
+    @classmethod
+    def view_user_account(cls, qq: int, username: str) -> str:
+        user: User = util.get_user(qq, username)
+        user_account: UserAccount = util.get_user_account(qq)
+        if not user_account.valid():
+            return user.username + '，你还没有开户'
+        reply = user.username + '，你的花店账户如下：'
+        reply += '\n账户金币：%s' % util.show_gold(user_account.account_gold)
+        reply += '\n持有的期货：%d种' % len(user_account.hold_stock)
+        reply += '\n欠款：%d种' % len(user_account.debt_list)
+        return reply
 
     @classmethod
     def view_gold_rank(cls, debug: bool = False) -> str:
