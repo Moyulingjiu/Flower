@@ -84,6 +84,8 @@ def get_user_account(qq: int) -> UserAccount:
     获取用户账户
     """
     user_account: UserAccount = flower_dao.select_user_account_by_qq(qq)
+    if not user_account.valid():
+        raise NoAccount('')
     return user_account
 
 

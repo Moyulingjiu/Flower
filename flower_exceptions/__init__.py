@@ -5,5 +5,5 @@ __all__ = [
     "MyException", "ConfigException", "UserNotRegisteredException", "ItemNegativeNumberException",
     "ItemNotFoundException", "ItemNotEnoughException", "WareHouseSizeNotEnoughException",
     "ResBeLockedException", "AtListNullException", "TypeException", "PageOutOfRangeException",
-    "FunctionArgsException", "UseFailException", "ResourceNotFound", "GoldNotEnough"
+    "FunctionArgsException", "UseFailException", "ResourceNotFound", "GoldNotEnough", "NoAccount"
 ]

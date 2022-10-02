@@ -328,7 +328,8 @@ def unlock(key: str) -> int:
 
 ####################################################################################################
 def put_user_rank(user: User, user_statistics: UserStatistics = None):
-    put_gold_rank(user.qq, user.gold)
+    user_account: UserAccount = select_user_account_by_qq(user.qq)
+    put_gold_rank(user.qq, user.gold + user_account.account_gold)
     put_exp_rank(user.qq, user.exp)
     put_total_gold_rank(user.qq, user.total_gold)
     if user_statistics is not None:

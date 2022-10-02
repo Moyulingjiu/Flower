@@ -238,6 +238,12 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_user_account(qq, username)
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店交易状态':
+                pass
+            elif message == '花店持仓状态':
+                pass
+            elif message == '花店欠款状态':
+                pass
 
             # 操作部分
             elif message == '初始化花店':
@@ -537,8 +543,26 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                     pass
                 except ValueError:
                     raise TypeException('格式错误，格式“花店卖出期货 【货品名】 【数量】”，数量为1可以省略')
-            elif message == '花店交易状态':
-                pass
+            elif message[:6] == '花店转入金币':
+                data = message[6:]
+                try:
+                    gold_float: float = float(data)
+                    gold: int = int(gold_float * 100)
+                except ValueError:
+                    raise TypeException('格式错误！格式“花店转入金币 金币数量”')
+                reply = FlowerService.transfer_in(qq, username, gold)
+                result.reply_text.append(reply)
+                return result
+            elif message[:6] == '花店转出金币':
+                data = message[6:]
+                try:
+                    gold_float: float = float(data)
+                    gold: int = int(gold_float * 100)
+                except ValueError:
+                    raise TypeException('格式错误！格式“花店转出金币 金币数量”')
+                reply = FlowerService.transfer_out(qq, username, gold)
+                result.reply_text.append(reply)
+                return result
         else:
             if message[:4] == '花店转账':
                 data: str = message[4:]
@@ -579,6 +603,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                        '2.账号风险行为，耐心等待两小时重置\n'
                        '3.网络波动'
         )
+    except NoAccount:
+        return Result.init(reply_text='您没有花店账户，需要在交易员处进行开户才能进行交易')
     except AtListNullException as e:
         return Result.init(reply_text=e.message)
     except TypeException as e:
@@ -4875,12 +4901,13 @@ class FlowerService:
             user_person: UserPerson = user_person_list[person_index]
             if not user_person.can_create_market_account:
                 return user.username + '，对方不能帮你开户'
-            user_account: UserAccount = util.get_user_account(qq)
-            if user_account.valid():
+            try:
+                user_account: UserAccount = util.get_user_account(qq)
+                context: CreateAccountConfirm = CreateAccountConfirm()
+                flower_dao.insert_context(qq, context)
+                return user.username + '，开户将会花费1000金币，确定要开户吗？\n输入“确认”表示确认，其余任何输入表示取消'
+            except NoAccount:
                 return user.username + '，你已经开过户了'
-            context: CreateAccountConfirm = CreateAccountConfirm()
-            flower_dao.insert_context(qq, context)
-            return user.username + '，开户将会花费1000金币，确定要开户吗？\n输入“确认”表示确认，其余任何输入表示取消'
         finally:
             util.unlock_user(qq)
 
@@ -4888,8 +4915,6 @@ class FlowerService:
     def view_user_account(cls, qq: int, username: str) -> str:
         user: User = util.get_user(qq, username)
         user_account: UserAccount = util.get_user_account(qq)
-        if not user_account.valid():
-            return user.username + '，你还没有开户'
         reply = user.username + '，你的花店账户如下：'
         reply += '\n账户金币：%s' % util.show_gold(user_account.account_gold)
         reply += '\n持有的期货：%d种' % len(user_account.hold_stock)
@@ -5024,6 +5049,44 @@ class FlowerService:
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
         reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
         return reply
+
+    @classmethod
+    def transfer_in(cls, qq: int, username: str, gold: int) -> str:
+        """
+        转入
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_account: UserAccount = util.get_user_account(qq)
+        try:
+            if user.gold < gold:
+                return user.username + '，金币不足！'
+            user.gold -= gold
+            user_account.account_gold += gold
+            flower_dao.update_user_account(user_account)
+            flower_dao.update_user_by_qq(user)
+            return user.username + '，转入交易账户成功！'
+        finally:
+            util.unlock_user(qq)
+
+    @classmethod
+    def transfer_out(cls, qq: int, username: str, gold: int) -> str:
+        """
+        转出
+        """
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_account: UserAccount = util.get_user_account(qq)
+        try:
+            if user_account.account_gold < gold:
+                return user.username + '，交易账户金币不足！'
+            user.gold += gold
+            user_account.account_gold -= gold
+            flower_dao.update_user_account(user_account)
+            flower_dao.update_user_by_qq(user)
+            return user.username + '，转出交易账户成功！'
+        finally:
+            util.unlock_user(qq)
 
 
 class DrawCard:
