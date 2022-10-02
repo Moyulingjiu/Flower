@@ -4902,12 +4902,12 @@ class FlowerService:
             if not user_person.can_create_market_account:
                 return user.username + '，对方不能帮你开户'
             try:
-                user_account: UserAccount = util.get_user_account(qq)
+                util.get_user_account(qq)
+                return user.username + '，你已经开过户了'
+            except NoAccount:
                 context: CreateAccountConfirm = CreateAccountConfirm()
                 flower_dao.insert_context(qq, context)
                 return user.username + '，开户将会花费1000金币，确定要开户吗？\n输入“确认”表示确认，其余任何输入表示取消'
-            except NoAccount:
-                return user.username + '，你已经开过户了'
         finally:
             util.unlock_user(qq)
 
