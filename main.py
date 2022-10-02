@@ -112,6 +112,18 @@ async def download_guide():
         )
 
 
+@app.get("/admin_guide")
+async def download_guide():
+    """
+    指南下载
+    """
+    filename = "doc/管理员帮助.png"
+    return FileResponse(
+            filename,  # 要下载的文件
+            filename="admin_guide.png"
+        )
+
+
 @app.post("/draw")
 async def draw_card(message: Message):
     """
