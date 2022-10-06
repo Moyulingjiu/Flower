@@ -124,8 +124,20 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_sign_rank()
                 result.reply_text.append(reply)
                 return result
-            elif message == '花店期货列表':
-                pass
+            elif message[:6] == '花店期货列表':
+                data = message[6:].strip()
+                if len(data) > 0:
+                    try:
+                        page: int = int(data)
+                    except ValueError:
+                        raise TypeException('格式错误！格式“花店期货列表 页码”，页码为1可以省略')
+                else:
+                    page: int = 0
+                if page > 0:
+                    page -= 1
+                reply = FlowerService.view_all_trading_flower(page)
+                result.reply_text.append(reply)
+                return result
 
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -3109,6 +3121,31 @@ class ContextHandler:
 
 
 class FlowerService:
+
+    @classmethod
+    def view_all_trading_flower(cls, page, page_size: int = 20) -> str:
+        system_data: SystemData = util.get_system_data()
+        res: str = ''
+        index: int = 0
+        total: int = len(system_data.allow_trading_flower_list)
+        if page * page_size >= total or page < 0:
+            return '页码超限'
+        for flower_id in system_data.allow_trading_flower_list:
+            if index >= (page + 1) * page_size:
+                break
+            if index >= page * page_size:
+                index += 1
+                flower: Flower = flower_dao.select_flower_by_id(flower_id)
+                res += '%d.%s\n' % (index, flower.name)
+            else:
+                index += 1
+        res += '-' * 6 + '\n'
+        total_page = total // page_size
+        if total % page_size > 0:
+            total_page += 1
+        res += '页码：%d/%d' % (page + 1, total_page)
+        return res
+
     @classmethod
     def query_city(cls, name: str) -> str:
         """
