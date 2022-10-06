@@ -129,12 +129,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 if len(data) > 0:
                     try:
                         page: int = int(data)
+                        page -= 1
                     except ValueError:
                         raise TypeException('格式错误！格式“花店期货列表 页码”，页码为1可以省略')
                 else:
                     page: int = 0
-                if page > 0:
-                    page -= 1
                 reply = FlowerService.view_all_trading_flower(page)
                 result.reply_text.append(reply)
                 return result
@@ -3260,6 +3259,10 @@ class FlowerService:
                 temp_group_text += '、' + flower_group.name
         if len(temp_group_text) > 0:
             res += '\n专辑：' + temp_group_text[1:]
+
+        system_data: SystemData = util.get_system_data()
+        if flower.get_id() in system_data.allow_trading_flower_list:
+            res += '\n该花可以参与期货交易'
 
         if level >= 1:
             if len(flower.climate_id) > 0:
