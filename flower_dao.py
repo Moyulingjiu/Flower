@@ -54,7 +54,6 @@ mongo_person_name = mongo_db['person_name']  # npc名
 
 mongo_user_account = mongo_db['user_account']  # 花店账户
 mongo_debt = mongo_db['debt']  # 花店欠款
-mongo_stock = mongo_db['stock']  # 花店股票
 mongo_flower_price = mongo_db['flower_price']  # 花店花的价格
 mongo_trade_records = mongo_db['trade_records']  # 交易记录
 
@@ -2120,6 +2119,162 @@ def insert_user_account(user_account: UserAccount) -> str:
     """
     result = mongo_user_account.insert_one(class_to_dict(user_account))
     redis_db.delete(redis_user_account_prefix + str(user_account.qq))
+    return str(result.inserted_id)
+
+
+def select_today_debt_by_qq(qq: int, select_time: datetime) -> List[TodayDebt]:
+    """
+    根据QQ选择今天内刷新的可选债务
+    """
+    redis_ans = redis_db.get(redis_debt_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        today: datetime = datetime(select_time.year, select_time.month, select_time.day)
+        tomorrow: datetime = today + timedelta(days=1)
+        result = mongo_debt.find(
+            {"qq": qq, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0}).sort([('create_time', 1)])
+        debt_list: List[TodayDebt] = []
+        for debt_result in result:
+            debt: TodayDebt = TodayDebt()
+            dict_to_class(debt_result, debt)
+            debt_list.append(debt)
+        redis_db.set(redis_debt_prefix + str(qq) + '_' + select_time.strftime('%Y_%m_%d'),
+                     serialization(debt_list), ex=get_random_expire())
+        return debt_list
+
+
+def select_debt_by_id(_id: str) -> TodayDebt:
+    """
+    根据id选取今日的债务
+    """
+    redis_ans = redis_db.get(redis_debt_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_debt.find_one({"_id": ObjectId(_id)})
+        debt: TodayDebt = TodayDebt()
+        dict_to_class(result, debt)
+        redis_db.set(redis_debt_prefix + _id, serialization(debt), ex=get_random_expire())
+        return debt
+
+
+def update_today_debt(debt: TodayDebt) -> int:
+    """
+    更新今日可选的债务
+    """
+    result = mongo_debt.update_one({"_id": ObjectId(debt.get_id())},
+                                   {"$set": class_to_dict(debt)})
+    redis_db.delete(redis_debt_prefix + debt.get_id())
+    redis_db.delete(redis_debt_prefix + str(debt.qq) + '_' + debt.create_time.strftime('%Y_%m_%d'))
+    return result.modified_count
+
+
+def insert_debt(debt: TodayDebt) -> str:
+    """
+    插入用户账户
+    """
+    result = mongo_debt.insert_one(class_to_dict(debt))
+    redis_db.delete(redis_debt_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_period_flower_price(flower_id: str, select_time: datetime, days: int = 30) -> List[FlowerPrice]:
+    """
+    根据花的id选择某一天的价格
+    """
+    today: datetime = datetime(select_time.year, select_time.month, select_time.day)
+    end_date: datetime = today + timedelta(days=1)
+    start_date: datetime = end_date - timedelta(days=days)
+    redis_key: str = redis_flower_price_prefix + flower_id + '_' + start_date.strftime(
+        '%Y_%m_%d') + '_' + end_date.strftime('%Y_%m_%d')
+    redis_ans = redis_db.get(redis_key)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_flower_price.find(
+            {"flower_id": flower_id, "create_time": {'$gte': start_date, '$lt': end_date}, "is_delete": 0}).sort(
+            [('create_time', 1)])
+        flower_price_list: List[FlowerPrice] = []
+        for flower_price_result in result:
+            flower_price: FlowerPrice = FlowerPrice()
+            dict_to_class(flower_price_result, flower_price)
+            flower_price_list.append(flower_price)
+
+        redis_db.set(redis_key, serialization(flower_price_list), ex=get_random_expire())
+        return flower_price_list
+
+
+def select_today_flower_price(flower_id: str, select_time: datetime) -> FlowerPrice:
+    """
+    根据花的id选择某一天的价格
+    """
+    redis_ans = redis_db.get(redis_flower_price_prefix + flower_id + '_' + select_time.strftime('%Y_%m_%d'))
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        today: datetime = datetime(select_time.year, select_time.month, select_time.day)
+        tomorrow: datetime = today + timedelta(days=1)
+        result = mongo_flower_price.find_one(
+            {"flower_id": flower_id, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0}).sort(
+            [('create_time', 1)])
+        flower_price: FlowerPrice = FlowerPrice()
+        dict_to_class(result, flower_price)
+        redis_db.set(redis_flower_price_prefix + flower_id + '_' + select_time.strftime('%Y_%m_%d'),
+                     serialization(flower_price), ex=get_random_expire())
+        return flower_price
+
+
+def update_flower_price(flower_price: FlowerPrice) -> int:
+    """
+    更新花的价格
+    """
+    result = mongo_flower_price.update_one({"_id": ObjectId(flower_price.get_id())},
+                                           {"$set": class_to_dict(flower_price)})
+    redis_db.delete(redis_flower_price_prefix + flower_price.get_id())
+    return result.modified_count
+
+
+def insert_flower_price(flower_price: FlowerPrice) -> str:
+    """
+    插入花的价格
+    """
+    result = mongo_flower_price.insert_one(class_to_dict(flower_price))
+    redis_db.delete(redis_flower_price_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_trade_record(_id: str) -> TradeRecords:
+    """
+    根据id查询交易记录
+    """
+    redis_ans = redis_db.get(redis_flower_price_prefix + _id)
+    if redis_ans is not None:
+        return deserialize(redis_ans)
+    else:
+        result = mongo_trade_records.find_one({"_id": ObjectId(_id)})
+        trade_record: TradeRecords = TradeRecords()
+        dict_to_class(result, trade_record)
+        redis_db.set(redis_flower_price_prefix + _id, serialization(trade_record), ex=get_random_expire())
+        return trade_record
+
+
+def update_trade_record(trade_record: TradeRecords) -> int:
+    """
+    更新交易记录
+    """
+    result = mongo_trade_records.update_one({"_id": ObjectId(trade_record.get_id())},
+                                            {"$set": class_to_dict(trade_record)})
+    redis_db.delete(redis_flower_price_prefix + trade_record.get_id())
+    return result.modified_count
+
+
+def insert_trade_record(trade_record: TradeRecords) -> str:
+    """
+    插入交易记录
+    """
+    result = mongo_trade_records.insert_one(class_to_dict(trade_record))
+    redis_db.delete(redis_trade_records_prefix + str(result.inserted_id))
     return str(result.inserted_id)
 
 

@@ -1487,6 +1487,22 @@ def generate_today_person(qq: int):
         flower_dao.insert_user_person(user_person)
 
 
+def generate_today_debt(qq: int):
+    logger.info('开始更新玩家%d的每日债务' % qq)
+    for _ in range(3):
+        # 随机生成三种债务
+        debt: TodayDebt = TodayDebt()
+        debt.qq = qq
+        debt.gold = random.choice([100, 1000, 10000, 50000, 100000, 500000])
+        debt.repayment_day = random.randint(1, 30)
+        debt.daily_interest_rate = random.random() * 10.0
+        debt.rolling_interest = random.choice([True, False])
+        debt.minimum_interest = random.randint(1, debt.repayment_day) * debt.daily_interest_rate
+        debt.borrowing = False
+        debt.create_time = datetime.now()
+        flower_dao.insert_debt(debt)
+
+
 def calculate_item_gold(item: DecorateItem, item_obj: Item, relationship: Relationship,
                         random_ratio: float = 0.1) -> int:
     """

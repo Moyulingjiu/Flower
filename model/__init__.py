@@ -19,7 +19,7 @@ __all__ = [
 
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person", "PathModel",
 
-    "TradeType", "TradeRecords", "FlowerPrice", "Stock", "Debt", "UserAccount",
+    "TradeType", "TradeRecords", "FlowerPrice", "Stock", "Debt", "TodayDebt", "UserAccount",
 
     "WorldTerrain", "WorldArea", "Kingdom", "Relationship", "Person", "Trait", "PersonName", "PersonLastName",
 
