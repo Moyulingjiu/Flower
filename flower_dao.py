@@ -2176,6 +2176,7 @@ def insert_debt(debt: TodayDebt) -> str:
     """
     result = mongo_debt.insert_one(class_to_dict(debt))
     redis_db.delete(redis_debt_prefix + str(result.inserted_id))
+    redis_db.delete(redis_debt_prefix + str(debt.qq) + '_' + debt.create_time.strftime('%Y_%m_%d'))
     return str(result.inserted_id)
 
 

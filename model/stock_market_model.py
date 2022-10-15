@@ -102,37 +102,14 @@ class Stock(InnerClass):
         self.number = number  # 数量
 
 
-class Debt(InnerClass):
-    """
-    债务
-    """
-
-    def __init__(self, gold: int = 0, borrowing_time: datetime = datetime.now(),
-                 repayment_date: datetime = datetime.now(), daily_interest_rate: float = 0.0,
-                 rolling_interest: bool = False, minimum_interest: int = 0,
-                 pawn: List[DecorateItem] = None):
-        super().__init__('Debt')
-
-        self.gold = gold  # 借款金币
-        self.borrowing_time = borrowing_time  # 借款时间
-        self.repayment_date = repayment_date  # 还款时间
-
-        self.daily_interest_rate = daily_interest_rate  # 日利率
-        self.rolling_interest = rolling_interest  # 是否是利滚利（即是否以前一天加上利率的价格算今天的利率）
-        self.minimum_interest = minimum_interest  # 最低利率
-
-        if pawn is None:
-            pawn = []
-        self.pawn = pawn  # 抵押物
-
-
 class TodayDebt(EntityClass):
     """
     今日的可选债务
     """
 
     def __init__(self, qq: int = 0, gold: int = 0, repayment_day: int = 1, daily_interest_rate: float = 0.0,
-                 rolling_interest: bool = False, minimum_interest: int = 0, borrowing: bool = False,
+                 rolling_interest: bool = False, minimum_interest: float = 0.0, mortgage_rates: float = 0.0,
+                 borrowing: bool = False,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -144,8 +121,24 @@ class TodayDebt(EntityClass):
         self.daily_interest_rate = daily_interest_rate  # 日利率
         self.rolling_interest = rolling_interest  # 是否是利滚利（即是否以前一天加上利率的价格算今天的利率）
         self.minimum_interest = minimum_interest  # 最低利率
+        self.mortgage_rates = mortgage_rates  # 抵押率
 
         self.borrowing = borrowing  # 是否有被借走
+
+
+class Debt(InnerClass):
+    """
+    债务
+    """
+
+    def __init__(self, debt_id: str = '', pawn: List[DecorateItem] = None):
+        super().__init__('Debt')
+
+        self.debt_id = debt_id  # 贷款的id
+
+        if pawn is None:
+            pawn = []
+        self.pawn = pawn  # 抵押物
 
 
 class UserAccount(EntityClass):
@@ -153,13 +146,15 @@ class UserAccount(EntityClass):
     用户账户
     """
 
-    def __init__(self, qq: int = 0, account_gold: int = 0, hold_stock: List[Stock] = None, debt_list: List[Debt] = None,
+    def __init__(self, qq: int = 0, account_gold: int = 0, debt_gold: int = 0, hold_stock: List[Stock] = None,
+                 debt_list: List[Debt] = None,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
 
         self.qq = qq  # qq
         self.account_gold = account_gold  # 账户中的金币
+        self.debt_gold = debt_gold  # 账户中欠款的金币
         if hold_stock is None:
             hold_stock = []
         self.hold_stock = hold_stock  # 持有股票、期货

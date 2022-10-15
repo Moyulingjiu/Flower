@@ -249,12 +249,17 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_user_account(qq, username)
                 result.reply_text.append(reply)
                 return result
-            elif message == '花店交易状态':
-                pass
-            elif message == '花店持仓状态':
-                pass
-            elif message == '花店欠款状态':
-                pass
+            elif message[:6] == '花店交易状态':
+                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
+            elif message[:6] == '花店持仓状态':
+                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
+            elif message[:6] == '花店欠款状态':
+                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店欠款状态 页码”')
+            elif message[:6] == '花店可选欠款':
+                index: int = util.get_page(message[6:].strip(), '格式错误！格式“花店可选欠款 页码”')
+                reply: str = FlowerService.view_today_debt_choice(qq, index)
+                result.reply_text.append(reply)
+                return result
 
             # 操作部分
             elif message == '初始化花店':
@@ -3113,7 +3118,132 @@ class ContextHandler:
                 else:
                     reply = user.username + '，已取消开户'
                 result.context_reply_text.append(reply)
-
+            # 贷款
+            elif isinstance(context, DebtContext):
+                if context.step == 0:
+                    if message != '确认':
+                        del_context_list.append(origin_list[index])
+                        reply = '已为您取消贷款'
+                        result.context_reply_text.append(reply)
+                        continue
+                    flower_dao.remove_context(qq, origin_list[index])
+                    context.step += 1
+                    flower_dao.insert_context(qq, context)
+                    pawn_gold: int = round(context.debt.gold * context.debt.mortgage_rates)
+                    reply = "贷款详情：\n" \
+                            "金币：%s\n" \
+                            "还款天数：%d\n" \
+                            "日利率：%.4f%%\n" \
+                            "提前还款最低利率：%.4f%%\n" \
+                            "抵押率：%.4f%%\n" \
+                            "是否是利滚利：%s\n" \
+                            "------\n" \
+                            "至少需要抵押的物品金额：%s\n" \
+                            "1.“抵押 物品 数量 【小时数/品质/耐久】”来抵押某件物品\n" \
+                            "2.“预览抵押账单”来查看目前抵押了多少金币\n" \
+                            "3.“删除抵押 序号”来删除某一个抵押物\n" \
+                            "4.“确认”来确认贷款\n" \
+                            "5.“取消”来取消贷款" % (
+                                util.show_gold(context.debt.gold),
+                                context.debt.repayment_day,
+                                context.debt.daily_interest_rate * 100,
+                                context.debt.minimum_interest * 100,
+                                context.debt.mortgage_rates * 100,
+                                '是' if context.debt.rolling_interest else '否',
+                                util.show_gold(pawn_gold)
+                            )
+                    result.context_reply_text.append(reply)
+                    continue
+                elif context.step == 2:
+                    if message == '取消':
+                        del_context_list.append(origin_list[index])
+                        reply = '已为您取消贷款'
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message == '确认':
+                        cost_gold, _ = util.calculate_item_pawn_price(context.pawn)
+                        pawn_gold: int = round(context.debt.gold * context.debt.mortgage_rates)
+                        if cost_gold < pawn_gold:
+                            reply = '抵押物金额不足！'
+                            result.context_reply_text.append(reply)
+                            continue
+                        user: User = util.get_user(qq, username)
+                        try:
+                            util.remove_items(user.warehouse, context.pawn)
+                        except ItemNotFoundException or ItemNotEnoughException:
+                            reply = '仓库内物品不足！'
+                            result.context_reply_text.append(reply)
+                            continue
+                        flower_dao.update_user_by_qq(user)
+                        user_account: UserAccount = util.get_user_account(qq)
+                        debt: Debt = Debt()
+                        debt.debt_id = context.debt.get_id()
+                        debt.pawn = context.pawn
+                        user_account.debt_list.append(debt)
+                        user_account.debt_gold += context.debt.gold
+                        flower_dao.update_user_account(user_account)
+                        del_context_list.append(origin_list[index])
+                        reply = user.username + '，贷款成功！'
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message == '预览抵押账单':
+                        cost_gold, bill = util.calculate_item_pawn_price(context.pawn)
+                        pawn_gold: int = round(context.debt.gold * context.debt.mortgage_rates)
+                        if cost_gold >= pawn_gold:
+                            state: str = '抵押物足够'
+                        else:
+                            state: str = '抵押物不足'
+                        reply = '%s\n' \
+                                '------\n' \
+                                '%s' % (bill, state)
+                        result.context_reply_text.append(reply)
+                        continue
+                    elif message[:2] == '抵押':
+                        try:
+                            data = message[2:].strip()
+                            item: DecorateItem = util.analysis_item(data)
+                            origin_item: Item = flower_dao.select_item_by_name(item.item_name)
+                            if not origin_item.valid():
+                                reply = '物品不存在'
+                                result.context_reply_text.append(reply)
+                                continue
+                            elif origin_item.rot_second > 0:
+                                reply = '不可以抵押会腐烂的东西'
+                                result.context_reply_text.append(reply)
+                                continue
+                            elif item.number < 1:
+                                reply = '格式错误！格式“抵押 物品 数量 【小时数/品质/耐久】”。加速卡要跟小时，如果物品有耐久度，请跟耐久，如果有品质请跟品质，如果都没有省略'
+                                result.context_reply_text.append(reply)
+                                continue
+                            flower_dao.remove_context(qq, origin_list[index])
+                            context.pawn.append(item)
+                            flower_dao.insert_context(qq, context)
+                            reply = '成功追加物品：%s' % str(item)
+                            result.context_reply_text.append(reply)
+                        except TypeException:
+                            raise '格式错误！格式“抵押 物品 数量 【小时数/品质/耐久】”'
+                        except ItemNotFoundException:
+                            raise '格式错误！物品不存在'
+                    elif message[:4] == '删除抵押':
+                        data = message[4:].strip()
+                        try:
+                            item_index: int = int(data)
+                            if item_index > 0:
+                                item_index -= 1
+                            if item_index < 0 or item_index >= len(context.pawn):
+                                reply = '格式错误！格式“删除抵押 【附件序号】”，序号超出范围'
+                                result.context_reply_text.append(reply)
+                                continue
+                            flower_dao.remove_context(qq, origin_list[index])
+                            item = context.pawn[item_index]
+                            del context.pawn[item_index]
+                            flower_dao.insert_context(qq, context)
+                            reply = '成功删除物品：%s' % str(item)
+                            result.context_reply_text.append(reply)
+                        except ValueError:
+                            reply = '格式错误！格式“删除抵押 【附件序号】”'
+                            result.context_reply_text.append(reply)
+                            continue
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
@@ -4957,6 +5087,7 @@ class FlowerService:
         user_account: UserAccount = util.get_user_account(qq)
         reply = user.username + '，你的花店账户如下：'
         reply += '\n账户金币：%s' % util.show_gold(user_account.account_gold)
+        reply += '\n欠款金币：%s' % util.show_gold(user_account.debt_gold)
         reply += '\n持有的期货：%d种' % len(user_account.hold_stock)
         reply += '\n欠款：%d种' % len(user_account.debt_list)
         return reply
@@ -5120,6 +5251,8 @@ class FlowerService:
         try:
             if user_account.account_gold < gold:
                 return user.username + '，交易账户金币不足！'
+            if user_account.account_gold - gold < user_account.debt_gold:
+                return user.username + '，交易账户金币数不能小于借款金币数。即，借款的钱无法转出交易账户。'
             user.gold += gold
             user_account.account_gold -= gold
             flower_dao.update_user_account(user_account)
@@ -5127,6 +5260,58 @@ class FlowerService:
             return user.username + '，转出交易账户成功！'
         finally:
             util.unlock_user(qq)
+
+    @classmethod
+    def view_today_debt_choice(cls, qq: int, index: int) -> str:
+        """浏览今日的贷款"""
+        util.get_user_account(qq)
+        debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
+        if len(debt_list) == 0:
+            util.generate_today_debt(qq)
+            debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
+        if index >= len(debt_list):
+            return '页码超限！总计页码：%d' % len(debt_list)
+        debt: TodayDebt = debt_list[index]
+        return "金币：%s\n" \
+               "还款天数：%d\n" \
+               "日利率：%.4f%%\n" \
+               "提前还款最低利率：%.4f%%\n" \
+               "抵押率：%.4f%%\n" \
+               "是否是利滚利：%s\n" \
+               "是否已借出：%s\n" \
+               "------\n" \
+               "总计页码：%d" % (
+                   util.show_gold(debt.gold),
+                   debt.repayment_day,
+                   debt.daily_interest_rate * 100,
+                   debt.minimum_interest * 100,
+                   debt.mortgage_rates * 100,
+                   '是' if debt.rolling_interest else '否',
+                   '是' if debt.borrowing else '否',
+                   len(debt_list)
+               )
+
+    @classmethod
+    def get_debt(cls, qq: int, index: int) -> str:
+        """获取今日的某个贷款"""
+        util.get_user_account(qq)
+        debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
+        if len(debt_list) == 0:
+            util.generate_today_debt(qq)
+            debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
+        if index >= len(debt_list):
+            return '页码超限！总计页码：%d' % len(debt_list)
+        debt: TodayDebt = debt_list[index]
+        if debt.borrowing:
+            return '该贷款已借出，不可以重复借'
+        context: DebtContext = DebtContext(debt)
+        flower_dao.insert_context(qq, context)
+        return '借款协议：\n' \
+               '1.本游戏与现实无关，不鼓励现实非必要贷款。\n' \
+               '2.还款日当天晚上23:59分必须还款，如果交易账户资金足够还款将会扣除还款与抵押物，否则将会破产清算失去所有东西\n' \
+               '3.利滚利即上一日的利息会加入下一天的利息计算，反之则不加入。最低还款利息即提前还款也需要至少交这么多利息\n' \
+               '------\n' \
+               '输入“确认”同意上述协议，其余任何输入表示取消。'
 
 
 class DrawCard:

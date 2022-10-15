@@ -1489,15 +1489,20 @@ def generate_today_person(qq: int):
 
 def generate_today_debt(qq: int):
     logger.info('开始更新玩家%d的每日债务' % qq)
-    for _ in range(3):
+    for _ in range(random.choice([3, 4, 5])):
         # 随机生成三种债务
         debt: TodayDebt = TodayDebt()
         debt.qq = qq
-        debt.gold = random.choice([100, 1000, 10000, 50000, 100000, 500000])
+        debt.gold = random.choice([1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000])
         debt.repayment_day = random.randint(1, 30)
-        debt.daily_interest_rate = random.random() * 10.0
         debt.rolling_interest = random.choice([True, False])
-        debt.minimum_interest = random.randint(1, debt.repayment_day) * debt.daily_interest_rate
+        if debt.rolling_interest:
+            debt.daily_interest_rate = random.random() * 0.1
+            debt.minimum_interest = (1.0 + debt.daily_interest_rate) ** random.randint(1, debt.repayment_day)
+        else:
+            debt.daily_interest_rate = random.random() * 0.2
+            debt.minimum_interest = random.randint(1, debt.repayment_day) * debt.daily_interest_rate
+        debt.mortgage_rates = random.random()
         debt.borrowing = False
         debt.create_time = datetime.now()
         flower_dao.insert_debt(debt)
@@ -1586,5 +1591,37 @@ def calculate_item_mail_price(level_dis: int, item_list: List[DecorateItem]) -> 
         else:
             gold: int = int(origin_item.gold * (0.1 + 0.33 * level_dis))
         cost_gold += gold
-        bill += '物品%s的费用：%.2f\n' % (item.item_name, gold / 100)
+        bill += '物品%s的费用：%s\n' % (str(item), show_gold(gold))
     return cost_gold, bill[:-1]
+
+
+def calculate_item_pawn_price(item_list: List[DecorateItem]) -> Tuple[int, str]:
+    """计算物品抵押的价格"""
+    cost_gold: int = 0
+    bill: str = ''
+    for item in item_list:
+        origin_item: Item = flower_dao.select_item_by_name(item.item_name)
+        if not origin_item.valid():
+            continue
+        if origin_item.max_durability > 0:
+            gold: int = int(origin_item.gold * item.durability / origin_item.max_durability)
+        else:
+            gold: int = origin_item.gold
+        bill += '物品%s抵押金：%s\n' % (str(item), show_gold(gold))
+        cost_gold += gold
+    return cost_gold, bill[:-1]
+
+
+def get_page(data: str, exception: str = '格式错误！') -> int:
+    """
+    解析页码
+    """
+    if len(data) == 0:
+        return 0
+    try:
+        page: int = int(data)
+        if page > 0:
+            page -= 1
+        return page
+    except ValueError:
+        raise TypeException(exception)

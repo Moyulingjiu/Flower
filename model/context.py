@@ -4,12 +4,13 @@ from typing import Dict, List
 
 from flower_exceptions import FunctionArgsException
 from model import City, DecorateItem, DecorateBuff
+from model.stock_market_model import TodayDebt
 
 __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
     "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
-    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm"
+    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext"
 ]
 
 
@@ -236,3 +237,16 @@ class CreateAccountConfirm(BaseContext):
 
     def __init__(self):
         super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+
+
+class DebtContext(BaseContext):
+    """
+    借款
+    """
+
+    def __init__(self, debt: TodayDebt, pawn: List[DecorateItem] = None):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        self.debt = debt  # 贷款
+        if pawn is None:
+            pawn = []
+        self.pawn = pawn  # 抵押物
