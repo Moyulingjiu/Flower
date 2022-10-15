@@ -1497,10 +1497,10 @@ def generate_today_debt(qq: int):
         debt.repayment_day = random.randint(1, 30)
         debt.rolling_interest = random.choice([True, False])
         if debt.rolling_interest:
-            debt.daily_interest_rate = random.random() * 0.1
+            debt.daily_interest_rate = random.random() * 0.05
             debt.minimum_interest = (1.0 + debt.daily_interest_rate) ** random.randint(1, debt.repayment_day)
         else:
-            debt.daily_interest_rate = random.random() * 0.2
+            debt.daily_interest_rate = random.random() * 0.1
             debt.minimum_interest = random.randint(1, debt.repayment_day) * debt.daily_interest_rate
         debt.mortgage_rates = random.random()
         debt.borrowing = False
@@ -1587,11 +1587,11 @@ def calculate_item_mail_price(level_dis: int, item_list: List[DecorateItem]) -> 
             gold: int = int(origin_item.gold * (0.1 + 0.14 * level_dis))
         elif origin_item.item_type == ItemType.props or origin_item.item_type == ItemType.accelerate or \
                 origin_item.item_type == ItemType.fertilizer:
-            gold: int = int(origin_item.gold * (0.4 + 0.1 * level_dis))
+            gold: int = int(origin_item.gold * (0.4 + 0.1 * level_dis)) * item.number
         else:
-            gold: int = int(origin_item.gold * (0.1 + 0.33 * level_dis))
+            gold: int = int(origin_item.gold * (0.1 + 0.33 * level_dis)) * item.number
         cost_gold += gold
-        bill += '物品%s的费用：%s\n' % (str(item), show_gold(gold))
+        bill += '物品「%s」的费用：%s\n' % (str(item), show_gold(gold))
     return cost_gold, bill[:-1]
 
 
@@ -1604,10 +1604,10 @@ def calculate_item_pawn_price(item_list: List[DecorateItem]) -> Tuple[int, str]:
         if not origin_item.valid():
             continue
         if origin_item.max_durability > 0:
-            gold: int = int(origin_item.gold * item.durability / origin_item.max_durability)
+            gold: int = int(origin_item.gold * item.durability / origin_item.max_durability) * item.number
         else:
-            gold: int = origin_item.gold
-        bill += '物品%s抵押金：%s\n' % (str(item), show_gold(gold))
+            gold: int = origin_item.gold * item.number
+        bill += '物品「%s」抵押金：%s\n' % (str(item), show_gold(gold))
         cost_gold += gold
     return cost_gold, bill[:-1]
 

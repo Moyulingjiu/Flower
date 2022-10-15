@@ -255,8 +255,8 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
             elif message[:6] == '花店欠款状态':
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店欠款状态 页码”')
-            elif message[:6] == '花店可选欠款':
-                index: int = util.get_page(message[6:].strip(), '格式错误！格式“花店可选欠款 页码”')
+            elif message[:6] == '花店可选贷款':
+                index: int = util.get_page(message[6:].strip(), '格式错误！格式“花店可选贷款 页码”')
                 reply: str = FlowerService.view_today_debt_choice(qq, index)
                 result.reply_text.append(reply)
                 return result
@@ -577,6 +577,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 except ValueError:
                     raise TypeException('格式错误！格式“花店转出金币 金币数量”')
                 reply = FlowerService.transfer_out(qq, username, gold)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店贷款':
+                index: int = util.get_page(message[4:].strip())
+                reply = FlowerService.get_debt(qq, index)
                 result.reply_text.append(reply)
                 return result
         else:
@@ -3154,7 +3159,7 @@ class ContextHandler:
                             )
                     result.context_reply_text.append(reply)
                     continue
-                elif context.step == 2:
+                elif context.step == 1:
                     if message == '取消':
                         del_context_list.append(origin_list[index])
                         reply = '已为您取消贷款'
@@ -5087,9 +5092,9 @@ class FlowerService:
         user_account: UserAccount = util.get_user_account(qq)
         reply = user.username + '，你的花店账户如下：'
         reply += '\n账户金币：%s' % util.show_gold(user_account.account_gold)
-        reply += '\n欠款金币：%s' % util.show_gold(user_account.debt_gold)
-        reply += '\n持有的期货：%d种' % len(user_account.hold_stock)
-        reply += '\n欠款：%d种' % len(user_account.debt_list)
+        reply += '\n贷款金币：%s' % util.show_gold(user_account.debt_gold)
+        reply += '\n持有的期货数：%d' % len(user_account.hold_stock)
+        reply += '\n未还贷款数：%d' % len(user_account.debt_list)
         return reply
 
     @classmethod
@@ -5308,7 +5313,7 @@ class FlowerService:
         flower_dao.insert_context(qq, context)
         return '借款协议：\n' \
                '1.本游戏与现实无关，不鼓励现实非必要贷款。\n' \
-               '2.还款日当天晚上23:59分必须还款，如果交易账户资金足够还款将会扣除还款与抵押物，否则将会破产清算失去所有东西\n' \
+               '2.还款日第二天3:00分必须还款，如果交易账户资金足够还款将会扣除还款与抵押物，否则将会破产清算失去所有东西\n' \
                '3.利滚利即上一日的利息会加入下一天的利息计算，反之则不加入。最低还款利息即提前还款也需要至少交这么多利息\n' \
                '------\n' \
                '输入“确认”同意上述协议，其余任何输入表示取消。'
