@@ -253,8 +253,11 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
             elif message[:6] == '花店持仓状态':
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
-            elif message[:6] == '花店欠款状态':
-                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店欠款状态 页码”')
+            elif message[:6] == '花店贷款状态':
+                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店贷款状态 页码”')
+                reply = FlowerService.view_debt(qq, page)
+                result.reply_text.append(reply)
+                return result
             elif message[:6] == '花店可选贷款':
                 index: int = util.get_page(message[6:].strip(), '格式错误！格式“花店可选贷款 页码”')
                 reply: str = FlowerService.view_today_debt_choice(qq, index)
@@ -3172,6 +3175,7 @@ class ContextHandler:
                             reply = '抵押物金额不足！'
                             result.context_reply_text.append(reply)
                             continue
+                        # 移除仓库的抵押物
                         user: User = util.get_user(qq, username)
                         try:
                             util.remove_items(user.warehouse, context.pawn)
@@ -3180,14 +3184,19 @@ class ContextHandler:
                             result.context_reply_text.append(reply)
                             continue
                         flower_dao.update_user_by_qq(user)
+                        # 更新账户的数据
                         user_account: UserAccount = util.get_user_account(qq)
                         debt: Debt = Debt()
                         debt.debt_id = context.debt.get_id()
                         debt.pawn = context.pawn
+                        debt.create_time = datetime.now()
                         user_account.debt_list.append(debt)
                         user_account.debt_gold += context.debt.gold
                         user_account.account_gold += context.debt.gold
                         flower_dao.update_user_account(user_account)
+                        # 更新贷款，标记为已借出
+                        context.debt.borrowing = True
+                        flower_dao.update_today_debt(context.debt)
                         del_context_list.append(origin_list[index])
                         reply = user.username + '，贷款成功！'
                         result.context_reply_text.append(reply)
@@ -5318,6 +5327,10 @@ class FlowerService:
                '3.利滚利即上一日的利息会加入下一天的利息计算，反之则不加入。最低还款利息即提前还款也需要至少交这么多利息\n' \
                '------\n' \
                '输入“确认”同意上述协议，其余任何输入表示取消。'
+
+    @classmethod
+    def view_debt(cls, qq: int, page: int) -> str:
+        """查看欠款"""
 
 
 class DrawCard:

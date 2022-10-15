@@ -131,7 +131,7 @@ class Debt(InnerClass):
     债务
     """
 
-    def __init__(self, debt_id: str = '', pawn: List[DecorateItem] = None):
+    def __init__(self, debt_id: str = '', pawn: List[DecorateItem] = None, create_time: datetime = datetime.now()):
         super().__init__('Debt')
 
         self.debt_id = debt_id  # 贷款的id
@@ -139,6 +139,8 @@ class Debt(InnerClass):
         if pawn is None:
             pawn = []
         self.pawn = pawn  # 抵押物
+
+        self.create_time = create_time  # 创建时间
 
 
 class UserAccount(EntityClass):
