@@ -1612,12 +1612,30 @@ def calculate_item_pawn_price(item_list: List[DecorateItem]) -> Tuple[int, str]:
     return cost_gold, bill[:-1]
 
 
-def get_page(data: str, exception: str = '格式错误！') -> int:
+def calculate_interest(debt: Debt) -> int:
+    """计算利润"""
+    origin_debt: TodayDebt = flower_dao.select_debt_by_id(debt.debt_id)
+    # 获取天数
+    days: int = int((datetime.now() - debt.create_time).total_seconds() // global_config.day_second)
+    if origin_debt.rolling_interest:
+        interest: int = int((1.0 + origin_debt.daily_interest_rate) ** days * origin_debt.gold)
+    else:
+        interest: int = int((1.0 + origin_debt.daily_interest_rate * days) * origin_debt.gold)
+    min_interest: int = int((1.0 + origin_debt.minimum_interest) * origin_debt.gold)
+    if min_interest > interest:
+        interest = min_interest
+    return interest
+
+
+def get_page(data: str, exception: str = '格式错误！', no_default_number: bool = False) -> int:
     """
     解析页码
     """
     if len(data) == 0:
-        return 0
+        if not no_default_number:
+            return 0
+        else:
+            raise TypeException(exception)
     try:
         page: int = int(data)
         if page > 0:

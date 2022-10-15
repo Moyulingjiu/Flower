@@ -257,6 +257,10 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_debt(qq)
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店可选贷款':
+                reply: str = FlowerService.view_all_today_debt_choice(qq)
+                result.reply_text.append(reply)
+                return result
             elif message[:6] == '花店可选贷款':
                 index: int = util.get_page(message[6:].strip(), '格式错误！格式“花店可选贷款 页码”')
                 reply: str = FlowerService.view_today_debt_choice(qq, index)
@@ -582,8 +586,13 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 result.reply_text.append(reply)
                 return result
             elif message[:4] == '花店贷款':
-                index: int = util.get_page(message[4:].strip())
+                index: int = util.get_page(message[4:].strip(), '格式错误！格式“花店贷款 序号”', no_default_number=True)
                 reply = FlowerService.get_debt(qq, index)
+                result.reply_text.append(reply)
+                return result
+            elif message[:4] == '花店还款':
+                index: int = util.get_page(message[4:].strip())
+                reply = FlowerService.repayment_debt(qq, username, index)
                 result.reply_text.append(reply)
                 return result
         else:
@@ -3177,7 +3186,7 @@ class ContextHandler:
                         # 移除仓库的抵押物
                         user: User = util.get_user(qq, username)
                         try:
-                            util.remove_items(user.warehouse, context.pawn)
+                            util.remove_items(user.warehouse, copy.deepcopy(context.pawn))
                         except ItemNotFoundException or ItemNotEnoughException:
                             reply = '仓库内物品不足！'
                             result.context_reply_text.append(reply)
@@ -5306,6 +5315,21 @@ class FlowerService:
                )
 
     @classmethod
+    def view_all_today_debt_choice(cls, qq: int) -> str:
+        """浏览今日的全部贷款"""
+        util.get_user_account(qq)
+        debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
+        if len(debt_list) == 0:
+            util.generate_today_debt(qq)
+            debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
+        reply: str = ''
+        index: int = 0
+        for debt in debt_list:
+            index += 1
+            reply += '%d.%s（利息%.4f%%）\n' % (index, util.show_gold(debt.gold), debt.daily_interest_rate * 100)
+        return reply[:-1]
+
+    @classmethod
     def get_debt(cls, qq: int, index: int) -> str:
         """获取今日的某个贷款"""
         user_account: UserAccount = util.get_user_account(qq)
@@ -5338,15 +5362,7 @@ class FlowerService:
         for debt in user_account.debt_list:
             index += 1
             origin_debt: TodayDebt = flower_dao.select_debt_by_id(debt.debt_id)
-            # 获取天数
-            days: int = int((datetime.now() - debt.create_time).total_seconds() // global_config.day_second)
-            if origin_debt.rolling_interest:
-                interest: int = int((1.0 + origin_debt.daily_interest_rate) ** days * origin_debt.gold)
-            else:
-                interest: int = int((1.0 + origin_debt.daily_interest_rate * days) * origin_debt.gold)
-            min_interest: int = int((1.0 + origin_debt.minimum_interest) * origin_debt.gold)
-            if min_interest > interest:
-                interest = min_interest
+            interest = util.calculate_interest(debt)
             reply += '%d.欠款%s，今日应还%s（还款期限%s）\n' % (
                 index,
                 util.show_gold(origin_debt.gold),
@@ -5354,6 +5370,33 @@ class FlowerService:
                 (debt.create_time + timedelta(days=origin_debt.repayment_day)).strftime('%Y-%m-%d %H:%M:%S')
             )
         return reply[:-1]
+
+    @classmethod
+    def repayment_debt(cls, qq: int, username: str, index: int) -> str:
+        """还款"""
+        util.lock_user(qq)
+        user: User = util.get_user(qq, username)
+        user_account: UserAccount = util.get_user_account(qq)
+        try:
+            if index >= len(user_account.debt_list) or index < 0:
+                return user.username + '，序号超限！不存在对应的欠款'
+            debt: Debt = user_account.debt_list[index]
+            origin_debt: TodayDebt = flower_dao.select_debt_by_id(debt.debt_id)
+            interest = util.calculate_interest(debt)
+            if user_account.account_gold < interest:
+                return user.username + '，账户中金币不足！'
+            # 还回抵押物与扣除金币
+            util.insert_items(user.warehouse, debt.pawn)
+            flower_dao.update_user_by_qq(user)
+            user_account.account_gold -= interest
+            user_account.debt_gold -= origin_debt.gold
+            flower_dao.update_user_account(user_account)
+            return user.username + '，还款成功！当前余额：' + util.show_gold(user_account.account_gold)
+        except ItemNotFoundException or ItemNegativeNumberException or WareHouseSizeNotEnoughException:
+            return user.username + '，仓库空间不足！请尽快腾出部分空间然后再还款，避免耽误时间。'
+        finally:
+            util.unlock_user(qq)
+
 
 
 class DrawCard:
