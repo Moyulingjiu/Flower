@@ -252,10 +252,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             elif message[:6] == '花店交易状态':
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
             elif message[:6] == '花店持仓状态':
-                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
-            elif message[:6] == '花店贷款状态':
-                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店贷款状态 页码”')
-                reply = FlowerService.view_debt(qq, page)
+                page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店持仓状态 页码”')
+            elif message == '花店贷款状态':
+                reply = FlowerService.view_debt(qq)
                 result.reply_text.append(reply)
                 return result
             elif message[:6] == '花店可选贷款':
@@ -5309,7 +5308,7 @@ class FlowerService:
     @classmethod
     def get_debt(cls, qq: int, index: int) -> str:
         """获取今日的某个贷款"""
-        util.get_user_account(qq)
+        user_account: UserAccount = util.get_user_account(qq)
         debt_list: List[TodayDebt] = flower_dao.select_today_debt_by_qq(qq, datetime.now())
         if len(debt_list) == 0:
             util.generate_today_debt(qq)
@@ -5319,6 +5318,8 @@ class FlowerService:
         debt: TodayDebt = debt_list[index]
         if debt.borrowing:
             return '该贷款已借出，不可以重复借'
+        if len(user_account.debt_list) >= 10:
+            return '贷款数目不能超过10个！'
         context: DebtContext = DebtContext(debt)
         flower_dao.insert_context(qq, context)
         return '借款协议：\n' \
@@ -5329,8 +5330,30 @@ class FlowerService:
                '输入“确认”同意上述协议，其余任何输入表示取消。'
 
     @classmethod
-    def view_debt(cls, qq: int, page: int) -> str:
+    def view_debt(cls, qq: int) -> str:
         """查看欠款"""
+        user_account: UserAccount = util.get_user_account(qq)
+        index: int = 0
+        reply: str = ''
+        for debt in user_account.debt_list:
+            index += 1
+            origin_debt: TodayDebt = flower_dao.select_debt_by_id(debt.debt_id)
+            # 获取天数
+            days: int = int((datetime.now() - debt.create_time).total_seconds() // global_config.day_second)
+            if origin_debt.rolling_interest:
+                interest: int = int((1.0 + origin_debt.daily_interest_rate) ** days * origin_debt.gold)
+            else:
+                interest: int = int((1.0 + origin_debt.daily_interest_rate * days) * origin_debt.gold)
+            min_interest: int = int((1.0 + origin_debt.minimum_interest) * origin_debt.gold)
+            if min_interest > interest:
+                interest = min_interest
+            reply += '%d.欠款%s，今日应还%s（还款期限%s）\n' % (
+                index,
+                util.show_gold(origin_debt.gold),
+                util.show_gold(interest),
+                (debt.create_time + timedelta(days=origin_debt.repayment_day)).strftime('%Y-%m-%d %H:%M:%S')
+            )
+        return reply[:-1]
 
 
 class DrawCard:
