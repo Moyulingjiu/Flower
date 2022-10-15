@@ -3186,6 +3186,7 @@ class ContextHandler:
                         debt.pawn = context.pawn
                         user_account.debt_list.append(debt)
                         user_account.debt_gold += context.debt.gold
+                        user_account.account_gold += context.debt.gold
                         flower_dao.update_user_account(user_account)
                         del_context_list.append(origin_list[index])
                         reply = user.username + '，贷款成功！'
