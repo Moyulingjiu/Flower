@@ -149,7 +149,7 @@ class UserAccount(EntityClass):
     """
 
     def __init__(self, qq: int = 0, account_gold: int = 0, debt_gold: int = 0, hold_stock: List[Stock] = None,
-                 debt_list: List[Debt] = None,
+                 debt_list: List[Debt] = None, not_enough_bond_days: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -157,6 +157,7 @@ class UserAccount(EntityClass):
         self.qq = qq  # qq
         self.account_gold = account_gold  # 账户中的金币
         self.debt_gold = debt_gold  # 账户中欠款的金币
+        self.not_enough_bond_days = not_enough_bond_days  # 保证金不足的天数
         if hold_stock is None:
             hold_stock = []
         self.hold_stock = hold_stock  # 持有股票、期货

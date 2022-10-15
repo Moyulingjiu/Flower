@@ -5398,7 +5398,6 @@ class FlowerService:
             util.unlock_user(qq)
 
 
-
 class DrawCard:
     """
     抽卡类
