@@ -944,6 +944,27 @@ def update_all_user() -> None:
 def complete_trade() -> None:
     """更新股市，完成交易"""
     logger.info('开始随机完成交易')
+    system_data = get_system_data()
+    for flower_id in system_data.allow_trading_flower_list:
+        flower: Flower = flower_dao.select_flower_by_id(flower_id)
+        flower_price: FlowerPrice = get_now_price(flower.name)
+        if flower_price is None:
+            continue
+        if flower_price.price[-1] > 50000:
+            factor: float = 0.01
+        elif flower_price.price[-1] > 10000:
+            factor: float = 0.02
+        elif flower_price.price[-1] > 2000:
+            factor: float = 0.03
+        else:
+            factor: float = 0.05
+        if random.random() >= 0.5:
+            ratio: float = random.random() * factor
+        else:
+            ratio: float = -1 * random.random() * factor
+        new_price = int(flower_price.price[-1] * (1.0 + ratio))
+        flower_price.insert_price(new_price)
+        flower_dao.update_flower_price(flower_price)
 
 
 def lock_the_world() -> None:

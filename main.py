@@ -74,7 +74,7 @@ async def start_event():
                       second=0, timezone='Asia/Shanghai', args=[], id="unlock_world",
                       replace_existing=True)
     # 每个小时判断一下交易
-    scheduler.add_job(util.complete_trade, hour='0-23', minute=0, second=0,
+    scheduler.add_job(util.complete_trade, 'cron', day_of_week='0-6', hour='0-23', minute=0, second=0,
                       timezone='Asia/Shanghai', args=[], id="complete_trade",
                       replace_existing=True)
     scheduler.start()
@@ -99,9 +99,9 @@ async def download_help():
     """
     filename = "doc/帮助.png"
     return FileResponse(
-            filename,  # 要下载的文件
-            filename="flower_help.png"
-        )
+        filename,  # 要下载的文件
+        filename="flower_help.png"
+    )
 
 
 @app.get("/guide")
@@ -111,9 +111,9 @@ async def download_guide():
     """
     filename = "doc/新手指南.png"
     return FileResponse(
-            filename,  # 要下载的文件
-            filename="flower_guide.png"
-        )
+        filename,  # 要下载的文件
+        filename="flower_guide.png"
+    )
 
 
 @app.get("/admin_guide")
@@ -123,9 +123,9 @@ async def download_guide():
     """
     filename = "doc/管理员帮助.png"
     return FileResponse(
-            filename,  # 要下载的文件
-            filename="admin_guide.png"
-        )
+        filename,  # 要下载的文件
+        filename="admin_guide.png"
+    )
 
 
 @app.post("/draw")
@@ -163,7 +163,7 @@ async def send_mail(origin_mail: OriginMail):
         return Response(code=404, message='not found', data=None)
     except ResBeLockedException:
         return Response(code=408, message='time out', data=None)
-    
+
     mail: Mail = Mail()
     mail.from_qq = 0
     mail.username = origin_mail.username
@@ -214,7 +214,7 @@ async def add_flower(message: Message):
                         announcement.expire_time.strftime('%Y-%m-%d %H:%M:%S')
                     )
                     result.reply_text.append(reply)
-            
+
             # 检查留言板
             if message.qq in global_config.message_board:
                 logger.info('检测到留言消息')
@@ -222,7 +222,7 @@ async def add_flower(message: Message):
                     logger.info('用户<%s>(%d)有留言：%s' % (message.username, message.qq, leave_message))
                     result.reply_text.append(leave_message)
                 global_config.message_board[message.qq] = []
-            
+
             logger.info('来自玩家<%s>(%d)[%s，at_list:%s]@机器人<%s>(%d)：%s' % (
                 message.username, message.qq, message.message, str(message.at_list), message.bot_name, message.bot_qq,
                 str(result)))
@@ -231,6 +231,6 @@ async def add_flower(message: Message):
         logger.error(str(e))
         return Response(code=500, message="internal error", data=Result.init())
 
+
 if __name__ == '__main__':
     uvicorn.run(app, host=global_config.host, port=global_config.port)
-    

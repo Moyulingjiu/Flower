@@ -2185,7 +2185,7 @@ def select_period_flower_price(flower_id: str, select_time: datetime, days: int 
     根据花的id选择某一天的价格
     """
     today: datetime = datetime(select_time.year, select_time.month, select_time.day)
-    end_date: datetime = today + timedelta(days=1)
+    end_date: datetime = today
     start_date: datetime = end_date - timedelta(days=days)
     redis_key: str = redis_flower_price_prefix + flower_id + '_' + start_date.strftime(
         '%Y_%m_%d') + '_' + end_date.strftime('%Y_%m_%d')
@@ -2217,8 +2217,7 @@ def select_today_flower_price(flower_id: str, select_time: datetime) -> FlowerPr
         today: datetime = datetime(select_time.year, select_time.month, select_time.day)
         tomorrow: datetime = today + timedelta(days=1)
         result = mongo_flower_price.find_one(
-            {"flower_id": flower_id, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0}).sort(
-            [('create_time', 1)])
+            {"flower_id": flower_id, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0})
         flower_price: FlowerPrice = FlowerPrice()
         dict_to_class(result, flower_price)
         redis_db.set(redis_flower_price_prefix + flower_id + '_' + select_time.strftime('%Y_%m_%d'),
@@ -2242,6 +2241,8 @@ def insert_flower_price(flower_price: FlowerPrice) -> str:
     """
     result = mongo_flower_price.insert_one(class_to_dict(flower_price))
     redis_db.delete(redis_flower_price_prefix + str(result.inserted_id))
+    redis_db.delete(
+        redis_flower_price_prefix + flower_price.flower_id + '_' + flower_price.create_time.strftime('%Y_%m_%d'))
     return str(result.inserted_id)
 
 
