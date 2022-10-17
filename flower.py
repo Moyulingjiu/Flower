@@ -137,6 +137,15 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.view_all_trading_flower(page)
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店股市规则':
+                reply = '1.股市一切内容与现实无关，现实投资有风险！\n' \
+                        '2.基准保证金率为5%，从买入价格起算，货物每降价1%，需额外增加1%买入价格的保证金。\n' \
+                        '3.如果账户内保证金不足连续三天，将会强制平仓。即，以当前的市场价卖出所有持仓。\n' \
+                        '4.你的交易请求不会立马完成！必须要有其他玩家或者npc买卖才能完成你的订单。\n' \
+                        '5.交易税从当天买当天卖1%开始，到持仓30天20%线性增长。\n' \
+                        '6.花店每天会提供部分贷款选项，记得及时还款，否则将会强制还款，若金币不足，将会强制破产清算，失去所有东西。'
+                result.reply_text.append(reply)
+                return result
 
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -556,15 +565,41 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             elif message[:6] == '花店买入期货':
                 data = message[6:].strip()
                 try:
-                    pass
-                except ValueError:
-                    raise TypeException('格式错误，格式“花店买入期货 【货品名】 【数量】”，数量为1可以省略')
+                    data_list = data.split(' ')
+                    if len(data_list) == 2:
+                        name = data_list[0]
+                        price: int = int(float(data_list[1]) * 100)
+                        number = 1
+                    elif len(data_list) == 3:
+                        name = data_list[0]
+                        price: int = int(float(data_list[1]) * 100)
+                        number = int(data_list[2])
+                    else:
+                        raise TypeException('')
+                except ValueError or TypeException:
+                    raise TypeException('格式错误，格式“花店买入期货 货品名 最高交易价格 数量”，数量为1可以省略')
+                reply = FlowerService.buy_futures(qq, username, name, price, number)
+                result.reply_text.append(reply)
+                return result
             elif message[:6] == '花店卖出期货':
                 data = message[6:].strip()
                 try:
-                    pass
-                except ValueError:
-                    raise TypeException('格式错误，格式“花店卖出期货 【货品名】 【数量】”，数量为1可以省略')
+                    data_list = data.split(' ')
+                    if len(data_list) == 2:
+                        name = data_list[0]
+                        price: int = int(float(data_list[1]) * 100)
+                        number = 1
+                    elif len(data_list) == 3:
+                        name = data_list[0]
+                        price: int = int(float(data_list[1]) * 100)
+                        number = int(data_list[2])
+                    else:
+                        raise TypeException('')
+                except ValueError or TypeException:
+                    raise TypeException('格式错误，格式“花店卖出期货 货品名 最高交易价格 数量”，数量为1可以省略')
+                reply = FlowerService.sell_futures(qq, username, name, price, number)
+                result.reply_text.append(reply)
+                return result
             elif message[:6] == '花店转入金币':
                 data = message[6:]
                 try:
@@ -1888,7 +1923,7 @@ class ContextHandler:
                     user.city_id = city.get_id()
                     user.born_city_id = city.get_id()
 
-                    # 农场的处
+                    # 农场的初始化
                     util.init_user_farm(user, city)
 
                     flower_dao.insert_user(user)
@@ -5396,6 +5431,35 @@ class FlowerService:
             return user.username + '，仓库空间不足！请尽快腾出部分空间然后再还款，避免耽误时间。'
         finally:
             util.unlock_user(qq)
+
+    @classmethod
+    def buy_futures(cls, qq: int, username: str, name: str, price: int, number: int) -> str:
+        """买入期货"""
+        user: User = util.get_user(qq, username)
+        util.get_user_account(qq)
+        system_data: SystemData = util.get_system_data()
+        flower: Flower = flower_dao.select_flower_by_name(name)
+        if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
+            return user.username + '，%s不能参与期货交易' % name
+        record: TradeRecords = TradeRecords()
+        record.flower_id = flower.get_id()
+        record.user_id = qq
+        record.nickname = user.username
+        record.trade_type = TradeType.buy
+        record.price = price
+        record.number = number
+        return user.username + '，你的交易请求已发送到市场'
+
+    @classmethod
+    def sell_futures(cls, qq: int, username, name: str, price: int, number: int) -> str:
+        """卖出期货"""
+        user: User = util.get_user(qq, username)
+        util.get_user_account(qq)
+        system_data: SystemData = util.get_system_data()
+        flower: Flower = flower_dao.select_flower_by_name(name)
+        if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
+            return user.username + '，%s不能参与期货交易' % name
+        return user.username + '，你的交易请求已发送到市场'
 
 
 class DrawCard:

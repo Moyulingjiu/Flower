@@ -2096,7 +2096,7 @@ def select_user_account_by_qq(qq: int) -> UserAccount:
     if redis_ans is not None:
         return deserialize(redis_ans)
     else:
-        result = mongo_user_account.find_one({"qq": qq})
+        result = mongo_user_account.find_one({"qq": qq, "is_delete": 0})
         user_account: UserAccount = UserAccount()
         dict_to_class(result, user_account)
         redis_db.set(redis_user_account_prefix + str(qq), serialization(user_account), ex=get_random_expire())

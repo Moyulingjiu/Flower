@@ -46,7 +46,7 @@ class TradeRecords(EntityClass):
     贸易记录
     """
 
-    def __init__(self, user_id: str = '', role_id: str = '', nickname: str = '', trade_type: TradeType = TradeType.none,
+    def __init__(self, user_id: int = 0, role_id: str = '', nickname: str = '', trade_type: TradeType = TradeType.none,
                  flower_id: str = '', transaction_complete: bool = False,
                  number: int = 0, price: int = 0, transaction_volume: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
@@ -95,11 +95,13 @@ class Stock(InnerClass):
     股票、期货
     """
 
-    def __init__(self, flower_id: str = '', number: int = 0):
+    def __init__(self, flower_id: str = '', number: int = 0, gold: int = 0, create_time: datetime = datetime.now()):
         super().__init__('Stock')
 
         self.flower_id = flower_id  # 花的id
         self.number = number  # 数量
+        self.gold = gold  # 持仓价格
+        self.create_time = create_time  # 持仓开始日期
 
 
 class TodayDebt(EntityClass):

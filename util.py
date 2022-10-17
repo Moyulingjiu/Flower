@@ -883,14 +883,67 @@ def update_all_user() -> None:
         page += 1
         user_list: List[User] = flower_dao.select_all_user(page=page, page_size=page_size)
         for user in user_list:
+            # 更新用户的农场
             logger.info('更新用户<%s>(%d)的农场' % (user.username, user.qq))
             city: City = flower_dao.select_city_by_id(user.city_id)
             soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
             weather: Weather = get_weather(city)
             flower: Flower = flower_dao.select_flower_by_id(user.farm.flower_id)
             update_farm(user, city, soil, weather, flower)
+            # 处理用户账户中的数据
+            logger.info('更新用户<%s>(%d)的账户' % (user.username, user.qq))
+            try:
+                user_account = get_user_account(user.qq)
+                # 用于记录被删除之后的list
+                handle_debt_list: List[Debt] = []
+                for debt in user_account.debt_list:
+                    origin_debt: TodayDebt = flower_dao.select_debt_by_id(debt.debt_id)
+                    days: int = int((datetime.now() - debt.create_time).total_seconds() // global_config.day_second)
+                    # 如果超过了还款期限就需要强制还款
+                    if days >= origin_debt.repayment_day:
+                        interest = calculate_interest(debt)
+                        # 如果金币足够，那么直接扣除
+                        if user_account.account_gold + user.gold >= interest:
+                            if user_account.account_gold >= interest:
+                                user_account.account_gold -= interest
+                            else:
+                                user.gold -= interest - user_account.account_gold
+                                user_account.account_gold = 0
+                        else:
+                            # 金币不足，破产清算
+                            new_user: User = User()
+                            new_user.qq = user.qq
+                            new_user.__dict__['_id'] = user.__dict__['_id']
+                            # 将基础信息复制过去
+                            new_user.born_city_id = user.born_city_id
+                            new_user.gender = user.gender
+                            new_user.city_id = user.city_id
+                            # 农场的初始化
+                            init_user_farm(user, city)
+                            user = new_user
+                            send_system_mail(user, '破产清算',
+                                             '很遗憾！你的账户内资金不足以还清债务，我们对你进行了破产清算', [], 0)
+                            user_account.is_delete = 1  # 将账户标记为删除
+                            flower_dao.redis_db.delete(flower_dao.redis_user_account_prefix + str(user_account.qq))
+                            break  # 破产清算就没有必要继续循环了
+                    elif days == origin_debt.repayment_day - 1:
+                        send_system_mail(user, '即将强制还债！',
+                                         '请注意！你的账户内存在一笔贷款即将逾期，如果明天凌晨三点仍未归还，系统将会强制还债！如果账户内金币不足将会直接破产清算，失去所有东西',
+                                         [], 0)
+                    else:
+                        handle_debt_list.append(debt)
+                user_account.debt_list = handle_debt_list
+                flower_dao.update_user_account(user_account)
+            except NoAccount:
+                pass
+            # 更新用户数据
             flower_dao.update_user_by_qq(user)
     logger.info('更新用户数据完成')
+
+
+def complete_trade() -> None:
+    """更新股市，完成交易"""
+    logger.info('开始随机完成交易')
 
 
 def lock_the_world() -> None:
@@ -1643,3 +1696,29 @@ def get_page(data: str, exception: str = '格式错误！', no_default_number: b
         return page
     except ValueError:
         raise TypeException(exception)
+
+
+def get_now_price(flower_name: str) -> FlowerPrice or None:
+    """根据花名获取花今天的价格"""
+    now = datetime.now()
+    flower: Flower = flower_dao.select_flower_by_name(flower_name)
+    system_data = get_system_data()
+    if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
+        return None
+    flower_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), now)
+    if flower_price.valid():
+        return flower_price
+    yesterday: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), now - timedelta(days=1))
+    flower_price: FlowerPrice = FlowerPrice()
+    if not yesterday.valid() or len(yesterday.price) == 0:
+        item = flower_dao.select_item_by_name(flower.name)
+        if not item.valid():
+            return None
+        flower_price.insert_price(item.gold)
+    else:
+        flower_price.insert_price(yesterday.price[-1])
+    flower_price.flower_id = flower.get_id()
+    flower_price.create_time = now
+    flower_dao.insert_flower_price(flower_price)
+    flower_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), now)
+    return flower_price

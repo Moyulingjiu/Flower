@@ -69,9 +69,13 @@ async def start_event():
     scheduler.add_job(util.update_all_user, 'cron', day_of_week='0-6', hour=4, minute=0,
                       second=0, timezone='Asia/Shanghai', args=[], id="update_all_user",
                       replace_existing=True)
-    # 每天凌晨5点0锁定游戏
+    # 每天凌晨5点0解锁游戏
     scheduler.add_job(util.release_update_right, 'cron', day_of_week='0-6', hour=5, minute=0,
                       second=0, timezone='Asia/Shanghai', args=[], id="unlock_world",
+                      replace_existing=True)
+    # 每个小时判断一下交易
+    scheduler.add_job(util.complete_trade, hour='0-23', minute=0, second=0,
+                      timezone='Asia/Shanghai', args=[], id="complete_trade",
                       replace_existing=True)
     scheduler.start()
     logger.info('背景任务已启动')
