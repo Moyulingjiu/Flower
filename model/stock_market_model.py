@@ -23,7 +23,7 @@ class TradeType(Enum):
     sell = 'sell'
 
     @classmethod
-    def view_level(cls, trade_type) -> str:
+    def view_type(cls, trade_type) -> str:
         if trade_type == cls.buy:
             return '买入'
         elif trade_type == cls.sell:
@@ -31,7 +31,7 @@ class TradeType(Enum):
         return '未知'
 
     @classmethod
-    def get_level(cls, trade_type: str):
+    def get_type(cls, trade_type: str):
         if not trade_type.startswith('TradeType.'):
             trade_type = 'TradeType.' + trade_type
         if trade_type == str(cls.buy):

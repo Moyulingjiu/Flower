@@ -260,6 +260,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             elif message[:6] == '花店交易状态':
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店交易状态 页码”')
+                reply = FlowerService.view_trade_states(qq, username, page)
+                result.reply_text.append(reply)
+                return result
             elif message[:6] == '花店持仓状态':
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店持仓状态 页码”')
             elif message == '花店贷款状态':
@@ -5450,10 +5453,11 @@ class FlowerService:
         record.price = price
         record.number = number
         flower_dao.insert_trade_record(record)
-        return user.username + '，你的交易请求已发送到市场'
+        return user.username + '，你的交易请求已发送到市场\n' \
+                               '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，可能不能100%完成你的交易请求。'
 
     @classmethod
-    def sell_futures(cls, qq: int, username, name: str, price: int, number: int) -> str:
+    def sell_futures(cls, qq: int, username: str, name: str, price: int, number: int) -> str:
         """卖出期货"""
         user: User = util.get_user(qq, username)
         util.get_user_account(qq)
@@ -5461,7 +5465,46 @@ class FlowerService:
         flower: Flower = flower_dao.select_flower_by_name(name)
         if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
             return user.username + '，%s不能参与期货交易' % name
-        return user.username + '，你的交易请求已发送到市场'
+        record: TradeRecords = TradeRecords()
+        record.flower_id = flower.get_id()
+        record.user_id = qq
+        record.nickname = user.username
+        record.trade_type = TradeType.sell
+        record.price = price
+        record.number = number
+        return user.username + '，你的交易请求已发送到市场\n' \
+                               '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，可能不能100%完成你的交易请求。'
+
+    @classmethod
+    def view_trade_states(cls, qq: int, username: str, page: int, page_size: int = 20):
+        """查看所有的交易状态"""
+        user: User = util.get_user(qq, username)
+        util.get_user_account(qq)
+        trade_number: int = flower_dao.select_trade_record_by_qq_number(qq)
+        if trade_number == 0:
+            return user.username + '，你目前没有未完成的交易。'
+        if page * page_size >= trade_number or page < 0:
+            return user.username + '，页码超限！'
+        trade_list: List[TradeRecords] = flower_dao.select_trade_record_by_qq(qq, page, page_size)
+        reply = ''
+        index: int = 0
+        for trade_record in trade_list:
+            index += 1
+            flower: Flower = flower_dao.select_flower_by_id(trade_record.flower_id)
+            reply += '%d.%s%sx%d（已完成数目：%d，锚定价格：%s）\n' % (
+                index,
+                '买入' if trade_record.trade_type == TradeType.buy else '卖出',
+                flower.name,
+                trade_record.number,
+                trade_record.transaction_volume,
+                util.show_gold(trade_record.price)
+            )
+        reply += '-' * 6 + '\n'
+        total_page: int = trade_number // page_size
+        if trade_number % page_size > 0:
+            total_page += 1
+        reply += '当前页码：%d/%d' % (page + 1, total_page)
+        return reply
 
 
 class DrawCard:

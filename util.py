@@ -952,13 +952,19 @@ def update_all_user() -> None:
 def complete_trade() -> None:
     """更新股市，完成交易"""
     logger.info('开始随机完成交易')
-    flower_dao.lock(flower_dao.redis_update_price_lock)
+    try:
+        flower_dao.lock(flower_dao.redis_update_price_lock)
+    except ResBeLockedException:
+        logger.info('未能抢到更新权限')
+        return
     try:
         hour: str = str(datetime.now().hour)
         # 锁定更新hour，并且检测时间是否是相同的，每次仅放一个线程进入
         old_hour: str = flower_dao.redis_db.get(flower_dao.redis_update_price_hour)
         if hour == old_hour:
+            logger.info('价格已被其它线程更新，无需本线程更新')
             return
+        logger.info('获取到更新的权限')
         flower_dao.redis_db.set(flower_dao.redis_update_price_hour, hour)
         system_data = get_system_data()
         for flower_id in system_data.allow_trading_flower_list:

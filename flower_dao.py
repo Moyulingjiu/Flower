@@ -2248,6 +2248,72 @@ def insert_flower_price(flower_price: FlowerPrice) -> str:
     return str(result.inserted_id)
 
 
+def select_trade_record_by_qq_number(qq: int) -> int:
+    """查询未完成的买入的交易记录数量"""
+    number: int = mongo_trade_records.count_documents({
+        "is_delete": 0, "user_id": qq, "transaction_complete": False
+    })
+    return number
+
+
+def select_trade_record_by_qq(qq: int, page: int, page_size: int = 30) -> List[TradeRecords]:
+    """查询未完成的买入的交易记录"""
+    result = mongo_trade_records.find({
+        "is_delete": 0, "user_id": qq, "transaction_complete": False
+    }).skip(page * page_size).limit(page_size)
+    trade_records_list: List[TradeRecords] = []
+    for trade_records_result in result:
+        trade_record: TradeRecords = TradeRecords()
+        dict_to_class(trade_records_result, trade_record)
+        trade_record.trade_type = TradeType.get_type(str(trade_record.trade_type))
+        trade_records_list.append(trade_record)
+    return trade_records_list
+
+
+def select_buy_trade_record_number():
+    """查询未完成的买入的交易记录的数量"""
+    number: int = mongo_trade_records.count_documents({
+        "is_delete": 0, "trade_type": "buy", "transaction_complete": False
+    })
+    return number
+
+
+def select_buy_trade_record(page: int, page_size: int = 30) -> List[TradeRecords]:
+    """查询未完成的买入的交易记录"""
+    result = mongo_trade_records.find({
+        "is_delete": 0, "trade_type": "buy", "transaction_complete": False
+    }).skip(page * page_size).limit(page_size)
+    trade_records_list: List[TradeRecords] = []
+    for trade_records_result in result:
+        trade_record: TradeRecords = TradeRecords()
+        dict_to_class(trade_records_result, trade_record)
+        trade_record.trade_type = TradeType.get_type(str(trade_record.trade_type))
+        trade_records_list.append(trade_record)
+    return trade_records_list
+
+
+def select_sell_trade_record_number() -> int:
+    """查询未完成的卖出的交易记录的数量"""
+    number: int = mongo_trade_records.count_documents({
+        "is_delete": 0, "trade_type": "sell", "transaction_complete": False
+    })
+    return number
+
+
+def select_sell_trade_record(page: int, page_size: int = 30) -> List[TradeRecords]:
+    """查询未完成的卖出的交易记录"""
+    result = mongo_trade_records.find({
+        "is_delete": 0, "trade_type": "sell", "transaction_complete": False
+    }).skip(page * page_size).limit(page_size)
+    trade_records_list: List[TradeRecords] = []
+    for trade_records_result in result:
+        trade_record: TradeRecords = TradeRecords()
+        dict_to_class(trade_records_result, trade_record)
+        trade_record.trade_type = TradeType.get_type(str(trade_record.trade_type))
+        trade_records_list.append(trade_record)
+    return trade_records_list
+
+
 def select_trade_record(_id: str) -> TradeRecords:
     """
     根据id查询交易记录
@@ -2259,6 +2325,7 @@ def select_trade_record(_id: str) -> TradeRecords:
         result = mongo_trade_records.find_one({"_id": ObjectId(_id)})
         trade_record: TradeRecords = TradeRecords()
         dict_to_class(result, trade_record)
+        trade_record.trade_type = TradeType.get_type(str(trade_record.trade_type))
         redis_db.set(redis_flower_price_prefix + _id, serialization(trade_record), ex=get_random_expire())
         return trade_record
 
