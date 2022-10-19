@@ -968,6 +968,7 @@ def complete_trade() -> None:
         flower_dao.redis_db.set(flower_dao.redis_update_price_hour, str(hour))
         system_data = get_system_data()
         for flower_id in system_data.allow_trading_flower_list:
+            # 先获取价格
             flower: Flower = flower_dao.select_flower_by_id(flower_id)
             flower_price: FlowerPrice = get_now_price(flower.name)
             if flower_price is None:
@@ -987,6 +988,14 @@ def complete_trade() -> None:
             new_price = int(flower_price.get_latest_price() * (1.0 + ratio))
             flower_price.insert_price(new_price, hour)
             flower_dao.update_flower_price(flower_price)
+
+            # 随机在上述价格的波动上进行校验
+
+        # 来根据买单完成交易
+        buy_number: int = flower_dao.select_buy_trade_record_number()
+        sell_number: int = flower_dao.select_sell_trade_record_number()
+        while buy_number > 0 and sell_number > 0:
+            pass
     finally:
         flower_dao.unlock(flower_dao.redis_update_price_lock)
         logger.info('结束随机完成交易')

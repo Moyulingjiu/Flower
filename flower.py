@@ -5443,8 +5443,13 @@ class FlowerService:
         util.get_user_account(qq)
         system_data: SystemData = util.get_system_data()
         flower: Flower = flower_dao.select_flower_by_name(name)
-        if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
+        flower_price: FlowerPrice = util.get_now_price(flower.name)
+        if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list or flower_price is None:
             return user.username + '，%s不能参与期货交易' % name
+        if flower_price.latest_price * 0.8 > price or flower_price.latest_price * 1.2 < price:
+            return user.username + '，%s的当前价格为%s，不可以超出这个价格的正负20%%' % (
+                flower.name, util.show_gold(flower_price.latest_price)
+            )
         record: TradeRecords = TradeRecords()
         record.flower_id = flower.get_id()
         record.user_id = qq
@@ -5463,8 +5468,13 @@ class FlowerService:
         util.get_user_account(qq)
         system_data: SystemData = util.get_system_data()
         flower: Flower = flower_dao.select_flower_by_name(name)
-        if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
+        flower_price: FlowerPrice = util.get_now_price(flower.name)
+        if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list or flower_price is None:
             return user.username + '，%s不能参与期货交易' % name
+        if flower_price.latest_price * 0.8 > price or flower_price.latest_price * 1.2 < price:
+            return user.username + '，%s的当前价格为%s，不可以超出这个价格的正负20%%' % (
+                flower.name, util.show_gold(flower_price.latest_price)
+            )
         record: TradeRecords = TradeRecords()
         record.flower_id = flower.get_id()
         record.user_id = qq

@@ -89,7 +89,6 @@ class FlowerPrice(EntityClass):
     def insert_price(self, price: int, hour: int):
         if price < 0:
             return
-        print('hour:', hour, ",price:", price)
         self.latest_price = price
         if not self.init:
             self.max_price = price
