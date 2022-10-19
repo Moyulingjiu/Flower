@@ -1590,10 +1590,10 @@ def generate_today_debt(qq: int):
         debt.repayment_day = random.randint(1, 30)
         debt.rolling_interest = random.choice([True, False])
         if debt.rolling_interest:
-            debt.daily_interest_rate = random.random() * 0.05
+            debt.daily_interest_rate = random.random() * 0.01
             debt.minimum_interest = (1.0 + debt.daily_interest_rate) ** random.randint(1, debt.repayment_day)
         else:
-            debt.daily_interest_rate = random.random() * 0.1
+            debt.daily_interest_rate = random.random() * 0.05
             debt.minimum_interest = random.randint(1, debt.repayment_day) * debt.daily_interest_rate
         debt.mortgage_rates = random.random()
         debt.borrowing = False
