@@ -5449,6 +5449,7 @@ class FlowerService:
         record.trade_type = TradeType.buy
         record.price = price
         record.number = number
+        flower_dao.insert_trade_record(record)
         return user.username + '，你的交易请求已发送到市场'
 
     @classmethod

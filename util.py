@@ -982,7 +982,7 @@ def complete_trade() -> None:
             flower_price.insert_price(new_price)
             flower_dao.update_flower_price(flower_price)
     finally:
-        flower_dao.lock(flower_dao.redis_update_price_lock)
+        flower_dao.unlock(flower_dao.redis_update_price_lock)
         logger.info('结束随机完成交易')
 
 
