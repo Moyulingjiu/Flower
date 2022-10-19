@@ -5277,6 +5277,7 @@ class FlowerService:
         reply += '（第%d名）' % (draw_card_rank + 1)
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
         reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
+        reply += '\n破产次数：%d次' % user_statistics.bankruptcy
         return reply
 
     @classmethod

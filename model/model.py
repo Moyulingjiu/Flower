@@ -1311,7 +1311,7 @@ class UserStatistics(EntityClass):
     def __init__(self, qq: int = 0, watering: int = 0, remove_flower: int = 0,
                  use_item: Dict[str, int] = None,
                  plant_flower: Dict[str, int] = None, plant_perfect_flower: Dict[str, int] = None,
-                 draw_times: int = 0, success_draw_times: int = 0, all_draw_times: int = 0,
+                 draw_times: int = 0, success_draw_times: int = 0, all_draw_times: int = 0, bankruptcy: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -1332,6 +1332,7 @@ class UserStatistics(EntityClass):
         self.draw_times = draw_times  # 抽卡次数
         self.success_draw_times = success_draw_times  # 成功抽到的次数
         self.all_draw_times = all_draw_times  # 抽到全部的物品
+        self.bankruptcy = bankruptcy  # 破产次数
 
 
 class User(EntityClass):

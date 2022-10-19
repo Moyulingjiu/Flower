@@ -34,6 +34,7 @@ baidu_login_cookie = ''
 # 全局锁
 get_right_update_data: bool = False
 get_all_weather: bool = False
+update_price_lock: bool = False
 
 object_id_length: int = 24  # mongodb的object id的长度
 

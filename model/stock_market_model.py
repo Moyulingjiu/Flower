@@ -88,6 +88,8 @@ class FlowerPrice(EntityClass):
         self.max_price = max(self.max_price, price)
         self.min_price = min(self.min_price, price)
         self.price.append(price)
+        if len(self.price) == 1:
+            self.min_price = self.price[0]
 
 
 class Stock(InnerClass):

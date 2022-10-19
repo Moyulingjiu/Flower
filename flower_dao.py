@@ -64,6 +64,8 @@ redis_db = StrictRedis(connection_pool=redis_pool)
 
 redis_global_prefix = 'flower_'  # redis全局前缀
 redis_global_game_lock = redis_global_prefix + 'global_game_lock'  # 游戏锁前缀
+redis_update_price_lock = redis_global_prefix + 'update_price_lock'  # 更新价格的前缀
+redis_update_price_hour = redis_global_prefix + 'update_price_hour'  # 更新当前价格的小时
 redis_system_data_prefix = redis_global_prefix + 'system_data'  # 系统数据前缀（有且仅有一个）
 redis_announcement_prefix = redis_global_prefix + 'announcement'  # 公告数据前缀（有且仅有一个，为一个列表，表示当前有效的公告）
 redis_region_prefix = redis_global_prefix + 'region_'  # 地区redis前缀（地区id）

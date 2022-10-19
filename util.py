@@ -925,10 +925,18 @@ def update_all_user() -> None:
                                              '很遗憾！你的账户内资金不足以还清债务，我们对你进行了破产清算', [], 0)
                             user_account.is_delete = 1  # 将账户标记为删除
                             flower_dao.redis_db.delete(flower_dao.redis_user_account_prefix + str(user_account.qq))
+                            # 更新统计数据
+                            user_statistics: UserStatistics = get_user_statistics(user.qq)
+                            user_statistics.bankruptcy += 1
+                            flower_dao.update_user_statistics(user_statistics)
                             break  # 破产清算就没有必要继续循环了
                     elif days == origin_debt.repayment_day - 1:
                         send_system_mail(user, '即将强制还债！',
                                          '请注意！你的账户内存在一笔贷款即将逾期，如果明天凌晨三点仍未归还，系统将会强制还债！如果账户内金币不足将会直接破产清算，失去所有东西',
+                                         [], 0)
+                    elif days == origin_debt.repayment_day - 7:
+                        send_system_mail(user, '还有一周的还款时间',
+                                         '请注意！你的账户内存在一笔贷款即将逾期，如果一周后的凌晨三点仍未归还，系统将会强制还债！如果账户内金币不足将会直接破产清算，失去所有东西',
                                          [], 0)
                     else:
                         handle_debt_list.append(debt)
@@ -944,27 +952,38 @@ def update_all_user() -> None:
 def complete_trade() -> None:
     """更新股市，完成交易"""
     logger.info('开始随机完成交易')
-    system_data = get_system_data()
-    for flower_id in system_data.allow_trading_flower_list:
-        flower: Flower = flower_dao.select_flower_by_id(flower_id)
-        flower_price: FlowerPrice = get_now_price(flower.name)
-        if flower_price is None:
-            continue
-        if flower_price.price[-1] > 50000:
-            factor: float = 0.01
-        elif flower_price.price[-1] > 10000:
-            factor: float = 0.02
-        elif flower_price.price[-1] > 2000:
-            factor: float = 0.03
-        else:
-            factor: float = 0.05
-        if random.random() >= 0.5:
-            ratio: float = random.random() * factor
-        else:
-            ratio: float = -1 * random.random() * factor
-        new_price = int(flower_price.price[-1] * (1.0 + ratio))
-        flower_price.insert_price(new_price)
-        flower_dao.update_flower_price(flower_price)
+    flower_dao.lock(flower_dao.redis_update_price_lock)
+    try:
+        hour: str = str(datetime.now().hour)
+        # 锁定更新hour，并且检测时间是否是相同的，每次仅放一个线程进入
+        old_hour: str = flower_dao.redis_db.get(flower_dao.redis_update_price_hour)
+        if hour == old_hour:
+            return
+        flower_dao.redis_db.set(flower_dao.redis_update_price_hour, hour)
+        system_data = get_system_data()
+        for flower_id in system_data.allow_trading_flower_list:
+            flower: Flower = flower_dao.select_flower_by_id(flower_id)
+            flower_price: FlowerPrice = get_now_price(flower.name)
+            if flower_price is None:
+                continue
+            if flower_price.price[-1] > 50000:
+                factor: float = 0.01
+            elif flower_price.price[-1] > 10000:
+                factor: float = 0.02
+            elif flower_price.price[-1] > 2000:
+                factor: float = 0.03
+            else:
+                factor: float = 0.05
+            if random.random() >= 0.5:
+                ratio: float = random.random() * factor
+            else:
+                ratio: float = -1 * random.random() * factor
+            new_price = int(flower_price.price[-1] * (1.0 + ratio))
+            flower_price.insert_price(new_price)
+            flower_dao.update_flower_price(flower_price)
+    finally:
+        flower_dao.lock(flower_dao.redis_update_price_lock)
+        logger.info('结束随机完成交易')
 
 
 def lock_the_world() -> None:
