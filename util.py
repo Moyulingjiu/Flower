@@ -958,25 +958,25 @@ def complete_trade() -> None:
         logger.info('未能抢到更新权限')
         return
     try:
-        hour: str = str(datetime.now().hour)
+        hour: int = datetime.now().hour
         # 锁定更新hour，并且检测时间是否是相同的，每次仅放一个线程进入
         old_hour: str = flower_dao.redis_db.get(flower_dao.redis_update_price_hour)
-        if hour == old_hour:
+        if str(hour) == old_hour:
             logger.info('价格已被其它线程更新，无需本线程更新')
             return
         logger.info('获取到更新的权限')
-        flower_dao.redis_db.set(flower_dao.redis_update_price_hour, hour)
+        flower_dao.redis_db.set(flower_dao.redis_update_price_hour, str(hour))
         system_data = get_system_data()
         for flower_id in system_data.allow_trading_flower_list:
             flower: Flower = flower_dao.select_flower_by_id(flower_id)
             flower_price: FlowerPrice = get_now_price(flower.name)
             if flower_price is None:
                 continue
-            if flower_price.price[-1] > 50000:
+            if flower_price.get_latest_price() > 50000:
                 factor: float = 0.01
-            elif flower_price.price[-1] > 10000:
+            elif flower_price.get_latest_price() > 10000:
                 factor: float = 0.02
-            elif flower_price.price[-1] > 2000:
+            elif flower_price.get_latest_price() > 2000:
                 factor: float = 0.03
             else:
                 factor: float = 0.05
@@ -984,8 +984,8 @@ def complete_trade() -> None:
                 ratio: float = random.random() * factor
             else:
                 ratio: float = -1 * random.random() * factor
-            new_price = int(flower_price.price[-1] * (1.0 + ratio))
-            flower_price.insert_price(new_price)
+            new_price = int(flower_price.get_latest_price() * (1.0 + ratio))
+            flower_price.insert_price(new_price, hour)
             flower_dao.update_flower_price(flower_price)
     finally:
         flower_dao.unlock(flower_dao.redis_update_price_lock)
@@ -1747,6 +1747,7 @@ def get_page(data: str, exception: str = '格式错误！', no_default_number: b
 def get_now_price(flower_name: str) -> FlowerPrice or None:
     """根据花名获取花今天的价格"""
     now = datetime.now()
+    hour: int = now.hour
     flower: Flower = flower_dao.select_flower_by_name(flower_name)
     system_data = get_system_data()
     if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list:
@@ -1760,9 +1761,9 @@ def get_now_price(flower_name: str) -> FlowerPrice or None:
         item = flower_dao.select_item_by_name(flower.name)
         if not item.valid():
             return None
-        flower_price.insert_price(item.gold)
+        flower_price.insert_price(item.gold, hour)
     else:
-        flower_price.insert_price(yesterday.price[-1])
+        flower_price.insert_price(yesterday.get_latest_price(), hour)
     flower_price.flower_id = flower.get_id()
     flower_price.create_time = now
     flower_dao.insert_flower_price(flower_price)

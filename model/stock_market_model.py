@@ -83,13 +83,28 @@ class FlowerPrice(EntityClass):
         self.price = price  # 价格记录
         self.max_price = max_price
         self.min_price = min_price
+        self.latest_price = -1
+        self.init = False
 
-    def insert_price(self, price: int):
-        self.max_price = max(self.max_price, price)
-        self.min_price = min(self.min_price, price)
-        self.price.append(price)
-        if len(self.price) == 1:
-            self.min_price = self.price[0]
+    def insert_price(self, price: int, hour: int):
+        if price < 0:
+            return
+        print('hour:', hour, ",price:", price)
+        self.latest_price = price
+        if not self.init:
+            self.max_price = price
+            self.min_price = price
+            self.price = [-1 for _ in range(24)]
+            self.price[hour] = price
+            self.init = True
+        else:
+            self.max_price = max(self.max_price, price)
+            self.min_price = min(self.min_price, price)
+            self.price[hour] = price
+
+    def get_latest_price(self):
+        """获取最新的价格"""
+        return self.latest_price
 
 
 class Stock(InnerClass):
