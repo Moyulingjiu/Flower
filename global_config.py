@@ -127,6 +127,10 @@ def load_config(config_path: str = 'config.yaml'):
     global host, port, center
     global mongo_connection, redis_host, redis_port, redis_background_db, redis_db, redis_password
     global baidu_login_cookie
+
+    # 如果不存在这个缓存文件夹，就自动创建一个
+    if not os.path.exists('cache'):
+        os.mkdir('cache')
     
     with open(config_path, 'r', encoding='utf8') as f:
         config_yaml = yaml.safe_load(f.read())

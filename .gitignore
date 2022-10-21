@@ -3,6 +3,7 @@ temp
 venv
 logs
 __pycache__
+cache
 
 *.pyc
 *.pyo

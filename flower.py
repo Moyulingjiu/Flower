@@ -1,8 +1,12 @@
 # coding=utf-8
 import copy
+import os.path
+import shutil
 import random
 from datetime import timedelta, datetime, date
 from typing import Dict, List, Tuple
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
 from bson import ObjectId
 
@@ -139,13 +143,33 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             elif message == '花店股市规则':
                 reply = '1.股市一切内容与现实无关，现实投资有风险！\n' \
-                        '2.基准保证金率为5%，从买入价格起算，货物每降价1%，需额外增加1%买入价格的保证金。\n' \
-                        '3.如果账户内保证金不足连续三天，将会强制平仓。即，以当前的市场价卖出所有持仓。\n' \
-                        '4.你的交易请求不会立马完成！必须要有其他玩家或者npc买卖才能完成你的订单。\n' \
-                        '5.交易税从当天买当天卖1%开始，到持仓30天20%线性增长。\n' \
-                        '6.花店每天会提供部分贷款选项，记得及时还款，否则将会强制还款，若金币不足，将会强制破产清算，失去所有东西。'
+                        '2.你的交易请求不会立马完成！必须要有其他玩家或者npc买卖才能完成你的订单。\n' \
+                        '3.交易税从当天买当天卖1%开始，到持仓30天20%线性增长。\n' \
+                        '4.花店每天会提供部分贷款选项，记得及时还款，否则将会强制还款，若金币不足，将会强制破产清算，失去所有东西。'
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店股市帮助':
+                if not os.path.exists('cache/股市帮助.png'):
+                    try:
+                        shutil.copyfile('doc/股市帮助.png', 'cache/股市帮助.png')
+                    except IOError:
+                        logger.error('错误！无权复制文件！')
+                        result.reply_text.append(
+                            '系统内部错误！请及时告知管理员检查日志，发生时间：%s' % datetime.now().strftime(
+                                '%Y-%m-%d %H:%M:%S'))
+                        return result
+                result.reply_image.append('股市帮助.png')
+                return result
+            elif message[:6] == '花店价格走势':
+                data = message[6:].strip()
+                reply = FlowerService.generate_price_map(qq, username, data)
+                if reply.endswith('.png'):
+                    result.reply_image.append(reply)
+                else:
+                    result.reply_text.append(reply)
+                return result
+            elif message[:6] == '花店月度价格走势':
+                data = message[6:].strip()
 
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -265,6 +289,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             elif message[:6] == '花店持仓状态':
                 page: int = util.get_page(message[6:].strip(), '格式错误！格式“花店持仓状态 页码”')
+                reply = FlowerService.view_hold_stock(qq, username, page)
+                result.reply_text.append(reply)
+                return result
             elif message == '花店贷款状态':
                 reply = FlowerService.view_debt(qq)
                 result.reply_text.append(reply)
@@ -560,9 +587,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 data = message[4:].strip()
                 try:
                     person_index: int = int(data)
-                    # reply = FlowerService.create_account(qq, username, person_index)
-                    # result.reply_text.append(reply)
-                    # return result
+                    reply = FlowerService.create_account(qq, username, person_index)
+                    result.reply_text.append(reply)
+                    return result
                 except ValueError:
                     raise TypeException('格式错误，格式“花店开户 【人物序号】”')
             elif message[:6] == '花店买入期货':
@@ -3326,7 +3353,8 @@ class FlowerService:
             if index >= page * page_size:
                 index += 1
                 flower: Flower = flower_dao.select_flower_by_id(flower_id)
-                res += '%d.%s\n' % (index, flower.name)
+                flower_price: FlowerPrice = util.get_now_price(flower.name)
+                res += '%d.%s：%s\n' % (index, flower.name, util.show_gold(flower_price.latest_price))
             else:
                 index += 1
         res += '-' * 6 + '\n'
@@ -5486,7 +5514,7 @@ class FlowerService:
                                '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，可能不能100%完成你的交易请求。'
 
     @classmethod
-    def view_trade_states(cls, qq: int, username: str, page: int, page_size: int = 20):
+    def view_trade_states(cls, qq: int, username: str, page: int, page_size: int = 20) -> str:
         """查看所有的交易状态"""
         user: User = util.get_user(qq, username)
         util.get_user_account(qq)
@@ -5515,6 +5543,60 @@ class FlowerService:
             total_page += 1
         reply += '当前页码：%d/%d' % (page + 1, total_page)
         return reply
+
+    @classmethod
+    def view_hold_stock(cls, qq: int, username: str, page: int, page_size: int = 20) -> str:
+        """查看自己持仓的期货"""
+        user: User = util.get_user(qq, username)
+        user_account: UserAccount = util.get_user_account(qq)
+        if len(user_account.hold_stock) == 0:
+            return user.username + '，你目前还没有持有期货'
+        reply = ''
+        index: int = 0
+        for hold_stock in user_account.hold_stock:
+            if index >= page * page_size:
+                index += 1
+                flower: Flower = flower_dao.select_flower_by_id(hold_stock.flower_id)
+                days = (datetime.now() - hold_stock.create_time).total_seconds() // global_config.day_second
+                reply += '%d.%sx%d（持仓价格：%s，持仓天数：%d）\n' % (
+                    index, flower.name, hold_stock.number, util.show_gold(hold_stock.gold), days
+                )
+            elif index >= (page + 1) * page_size:
+                break
+            else:
+                index += 1
+        total_page = len(user_account.hold_stock) // page_size
+        if len(user_account.hold_stock) % page_size > 0:
+            total_page += 1
+        reply += '-' * 6 + '\n'
+        reply += '当前页码：%d/%d' % (page + 1, total_page)
+        return reply
+
+    @classmethod
+    def generate_price_map(cls, qq: int, username: str, flower_name: str) -> str:
+        """生成价格曲线"""
+        user: User = util.get_user(qq, username)
+        util.get_user_account(qq)
+        flower: Flower = flower_dao.select_flower_by_name(flower_name)
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+        today_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), today)
+        yesterday_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), yesterday)
+        if not today_price.valid() or not yesterday_price.valid():
+            return user.username + '，该花当前没有期货价格'
+        hour = today.hour
+        price = yesterday_price.price[hour + 1:] + today_price.price[:hour + 1]
+        price = [gold / 100 for gold in price]
+        my_font = font_manager.FontProperties(family='SimHei', size=16)
+        plt.plot(range(24), price, color='skyblue')
+        plt.plot([23], price[-1], 'o', color='orange')
+        plt.text(23, price[-1], util.show_gold(price[-1] * 100), fontproperties=my_font, color="black")
+        plt.xlabel('小时', fontproperties=my_font)
+        plt.ylabel('价格', fontproperties=my_font)
+        plt.title('%s的24小时价格表' % flower_name, fontproperties=my_font)
+        file_name = '%s.png' % flower_name
+        plt.savefig('cache/' + file_name)
+        return file_name
 
 
 class DrawCard:

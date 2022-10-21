@@ -989,13 +989,129 @@ def complete_trade() -> None:
             flower_price.insert_price(new_price, hour)
             flower_dao.update_flower_price(flower_price)
 
-            # 随机在上述价格的波动上进行校验
+        # 当前小时的交易额， 每小时的交易额不应该超过10亿
+        turnover: int = 0
 
         # 来根据买单完成交易
+        page_size: int = 30
         buy_number: int = flower_dao.select_buy_trade_record_number()
+        buy_page: int = 0
+        while buy_page * page_size < buy_number:
+            buy_list = flower_dao.select_buy_trade_record(buy_page, page_size)
+            buy_page += 1
+            for buy_record in buy_list:
+                flower: Flower = flower_dao.select_flower_by_id(buy_record.flower_id)
+                flower_price: FlowerPrice = get_now_price(flower.name)
+                # 价格比当前价格越低，越容易完成交易
+                sub: int = buy_record.price - flower_price.latest_price
+                prop: float = 0.5 + sub / flower_price.latest_price
+                if prop < 0.2:
+                    prop = 0
+                elif prop > 0.7:
+                    prop = 1
+                # 概率小于就完成交易
+                if random.random() <= prop:
+                    buy_record.transaction_volume = buy_record.number
+                    buy_record.transaction_complete = True
+                    if buy_record.user_id > 0:
+                        try:
+                            lock_user(buy_record.user_id)
+                        except ResBeLockedException:
+                            continue
+                        try:
+                            user: User = get_user(buy_record.user_id)
+                            user_account: UserAccount = get_user_account(buy_record.user_id)
+                            # 实际账户资金能够交易的数量
+                            real_number: int = user_account.account_gold // buy_record.price
+                            if real_number > buy_record.number:
+                                real_number = buy_record.number
+                            buy_record.transaction_volume = real_number
+                            stock: Stock = Stock()
+                            stock.flower_id = buy_record.flower_id
+                            stock.number = real_number
+                            stock.gold = buy_record.price
+                            stock.create_time = datetime.now()
+                            user_account.hold_stock.append(stock)
+                            user_account.account_gold -= stock.gold * stock.number
+                            flower_dao.update_user_account(user_account)
+                            send_system_mail(
+                                user,
+                                '交易订单已完成',
+                                '你的买入%s交易订单已完成，花费金币：%s' % (flower.name, show_gold(stock.gold * stock.number)),
+                                [],
+                                0
+                            )
+                            flower_dao.update_user_by_qq(user)
+                        finally:
+                            unlock_user(buy_record.user_id)
+                    flower_dao.update_trade_record(buy_record)
+                elif (buy_record.create_time - datetime.now()).total_seconds() // global_config.hour_second >= 24:
+                    # 对于超出一天的交易直接撤销
+                    buy_record.transaction_complete = True
+                    flower_dao.update_trade_record(buy_record)
         sell_number: int = flower_dao.select_sell_trade_record_number()
-        while buy_number > 0 and sell_number > 0:
-            pass
+        sell_page: int = 0
+        while sell_page * page_size < sell_number:
+            sell_list = flower_dao.select_sell_trade_record(sell_page, page_size)
+            sell_page += 1
+            for sell_record in sell_list:
+                flower: Flower = flower_dao.select_flower_by_id(sell_record.flower_id)
+                flower_price: FlowerPrice = get_now_price(flower.name)
+                # 价格比当前价格越低，越容易完成交易
+                sub: int = sell_record.price - flower_price.latest_price
+                prop: float = 0.5 + sub / flower_price.latest_price
+                if prop < 0.2:
+                    prop = 0
+                elif prop > 0.7:
+                    prop = 1
+                # 概率小于就完成交易
+                if random.random() <= prop:
+                    sell_record.transaction_volume = sell_record.number
+                    sell_record.transaction_complete = True
+                    flower_dao.update_trade_record(sell_record)
+                    if sell_record.user_id > 0:
+                        try:
+                            lock_user(sell_record.user_id)
+                        except ResBeLockedException:
+                            continue
+                        try:
+                            user: User = get_user(sell_record.user_id)
+                            user_account: UserAccount = get_user_account(sell_record.user_id)
+                            gap_days = (datetime.now() - sell_record.stock_hold_time) \
+                                           .total_seconds() // global_config.day_second
+                            if gap_days > 30:
+                                gap_days = 30
+                            # 这里需要扣除个税
+                            real_gold = sell_record.number * sell_record.price
+                            rate = 1.0 - 0.2 * gap_days / 30
+                            user_account.account_gold += real_gold * rate
+                            flower_dao.update_user_account(user_account)
+                            send_system_mail(
+                                user,
+                                '交易订单已完成',
+                                '你的卖出%s交易订单已完成，卖出金币：%s，税率：%.2f%%，实际到账：%s' % (
+                                    flower.name,
+                                    show_gold(real_gold),
+                                    (1.0 - rate) * 100,
+                                    show_gold(int(real_gold * rate))
+                                ),
+                                [],
+                                0
+                            )
+                            flower_dao.update_user_by_qq(user)
+                        finally:
+                            unlock_user(sell_record.user_id)
+                elif (sell_record.create_time - datetime.now()).total_seconds() // global_config.hour_second >= 24:
+                    # 对于超出一天的交易直接撤销
+                    sell_record.transaction_complete = True
+                    user_account: UserAccount = get_user_account(sell_record.user_id)
+                    stock: Stock = Stock()
+                    stock.flower_id = sell_record.flower_id
+                    stock.number = sell_record.number
+                    stock.gold = sell_record.price
+                    stock.create_time = sell_record.stock_hold_time
+                    user_account.hold_stock.append(stock)
+                    flower_dao.update_trade_record(sell_record)
     finally:
         flower_dao.unlock(flower_dao.redis_update_price_lock)
         logger.info('结束随机完成交易')

@@ -2,6 +2,7 @@
 import datetime
 from typing import List
 
+import os
 import uvicorn
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.redis import RedisJobStore
@@ -125,6 +126,18 @@ async def download_guide():
     return FileResponse(
         filename,  # 要下载的文件
         filename="admin_guide.png"
+    )
+
+
+@app.get("/download/{file_path}")
+async def download_file(file_path: str):
+    """下载某张图片，这里没有做权限验证，因为默认该服务需要与小柒结合为内网服务，不对外公开"""
+    filename = "cache/" + file_path
+    if not os.path.exists(filename):
+        return Response(code=404, message="not found", data='')
+    return FileResponse(
+        filename,
+        filename=file_path
     )
 
 

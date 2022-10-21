@@ -49,6 +49,7 @@ class TradeRecords(EntityClass):
     def __init__(self, user_id: int = 0, role_id: str = '', nickname: str = '', trade_type: TradeType = TradeType.none,
                  flower_id: str = '', transaction_complete: bool = False,
                  number: int = 0, price: int = 0, transaction_volume: int = 0,
+                 stock_hold_time: datetime = datetime.now(),
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -63,6 +64,7 @@ class TradeRecords(EntityClass):
         self.number = number  # 交易的数量
         self.price = price  # 交易时的价格
         self.transaction_volume = transaction_volume  # 实际交易数量
+        self.stock_hold_time = stock_hold_time  # 对于卖出的，要记录一下持仓的日期方便退回
 
 
 class FlowerPrice(EntityClass):
@@ -167,7 +169,7 @@ class UserAccount(EntityClass):
     """
 
     def __init__(self, qq: int = 0, account_gold: int = 0, debt_gold: int = 0, hold_stock: List[Stock] = None,
-                 debt_list: List[Debt] = None, not_enough_bond_days: int = 0,
+                 debt_list: List[Debt] = None, not_enough_bond_days: int = 0, can_view_image: bool = False,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
