@@ -5660,7 +5660,7 @@ class FlowerService:
         today_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), today)
         yesterday_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), yesterday)
         if not today_price.valid() or not yesterday_price.valid():
-            return user.username + '，该花当前没有期货价格'
+            return user.username + '，该花当前没有期货价格或允许交易的时间不足24小时'
         hour = today.hour
         price = yesterday_price.price[hour + 1:] + today_price.price[:hour + 1]
         price = [gold / 100 for gold in price]
