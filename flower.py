@@ -170,6 +170,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             elif message[:6] == '花店月度价格走势':
                 data = message[6:].strip()
+                # todo: 生成月度k线
 
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -587,9 +588,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 data = message[4:].strip()
                 try:
                     person_index: int = int(data)
-                    reply = FlowerService.create_account(qq, username, person_index)
-                    result.reply_text.append(reply)
-                    return result
+                    # reply = FlowerService.create_account(qq, username, person_index)
+                    # result.reply_text.append(reply)
+                    # return result
                 except ValueError:
                     raise TypeException('格式错误，格式“花店开户 【人物序号】”')
             elif message[:6] == '花店买入期货':
