@@ -5668,9 +5668,9 @@ class FlowerService:
         plt.plot(range(24), price, color='skyblue')
         plt.plot([23], price[-1], 'o', color='orange')
         plt.text(23, price[-1], util.show_gold(price[-1] * 100), fontproperties=my_font, color="black")
-        plt.xlabel('小时', fontproperties=my_font)
-        plt.ylabel('价格', fontproperties=my_font)
-        plt.title('%s的24小时价格表' % flower_name, fontproperties=my_font)
+        plt.xlabel('hour', fontproperties=my_font)
+        plt.ylabel('price', fontproperties=my_font)
+        plt.title('price in 24 hour', fontproperties=my_font)
         file_name = '%s.png' % flower_name
         plt.savefig('cache/' + file_name)
         return file_name
