@@ -588,9 +588,9 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 data = message[4:].strip()
                 try:
                     person_index: int = int(data)
-                    # reply = FlowerService.create_account(qq, username, person_index)
-                    # result.reply_text.append(reply)
-                    # return result
+                    reply = FlowerService.create_account(qq, username, person_index)
+                    result.reply_text.append(reply)
+                    return result
                 except ValueError:
                     raise TypeException('格式错误，格式“花店开户 【人物序号】”')
             elif message[:6] == '花店买入期货':
@@ -3333,6 +3333,41 @@ class ContextHandler:
                             reply = '格式错误！格式“删除抵押 【附件序号】”'
                             result.context_reply_text.append(reply)
                             continue
+            # 多重选择出售期货
+            elif isinstance(context, SellFutureContext):
+                del_context_list.append(origin_list[index])
+                try:
+                    choose_index: int = int(message)
+                    if choose_index > 0:
+                        choose_index -= 1
+                except ValueError:
+                    choose_index = -1
+                if choose_index < 0 or choose_index >= len(context.index_list):
+                    reply = '已为你取消出售期货'
+                    result.context_reply_text.append(reply)
+                    continue
+                choose_stock = context.index_list[choose_index]
+                user: User = util.get_user(qq, username)
+                user_account: UserAccount = util.get_user_account(qq)
+                flower: Flower = flower_dao.select_flower_by_id(context.flower_id)
+                record: TradeRecords = TradeRecords()
+                record.flower_id = flower.get_id()
+                record.user_id = qq
+                record.nickname = user.username
+                record.trade_type = TradeType.sell
+                record.price = context.price
+                record.number = context.number
+                record.create_time = user_account.hold_stock[choose_stock].create_time
+                # 对应的也要减少数量
+                user_account.hold_stock[choose_stock].number -= context.number
+                if user_account.hold_stock[choose_stock].number <= 0:
+                    user_account.hold_stock.remove(user_account.hold_stock[choose_stock])
+                flower_dao.update_user_account(user_account)
+                flower_dao.insert_trade_record(record)
+                reply = user.username + '，你的交易请求已发送到市场\n' \
+                                        '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，' \
+                                        '可能不能100%完成你的交易请求。'
+                result.context_reply_text.append(reply)
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
@@ -5533,7 +5568,25 @@ class FlowerService:
         elif choose_stock == -1:
             return user.username + '，你没有足够数量的该期货。'
         else:
-            return user.username + '，你的持仓内有多重选择：'
+            reply = user.username + '，你的持仓内有多重选择：\n'
+            index: int = 0
+            for choose_index in multiple_choice:
+                index += 1
+                hold_stock = user_account.hold_stock[choose_index]
+                flower: Flower = flower_dao.select_flower_by_id(hold_stock.flower_id)
+                days = (datetime.now() - hold_stock.create_time).total_seconds() // global_config.day_second
+                reply += '%d.%sx%d（持仓价格：%s，持仓天数：%d）\n' % (
+                    index, flower.name, hold_stock.number, util.show_gold(hold_stock.gold), days
+                )
+            reply += '-' * 6 + '\n'
+            reply += '输入对应的序号选择期货，其他输入视为取消出售'
+            context: SellFutureContext = SellFutureContext()
+            context.index_list = multiple_choice
+            context.flower_id = flower.get_id()
+            context.number = number
+            context.price = price
+            flower_dao.insert_context(qq, context)
+            return reply
         return user.username + '，你的交易请求已发送到市场\n' \
                                '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，可能不能100%完成你的交易请求。'
 

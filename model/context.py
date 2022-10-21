@@ -10,7 +10,7 @@ __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
     "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
-    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext"
+    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext", "SellFutureContext"
 ]
 
 
@@ -250,3 +250,18 @@ class DebtContext(BaseContext):
         if pawn is None:
             pawn = []
         self.pawn = pawn  # 抵押物
+
+
+class SellFutureContext(BaseContext):
+    """
+    期货选择
+    """
+
+    def __init__(self, index_list: List[int] = None):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))
+        if index_list is None:
+            index_list = []
+        self.index_list = index_list
+        self.flower_id: str = ''
+        self.number: int = 0
+        self.price: int = 0
