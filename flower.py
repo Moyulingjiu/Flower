@@ -5494,7 +5494,7 @@ class FlowerService:
     def sell_futures(cls, qq: int, username: str, name: str, price: int, number: int) -> str:
         """卖出期货"""
         user: User = util.get_user(qq, username)
-        util.get_user_account(qq)
+        user_account: UserAccount = util.get_user_account(qq)
         system_data: SystemData = util.get_system_data()
         flower: Flower = flower_dao.select_flower_by_name(name)
         flower_price: FlowerPrice = util.get_now_price(flower.name)
@@ -5504,13 +5504,36 @@ class FlowerService:
             return user.username + '，%s的当前价格为%s，不可以超出这个价格的正负20%%' % (
                 flower.name, util.show_gold(flower_price.latest_price)
             )
-        record: TradeRecords = TradeRecords()
-        record.flower_id = flower.get_id()
-        record.user_id = qq
-        record.nickname = user.username
-        record.trade_type = TradeType.sell
-        record.price = price
-        record.number = number
+        choose_stock = -1
+        multiple_choice = []
+        index: int = 0
+        for stock in user_account.hold_stock:
+            if stock.flower_id == flower.get_id() and stock.number >= number:
+                multiple_choice.append(index)
+                if choose_stock == -1:
+                    choose_stock = index
+                elif choose_stock >= 0:
+                    choose_stock = -2
+            index += 1
+        if choose_stock >= 0:
+            record: TradeRecords = TradeRecords()
+            record.flower_id = flower.get_id()
+            record.user_id = qq
+            record.nickname = user.username
+            record.trade_type = TradeType.sell
+            record.price = price
+            record.number = number
+            record.create_time = user_account.hold_stock[choose_stock].create_time
+            # 对应的也要减少数量
+            user_account.hold_stock[choose_stock].number -= number
+            if user_account.hold_stock[choose_stock].number <= 0:
+                user_account.hold_stock.remove(user_account.hold_stock[choose_stock])
+            flower_dao.update_user_account(user_account)
+            flower_dao.insert_trade_record(record)
+        elif choose_stock == -1:
+            return user.username + '，你没有足够数量的该期货。'
+        else:
+            return user.username + '，你的持仓内有多重选择：'
         return user.username + '，你的交易请求已发送到市场\n' \
                                '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，可能不能100%完成你的交易请求。'
 
