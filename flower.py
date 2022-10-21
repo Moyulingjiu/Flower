@@ -5673,6 +5673,7 @@ class FlowerService:
         plt.title('price in 24 hour', fontproperties=my_font)
         file_name = '%s.png' % flower_name
         plt.savefig('cache/' + file_name)
+        plt.clf()  # 清图
         return file_name
 
 
