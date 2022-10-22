@@ -5360,6 +5360,8 @@ class FlowerService:
         try:
             if user.gold < gold:
                 return user.username + '，金币不足！'
+            if gold <= 0:
+                return user.username + '，不允许负数金币'
             user.gold -= gold
             user_account.account_gold += gold
             flower_dao.update_user_account(user_account)
@@ -5381,6 +5383,8 @@ class FlowerService:
                 return user.username + '，交易账户金币不足！'
             if user_account.account_gold - gold < user_account.debt_gold:
                 return user.username + '，交易账户金币数不能小于借款金币数。即，借款的钱无法转出交易账户。'
+            if gold <= 0:
+                return user.username + '，不允许负数金币'
             user.gold += gold
             user_account.account_gold -= gold
             flower_dao.update_user_account(user_account)
