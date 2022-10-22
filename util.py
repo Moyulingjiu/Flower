@@ -1002,9 +1002,9 @@ def complete_trade() -> None:
             for buy_record in buy_list:
                 flower: Flower = flower_dao.select_flower_by_id(buy_record.flower_id)
                 flower_price: FlowerPrice = get_now_price(flower.name)
-                # 价格比当前价格越低，越容易完成交易
+                # 价格比当前价格越高，越容易完成交易
                 sub: int = buy_record.price - flower_price.latest_price
-                prop: float = 0.5 + sub / flower_price.latest_price
+                prop: float = 0.5 + (sub / flower_price.latest_price) * 0.2
                 if prop < 0.2:
                     prop = 0
                 elif prop > 0.7:
@@ -1059,7 +1059,7 @@ def complete_trade() -> None:
                 flower_price: FlowerPrice = get_now_price(flower.name)
                 # 价格比当前价格越低，越容易完成交易
                 sub: int = sell_record.price - flower_price.latest_price
-                prop: float = 0.5 + sub / flower_price.latest_price
+                prop: float = 0.5 + (sub / flower_price.latest_price) * 0.2
                 if prop < 0.2:
                     prop = 0
                 elif prop > 0.7:
@@ -1671,9 +1671,9 @@ def generate_today_person(qq: int):
                         flower: Flower = flower_dao.select_random_flower([FlowerLevel.C, FlowerLevel.B])
                 if not flower.valid():
                     continue
-                if random.random() < 0.6:
+                if random.random() < 0.5:
                     level: int = 1
-                elif random.random() < 0.9:
+                elif random.random() < 0.8:
                     level: int = 2
                 elif random.random() < 0.97:
                     level: int = 3
