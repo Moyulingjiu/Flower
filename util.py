@@ -1083,7 +1083,7 @@ def complete_trade() -> None:
                             user: User = get_user(sell_record.user_id)
                             user_account: UserAccount = get_user_account(sell_record.user_id)
                             gap_days = (datetime.now() - sell_record.stock_hold_time) \
-                                           .total_seconds() // global_config.day_second
+                                           .total_seconds() // global_config.day_second + 1
                             if gap_days > 30:
                                 gap_days = 30
                             # 这里需要扣除个税
