@@ -976,9 +976,9 @@ def complete_trade() -> None:
             if flower_price is None:
                 continue
             if flower_price.get_latest_price() > 50000:
-                factor: float = 0.01
+                factor: float = 0.005
             elif flower_price.get_latest_price() > 10000:
-                factor: float = 0.02
+                factor: float = 0.01
             elif flower_price.get_latest_price() > 2000:
                 factor: float = 0.03
             else:
