@@ -5111,6 +5111,8 @@ class FlowerService:
                 person_index -= 1
             if person_index < 0 or person_index >= len(user_person_list):
                 return user.username + '，人物序号超限'
+            if item.number <= 0:
+                return user.username + '，出售商品不可以为负数'
             user_person: UserPerson = user_person_list[person_index]
             relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
             person: Person = flower_dao.select_person(user_person.person_id)
@@ -5510,6 +5512,8 @@ class FlowerService:
         flower_price: FlowerPrice = util.get_now_price(flower.name)
         if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list or flower_price is None:
             return user.username + '，%s不能参与期货交易' % name
+        if number <= 0:
+            return user.username + '，%s期货数量不可以为负数'
         if flower_price.latest_price * 0.8 > price or flower_price.latest_price * 1.2 < price:
             return user.username + '，%s的当前价格为%s，不可以超出这个价格的正负20%%' % (
                 flower.name, util.show_gold(flower_price.latest_price)
@@ -5535,6 +5539,8 @@ class FlowerService:
         flower_price: FlowerPrice = util.get_now_price(flower.name)
         if not flower.valid() or flower.get_id() not in system_data.allow_trading_flower_list or flower_price is None:
             return user.username + '，%s不能参与期货交易' % name
+        if number <= 0:
+            return user.username + '，%s期货数量不可以为负数'
         if flower_price.latest_price * 0.8 > price or flower_price.latest_price * 1.2 < price:
             return user.username + '，%s的当前价格为%s，不可以超出这个价格的正负20%%' % (
                 flower.name, util.show_gold(flower_price.latest_price)
