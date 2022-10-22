@@ -5655,12 +5655,13 @@ class FlowerService:
         user: User = util.get_user(qq, username)
         util.get_user_account(qq)
         flower: Flower = flower_dao.select_flower_by_name(flower_name)
+        system_data: SystemData = util.get_system_data()
+        if flower.get_id() not in system_data.allow_trading_flower_list:
+            return user.username + '，该花不是期货，不能参与期货交易'
         today = datetime.now()
         yesterday = today - timedelta(days=1)
         today_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), today)
         yesterday_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), yesterday)
-        if not today_price.valid() or not yesterday_price.valid():
-            return user.username + '，该花当前没有期货价格或允许交易的时间不足24小时'
         hour = today.hour
         price = yesterday_price.price[hour + 1:] + today_price.price[:hour + 1]
         price = [gold / 100 for gold in price]
