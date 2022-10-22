@@ -1006,7 +1006,7 @@ def complete_trade() -> None:
                 flower_price: FlowerPrice = get_now_price(flower.name)
                 # 价格比当前价格越高，越容易完成交易
                 sub: int = buy_record.price - flower_price.latest_price
-                prop: float = 0.5 + (sub / flower_price.latest_price) * 0.2
+                prop: float = 0.5 + (sub / flower_price.latest_price) * 2
                 if prop <= 0.3:
                     prop = 0
                 elif prop >= 0.9:
@@ -1037,6 +1037,7 @@ def complete_trade() -> None:
                             stock.create_time = datetime.now()
                             user_account.hold_stock.append(stock)
                             user_account.account_gold -= stock.gold * stock.number
+                            user_account.earn_gold -= stock.gold * stock.number
                             flower_dao.update_user_account(user_account)
                             send_system_mail(
                                 user,
@@ -1063,11 +1064,11 @@ def complete_trade() -> None:
                 flower_price: FlowerPrice = get_now_price(flower.name)
                 # 价格比当前价格越低，越容易完成交易
                 sub: int = sell_record.price - flower_price.latest_price
-                prop: float = 0.5 + (sub / flower_price.latest_price) * 0.2
-                if prop < 0.2:
+                prop: float = 0.5 + (sub / flower_price.latest_price) * 2
+                if prop < 0.3:
                     prop = 0
-                elif prop > 0.7:
-                    prop = 1
+                elif prop >= 0.9:
+                    prop = 0.9
                 # 概率小于就完成交易
                 if random.random() <= prop:
                     sell_record.transaction_volume = sell_record.number
@@ -1089,6 +1090,7 @@ def complete_trade() -> None:
                             real_gold = sell_record.number * sell_record.price
                             rate = 1.0 - 0.2 * gap_days / 30
                             user_account.account_gold += real_gold * rate
+                            user_account.earn_gold += real_gold * rate
                             flower_dao.update_user_account(user_account)
                             send_system_mail(
                                 user,
