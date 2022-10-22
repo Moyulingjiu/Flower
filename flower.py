@@ -4984,6 +4984,8 @@ class FlowerService:
         if person_index < 0 or person_index >= len(user_person_list):
             util.unlock_user(qq)
             return user.username + '，人物序号超限'
+        if number <= 0:
+            return user.username + '，不允许购买负数商品'
         user_person: UserPerson = user_person_list[person_index]
         relationship: Relationship = flower_dao.select_relationship_by_pair(user_person.person_id, str(qq))
         person: Person = flower_dao.select_person(user_person.person_id)
