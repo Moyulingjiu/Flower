@@ -1007,10 +1007,10 @@ def complete_trade() -> None:
                 # 价格比当前价格越高，越容易完成交易
                 sub: int = buy_record.price - flower_price.latest_price
                 prop: float = 0.5 + (sub / flower_price.latest_price) * 0.2
-                if prop < 0.2:
+                if prop <= 0.3:
                     prop = 0
-                elif prop > 0.7:
-                    prop = 1
+                elif prop >= 0.9:
+                    prop = 0.9
                 # 概率小于就完成交易
                 if random.random() <= prop:
                     buy_record.transaction_volume = buy_record.number
