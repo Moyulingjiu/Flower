@@ -983,7 +983,7 @@ def complete_trade() -> None:
                 factor: float = 0.03
             else:
                 factor: float = 0.05
-            if random.random() >= 0.5:
+            if random.random() >= 0.5 or flower_price.get_latest_price() < 50:
                 ratio: float = random.random() * factor
             else:
                 ratio: float = -1 * random.random() * factor
