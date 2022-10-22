@@ -4395,6 +4395,8 @@ class FlowerService:
                 return user.username + '，浇水失败！当前没有浇水壶或已没有耐久！'
         else:
             return user.username + '，浇水失败！当前没有浇水壶或已没有耐久！'
+        if multiple <= 0:
+            return user.username + '，浇水次数不可以是负数！'
         # 设置湿度的上限
         soil: Soil = flower_dao.select_soil_by_id(user.farm.soil_id)
         if soil.valid() and user.farm.humidity > soil.max_humidity:
