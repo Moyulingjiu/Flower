@@ -86,6 +86,8 @@ def get_user_account(qq: int) -> UserAccount:
     user_account: UserAccount = flower_dao.select_user_account_by_qq(qq)
     if not user_account.valid():
         raise NoAccount('')
+    # 清理无效的期货
+    user_account.hold_stock = [stock for stock in user_account.hold_stock if stock.number > 0]
     return user_account
 
 
@@ -1025,6 +1027,8 @@ def complete_trade() -> None:
                             real_number: int = user_account.account_gold // buy_record.price
                             if real_number > buy_record.number:
                                 real_number = buy_record.number
+                            if real_number <= 0:
+                                continue
                             buy_record.transaction_volume = real_number
                             stock: Stock = Stock()
                             stock.flower_id = buy_record.flower_id
