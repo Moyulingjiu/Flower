@@ -1,14 +1,12 @@
 # coding=utf-8
 import datetime
+import os
 from typing import List
 
-import os
 import uvicorn
 from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
-
 # 导入花店需要的辅助类
 from starlette.responses import FileResponse
 
