@@ -1130,7 +1130,7 @@ def complete_lottery() -> None:
     lottery_list: List[Lottery] = flower_dao.select_today_lottery(rand, datetime.now() - timedelta(days=1))
     system_data = get_system_data()
     if len(lottery_list) == 0:
-        system_data.winning_lottery_info = '上一期无人中奖'
+        system_data.winning_lottery_info = '上一期无人中奖，中奖数字：%d' % rand
         flower_dao.update_system_data(system_data)
         return
     bonus = system_data.lottery_prize_pool // len(lottery_list)
