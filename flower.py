@@ -171,6 +171,18 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             elif message[:6] == '花店月度价格走势':
                 data = message[6:].strip()
                 # todo: 生成月度k线
+            elif message == '花店上一期获奖情况':
+                system_data: SystemData = util.get_system_data()
+                reply = system_data.winning_lottery_info
+                if reply == '':
+                    reply = '上一期无人中奖'
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店奖金池':
+                system_data: SystemData = util.get_system_data()
+                reply = '当前奖金：' + util.show_gold(system_data.lottery_prize_pool)
+                result.reply_text.append(reply)
+                return result
 
             # 查看自己数据的部分
             elif message == '花店数据':
@@ -663,18 +675,6 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 return result
             elif message == '花店购买彩票':
                 reply = FlowerService.buy_lottery(qq, username)
-                result.reply_text.append(reply)
-                return result
-            elif message == '花店上一期获奖情况':
-                system_data: SystemData = util.get_system_data()
-                reply = system_data.winning_lottery_info
-                if reply == '':
-                    reply = '上一期无人中奖'
-                result.reply_text.append(reply)
-                return result
-            elif message == '花店奖金池':
-                system_data: SystemData = util.get_system_data()
-                reply = '当前奖金：' + util.show_gold(system_data.lottery_prize_pool)
                 result.reply_text.append(reply)
                 return result
         else:
