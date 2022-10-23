@@ -21,18 +21,7 @@ from global_config import logger
 from model import *
 from world_handler import update_world
 
-redis_db = {
-    "db": global_config.redis_background_db,
-    "host": global_config.redis_host,
-    "port": global_config.redis_port,
-    "password": global_config.redis_password
-}
 task_config = {
-    # 配置存储器
-    "jobstores": {
-        # 使用Redis进行存储
-        'default': RedisJobStore(**redis_db)
-    },
     # 配置执行器
     "executors": {
         # 使用进程池进行调度，最大进程数是10个
