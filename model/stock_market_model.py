@@ -10,7 +10,7 @@ from model.base_model import *
 from model.model import DecorateItem
 
 __all__ = [
-    "TradeType", "TradeRecords", "FlowerPrice", "Stock", "Debt", "TodayDebt", "UserAccount"
+    "TradeType", "TradeRecords", "FlowerPrice", "Stock", "Debt", "TodayDebt", "UserAccount", "Lottery"
 ]
 
 
@@ -185,3 +185,16 @@ class UserAccount(EntityClass):
         if debt_list is None:
             debt_list = []
         self.debt_list = debt_list  # 债务
+
+
+class Lottery(EntityClass):
+    """彩票"""
+
+    def __init__(self, qq: int = 0, lucky_number: int = 0, winning: bool = False,
+                 create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
+                 update_id: str = '0', is_delete: int = 0, _id: str or None = None):
+        super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
+
+        self.qq = qq  # QQ号
+        self.lucky_number = lucky_number  # 幸运数字
+        self.winning = winning  # 是否获奖

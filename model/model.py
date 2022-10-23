@@ -1312,6 +1312,7 @@ class UserStatistics(EntityClass):
                  use_item: Dict[str, int] = None,
                  plant_flower: Dict[str, int] = None, plant_perfect_flower: Dict[str, int] = None,
                  draw_times: int = 0, success_draw_times: int = 0, all_draw_times: int = 0, bankruptcy: int = 0,
+                 winning_lottery_times: int = 0, lottery_times: int = 0,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
                  update_id: str = '0', is_delete: int = 0, _id: str or None = None):
         super().__init__(create_time, create_id, update_time, update_id, is_delete, _id)
@@ -1333,6 +1334,9 @@ class UserStatistics(EntityClass):
         self.success_draw_times = success_draw_times  # 成功抽到的次数
         self.all_draw_times = all_draw_times  # 抽到全部的物品
         self.bankruptcy = bankruptcy  # 破产次数
+
+        self.lottery_times = lottery_times  # 抽奖次数
+        self.winning_lottery_times = winning_lottery_times  # 中奖次数
 
 
 class User(EntityClass):
@@ -1485,6 +1489,7 @@ class SystemData:
                  architect_item_pool: Dict[str, int] = None,
                  mater_right_qq: List[int] = None, admin_right_qq: List[int] = None, test_version: bool = False,
                  white_token_list: List[str] = None, allow_trading_flower_list: List[str] = None,
+                 lottery_prize_pool: int = 0, winning_lottery_info: str = '',
                  is_delete: int = 0, _id: str or None = None):
         self._id = _id
         self.is_delete = is_delete
@@ -1552,6 +1557,9 @@ class SystemData:
         if allow_trading_flower_list is None:
             allow_trading_flower_list = []
         self.allow_trading_flower_list = allow_trading_flower_list  # 允许交易的花名单
+
+        self.lottery_prize_pool = lottery_prize_pool  # 彩票奖金池
+        self.winning_lottery_info = winning_lottery_info  # 上一期获奖信息
     
     def get_id(self) -> str:
         return self._id

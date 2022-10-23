@@ -10,7 +10,8 @@ __all__ = [
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "Choice", "ChooseContext", "RandomTravelContext", "TravelContext", "AnnouncementContext",
     "AdminSendMailContext", "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
-    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext", "SellFutureContext"
+    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext", "SellFutureContext",
+    "ChooseLuckyNumber"
 ]
 
 
@@ -265,3 +266,12 @@ class SellFutureContext(BaseContext):
         self.flower_id: str = ''
         self.number: int = 0
         self.price: int = 0
+
+
+class ChooseLuckyNumber(BaseContext):
+    """
+    选择幸运数字
+    """
+
+    def __init__(self):
+        super().__init__(1, expire_time=datetime.datetime.now() + datetime.timedelta(hours=1))

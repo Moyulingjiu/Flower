@@ -19,12 +19,13 @@ __all__ = [
 
     "Disease", "Profession", "Race", "WorldArea", "Kingdom", "Person", "PathModel",
 
-    "TradeType", "TradeRecords", "FlowerPrice", "Stock", "Debt", "TodayDebt", "UserAccount",
+    "TradeType", "TradeRecords", "FlowerPrice", "Stock", "Debt", "TodayDebt", "UserAccount", "Lottery",
 
     "WorldTerrain", "WorldArea", "Kingdom", "Relationship", "Person", "Trait", "PersonName", "PersonLastName",
 
     "BaseContext", "RegisterContext", "BeginnerGuideContext", "ThrowAllItemContext", "RemoveFlowerContext",
     "ChooseContext", "Choice", "RandomTravelContext", "TravelContext", "AnnouncementContext", "AdminSendMailContext",
     "ClearMailBoxContext", "DeleteMailContext", "GiveBuffContext", "CommodityBargainingContext",
-    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext", "SellFutureContext"
+    "ViewRelationshipContext", "UserSendMailContext", "CreateAccountConfirm", "DebtContext", "SellFutureContext",
+    "ChooseLuckyNumber"
 ]

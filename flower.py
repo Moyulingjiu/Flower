@@ -661,6 +661,22 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
                 reply = FlowerService.repayment_debt(qq, username, index)
                 result.reply_text.append(reply)
                 return result
+            elif message == '花店购买彩票':
+                reply = FlowerService.buy_lottery(qq, username)
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店上一期获奖情况':
+                system_data: SystemData = util.get_system_data()
+                reply = system_data.winning_lottery_info
+                if reply == '':
+                    reply = '上一期无人中奖'
+                result.reply_text.append(reply)
+                return result
+            elif message == '花店奖金池':
+                system_data: SystemData = util.get_system_data()
+                reply = '当前奖金：' + util.show_gold(system_data.lottery_prize_pool)
+                result.reply_text.append(reply)
+                return result
         else:
             if message[:4] == '花店转账':
                 data: str = message[4:]
@@ -3368,6 +3384,41 @@ class ContextHandler:
                                         '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，' \
                                         '可能不能100%完成你的交易请求。'
                 result.context_reply_text.append(reply)
+            # 选择幸运数字
+            elif isinstance(context, ChooseLuckyNumber):
+                if message == '取消':
+                    del_context_list.append(origin_list[index])
+                    reply = '已为你取消购买彩票'
+                    result.context_reply_text.append(reply)
+                    continue
+                try:
+                    lucky_number: int = int(message)
+                except ValueError:
+                    lucky_number: int = -1
+                if lucky_number <= 0 or lucky_number > 10:
+                    reply = '数字只能在1~10之间选择，输入“取消”可以取消购买'
+                    result.context_reply_text.append(reply)
+                    continue
+                user: User = util.get_user(qq, username)
+                if user.gold < 1000:
+                    del_context_list.append(origin_list[index])
+                    reply = '你的金币不足10，购买失败！'
+                    result.context_reply_text.append(reply)
+                    continue
+                del_context_list.append(origin_list[index])
+                user.gold -= 1000
+                flower_dao.update_user_by_qq(user)
+                lottery: Lottery = Lottery()
+                lottery.qq = qq
+                lottery.lucky_number = lucky_number
+                lottery.create_time = datetime.now()
+                flower_dao.insert_lottery(lottery)
+                system_data: SystemData = util.get_system_data()
+                system_data.lottery_prize_pool += 1000
+                flower_dao.update_system_data(system_data)
+                reply = '彩票购买成功！当前奖金池：%s\n' \
+                        '每天晚上十二点整将会结算彩票，猜中数字的人会平分奖金池' % util.show_gold(system_data.lottery_prize_pool)
+                result.context_reply_text.append(reply)
         for context in del_context_list:
             flower_dao.remove_context(qq, context)
         return result
@@ -5351,6 +5402,8 @@ class FlowerService:
         reply += '\n抽到物品次数：%d次' % user_statistics.success_draw_times
         reply += '\n抽完所有物品：%d次' % user_statistics.all_draw_times
         reply += '\n破产次数：%d次' % user_statistics.bankruptcy
+        reply += '\n购买彩票次数：%d次' % user_statistics.lottery_times
+        reply += '\n彩票中奖次数：%d次' % user_statistics.winning_lottery_times
         return reply
 
     @classmethod
@@ -5690,6 +5743,16 @@ class FlowerService:
         plt.savefig('cache/' + file_name)
         plt.clf()  # 清图
         return file_name
+
+    @classmethod
+    def buy_lottery(cls, qq: int, username: str) -> str:
+        user: User = util.get_user(qq, username)
+        lottery: Lottery = flower_dao.select_today_lottery_by_qq(qq, datetime.now())
+        if lottery.valid():
+            return user.username + '，你今天已经购买彩票了，选择的幸运数字为：%d' % lottery.lucky_number
+        context: ChooseLuckyNumber = ChooseLuckyNumber()
+        flower_dao.insert_context(qq, context)
+        return user.username + '，请选择一个幸运数字，需要在1~10之间，输入“取消”可以取消购买彩票'
 
 
 class DrawCard:

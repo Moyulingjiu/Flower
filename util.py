@@ -1042,7 +1042,8 @@ def complete_trade() -> None:
                             send_system_mail(
                                 user,
                                 '交易订单已完成',
-                                '你的买入%s交易订单已完成，花费金币：%s' % (flower.name, show_gold(stock.gold * stock.number)),
+                                '你的买入%s交易订单已完成，花费金币：%s' % (
+                                flower.name, show_gold(stock.gold * stock.number)),
                                 [],
                                 0
                             )
@@ -1121,6 +1122,37 @@ def complete_trade() -> None:
     finally:
         flower_dao.unlock(flower_dao.redis_update_price_lock)
         logger.info('结束随机完成交易')
+
+
+def complete_lottery() -> None:
+    """每天彩票结算"""
+    rand = random.randint(1, 10)
+    lottery_list: List[Lottery] = flower_dao.select_today_lottery(rand, datetime.now() - timedelta(days=1))
+    system_data = get_system_data()
+    if len(lottery_list) == 0:
+        system_data.winning_lottery_info = '上一期无人中奖'
+        flower_dao.update_system_data(system_data)
+        return
+    bonus = system_data.lottery_prize_pool // len(lottery_list)
+    # 每天系统会补加30金币
+    system_data.lottery_prize_pool -= bonus * len(lottery_list) - 3000
+    system_data.winning_lottery_info = '中奖名单：'
+    index = 1
+    for lottery in lottery_list:
+        lottery.winning = True
+        flower_dao.update_lottery(lottery)
+        try:
+            lock_user(lottery.qq)
+            user: User = get_user(lottery.qq)
+            user.gold += bonus
+            send_system_mail(user, '彩票中奖', '恭喜你昨天的彩票中奖了！奖金已经发放给你了，奖金：' + show_gold(bonus), [],
+                             0)
+            flower_dao.update_user_by_qq(user)
+            unlock_user(lottery.qq)
+            system_data.winning_lottery_info += '\n%d.%s' % (index, '匿名' if user.auto_get_name else user.username)
+            index += 1
+        except ResBeLockedException:
+            continue
 
 
 def lock_the_world() -> None:

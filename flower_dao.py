@@ -56,6 +56,7 @@ mongo_user_account = mongo_db['user_account']  # 花店账户
 mongo_debt = mongo_db['debt']  # 花店欠款
 mongo_flower_price = mongo_db['flower_price']  # 花店花的价格
 mongo_trade_records = mongo_db['trade_records']  # 交易记录
+mongo_lottery = mongo_db['lottery']  # 彩票
 
 # Redis
 redis_pool = ConnectionPool(host=global_config.redis_host, port=global_config.redis_port, db=global_config.redis_db,
@@ -2346,6 +2347,47 @@ def insert_trade_record(trade_record: TradeRecords) -> str:
     """
     result = mongo_trade_records.insert_one(class_to_dict(trade_record))
     redis_db.delete(redis_trade_records_prefix + str(result.inserted_id))
+    return str(result.inserted_id)
+
+
+def select_today_lottery_by_qq(qq: int, select_time: datetime) -> Lottery:
+    """选取今天的中奖的彩票"""
+    today: datetime = datetime(select_time.year, select_time.month, select_time.day)
+    tomorrow: datetime = today + timedelta(days=1)
+    result = mongo_lottery.find_one({"qq": qq, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0})
+    lottery: Lottery = Lottery()
+    dict_to_class(result, lottery)
+    return lottery
+
+
+def select_today_lottery(number: int, select_time: datetime) -> List[Lottery]:
+    """选取今天的中奖的彩票"""
+    today: datetime = datetime(select_time.year, select_time.month, select_time.day)
+    tomorrow: datetime = today + timedelta(days=1)
+    result = mongo_lottery.find(
+        {"lucky_number": number, "create_time": {'$gte': today, '$lt': tomorrow}, "is_delete": 0})
+    lottery_list: List[Lottery] = []
+    for lottery_result in result:
+        lottery: Lottery = Lottery()
+        dict_to_class(lottery_result, lottery)
+        lottery_list.append(lottery)
+    return lottery_list
+
+
+def update_lottery(lottery: Lottery) -> int:
+    """
+    更新彩票
+    """
+    result = mongo_lottery.update_one({"_id": ObjectId(lottery.get_id())},
+                                      {"$set": class_to_dict(lottery)})
+    return result.modified_count
+
+
+def insert_lottery(lottery: Lottery) -> str:
+    """
+    插入彩票
+    """
+    result = mongo_lottery.insert_one(class_to_dict(lottery))
     return str(result.inserted_id)
 
 

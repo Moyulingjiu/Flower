@@ -78,6 +78,10 @@ async def start_event():
     scheduler.add_job(util.complete_trade, 'cron', day_of_week='0-6', hour='0-23', minute=0, second=0,
                       timezone='Asia/Shanghai', args=[], id="complete_trade",
                       replace_existing=True)
+    # 每天零点判断彩票
+    scheduler.add_job(util.complete_lottery, 'cron', day_of_week='0-6', hour=0, minute=0,
+                      second=0, timezone='Asia/Shanghai', args=[], id="complete_lottery",
+                      replace_existing=True)
     scheduler.start()
     logger.info('背景任务已启动')
     logger.info('FastApi已启动')
