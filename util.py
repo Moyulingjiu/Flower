@@ -1126,9 +1126,12 @@ def complete_trade() -> None:
 
 def complete_lottery() -> None:
     """每天彩票结算"""
+    logger.info('开始判断彩票中奖情况')
     rand = random.randint(1, 10)
+    logger.info('今日中奖数字为：%d' % rand)
     lottery_list: List[Lottery] = flower_dao.select_today_lottery(rand, datetime.now() - timedelta(days=1))
     system_data = get_system_data()
+    logger.info('中奖人数：%d' % len(lottery_list))
     if len(lottery_list) == 0:
         system_data.winning_lottery_info = '上一期无人中奖，中奖数字：%d' % rand
         flower_dao.update_system_data(system_data)
