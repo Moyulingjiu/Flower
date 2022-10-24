@@ -1065,7 +1065,7 @@ def complete_trade() -> None:
                 flower_price: FlowerPrice = get_now_price(flower.name)
                 # 价格比当前价格越低，越容易完成交易
                 sub: int = sell_record.price - flower_price.latest_price
-                prop: float = 0.5 + (sub / flower_price.latest_price) * 2
+                prop: float = 0.5 - (sub / flower_price.latest_price) * 2
                 if prop < 0.41:
                     prop = 0
                 elif prop >= 0.9:
