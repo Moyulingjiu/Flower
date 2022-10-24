@@ -1007,7 +1007,7 @@ def complete_trade() -> None:
                 # 价格比当前价格越高，越容易完成交易
                 sub: int = buy_record.price - flower_price.latest_price
                 prop: float = 0.5 + (sub / flower_price.latest_price) * 2
-                if prop <= 0.3:
+                if prop <= 0.41:
                     prop = 0
                 elif prop >= 0.9:
                     prop = 0.9
@@ -1066,7 +1066,7 @@ def complete_trade() -> None:
                 # 价格比当前价格越低，越容易完成交易
                 sub: int = sell_record.price - flower_price.latest_price
                 prop: float = 0.5 + (sub / flower_price.latest_price) * 2
-                if prop < 0.3:
+                if prop < 0.41:
                     prop = 0
                 elif prop >= 0.9:
                     prop = 0.9
