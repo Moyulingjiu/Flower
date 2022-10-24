@@ -127,7 +127,8 @@ class TodayDebt(EntityClass):
     今日的可选债务
     """
 
-    def __init__(self, qq: int = 0, gold: int = 0, repayment_day: int = 1, daily_interest_rate: float = 0.0,
+    def __init__(self, qq: int = 0, gold: int = 0, flower_id: str = '', number: int = 0,
+                 repayment_day: int = 1, daily_interest_rate: float = 0.0,
                  rolling_interest: bool = False, minimum_interest: float = 0.0, mortgage_rates: float = 0.0,
                  borrowing: bool = False,
                  create_time: datetime = datetime.now(), create_id: str = '0', update_time: datetime = datetime.now(),
@@ -136,6 +137,8 @@ class TodayDebt(EntityClass):
 
         self.qq = qq  # qq
         self.gold = gold  # 借款金币
+        self.flower_id = flower_id  # 花的id
+        self.number = number  # 花的数量
         self.repayment_day = repayment_day  # 还款的天数
 
         self.daily_interest_rate = daily_interest_rate  # 日利率

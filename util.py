@@ -1043,7 +1043,7 @@ def complete_trade() -> None:
                                 user,
                                 '交易订单已完成',
                                 '你的买入%s交易订单已完成，花费金币：%s' % (
-                                flower.name, show_gold(stock.gold * stock.number)),
+                                    flower.name, show_gold(stock.gold * stock.number)),
                                 [],
                                 0
                             )
@@ -1085,11 +1085,11 @@ def complete_trade() -> None:
                             user_account: UserAccount = get_user_account(sell_record.user_id)
                             gap_days = (datetime.now() - sell_record.stock_hold_time) \
                                            .total_seconds() // global_config.day_second + 1
-                            if gap_days > 30:
-                                gap_days = 30
+                            if gap_days > 15:
+                                gap_days = 15
                             # 这里需要扣除个税
                             real_gold = sell_record.number * sell_record.price
-                            rate = 1.0 - 0.2 * gap_days / 30
+                            rate = 1.0 - 0.2 * gap_days / 15
                             user_account.account_gold += real_gold * rate
                             user_account.earn_gold += real_gold * rate
                             flower_dao.update_user_account(user_account)
@@ -1487,6 +1487,7 @@ def send_system_mail(user: User, title: str, text: str, appendix: List[DecorateI
     mail.gold = gold
     mail.arrived = True
     mail.status = '由系统直接送达'
+    mail.create_time = datetime.now()
     mail_id: str = flower_dao.insert_mail(mail)
     user.mailbox.mail_list.append(mail_id)
 

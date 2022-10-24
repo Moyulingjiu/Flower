@@ -144,7 +144,7 @@ def handle(message: str, qq: int, username: str, bot_qq: int, bot_name: str, at_
             elif message == '花店股市规则':
                 reply = '1.股市一切内容与现实无关，现实投资有风险！\n' \
                         '2.你的交易请求不会立马完成！必须要有其他玩家或者npc买卖才能完成你的订单。\n' \
-                        '3.交易税从当天买当天卖1%开始，到持仓30天20%线性增长。\n' \
+                        '3.交易税从当天买当天卖1%开始，到持仓15天20%线性增长。\n' \
                         '4.花店每天会提供部分贷款选项，记得及时还款，否则将会强制还款，若金币不足，将会强制破产清算，失去所有东西。'
                 result.reply_text.append(reply)
                 return result
