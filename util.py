@@ -1140,6 +1140,7 @@ def complete_lottery() -> None:
     # 每天系统会补加30金币
     system_data.lottery_prize_pool -= bonus * len(lottery_list) - 3000
     system_data.winning_lottery_info = '中奖名单（上一期中奖数字：%d）：' % rand
+    flower_dao.update_system_data(system_data)
     index = 1
     for lottery in lottery_list:
         lottery.winning = True
