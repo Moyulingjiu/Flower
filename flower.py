@@ -5588,6 +5588,7 @@ class FlowerService:
         record.trade_type = TradeType.buy
         record.price = price
         record.number = number
+        record.create_time = datetime.now()
         flower_dao.insert_trade_record(record)
         return user.username + '，你的交易请求已发送到市场\n' \
                                '注意！你的交易单最多只会挂24小时，超过24小时将会按照实际交易数量结算你的交易，可能不能100%完成你的交易请求。'
@@ -5627,7 +5628,8 @@ class FlowerService:
             record.trade_type = TradeType.sell
             record.price = price
             record.number = number
-            record.create_time = user_account.hold_stock[choose_stock].create_time
+            record.stock_hold_time = user_account.hold_stock[choose_stock].create_time
+            record.create_time = datetime.now()
             # 对应的也要减少数量
             user_account.hold_stock[choose_stock].number -= number
             if user_account.hold_stock[choose_stock].number <= 0:
