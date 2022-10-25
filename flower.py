@@ -5556,6 +5556,8 @@ class FlowerService:
             flower_dao.update_user_by_qq(user)
             user_account.account_gold -= interest
             user_account.debt_gold -= origin_debt.gold
+            # 在欠款列表中删除该欠款
+            user_account.debt_list.remove(debt)
             flower_dao.update_user_account(user_account)
             return user.username + '，还款成功！当前余额：' + util.show_gold(user_account.account_gold)
         except ItemNotFoundException or ItemNegativeNumberException or WareHouseSizeNotEnoughException:
