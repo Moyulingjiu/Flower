@@ -3417,6 +3417,9 @@ class ContextHandler:
                 system_data: SystemData = util.get_system_data()
                 system_data.lottery_prize_pool += 1000
                 flower_dao.update_system_data(system_data)
+                user_statistics = util.get_user_statistics(qq)
+                user_statistics.lottery_times += 1
+                flower_dao.update_user_statistics(user_statistics)
                 reply = '彩票购买成功！当前奖金池：%s\n' \
                         '每天晚上十二点整将会结算彩票，猜中数字的人会平分奖金池' % util.show_gold(system_data.lottery_prize_pool)
                 result.context_reply_text.append(reply)

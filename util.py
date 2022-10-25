@@ -1152,6 +1152,9 @@ def complete_lottery() -> None:
             send_system_mail(user, '彩票中奖', '恭喜你昨天的彩票中奖了！奖金已经发放给你了，奖金：' + show_gold(bonus), [],
                              0)
             flower_dao.update_user_by_qq(user)
+            user_statistics = get_user_statistics(lottery.qq)
+            user_statistics.winning_lottery_times += 1
+            flower_dao.update_user_statistics(user_statistics)
             unlock_user(lottery.qq)
             system_data.winning_lottery_info += '\n%d.%s' % (index, '匿名' if user.auto_get_name else user.username)
             index += 1
