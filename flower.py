@@ -3373,7 +3373,8 @@ class ContextHandler:
                 record.trade_type = TradeType.sell
                 record.price = context.price
                 record.number = context.number
-                record.create_time = user_account.hold_stock[choose_stock].create_time
+                record.stock_hold_time = user_account.hold_stock[choose_stock].create_time
+                record.create_time = datetime.now()
                 # 对应的也要减少数量
                 user_account.hold_stock[choose_stock].number -= context.number
                 if user_account.hold_stock[choose_stock].number <= 0:
