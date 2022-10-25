@@ -5552,7 +5552,7 @@ class FlowerService:
             if user_account.account_gold < interest:
                 return user.username + '，账户中金币不足！'
             # 还回抵押物与扣除金币
-            util.insert_items(user.warehouse, debt.pawn)
+            util.insert_items(user.warehouse, copy.deepcopy(debt.pawn))
             flower_dao.update_user_by_qq(user)
             user_account.account_gold -= interest
             user_account.debt_gold -= origin_debt.gold
