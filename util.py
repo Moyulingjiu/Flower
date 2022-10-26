@@ -1051,7 +1051,7 @@ def complete_trade() -> None:
                         finally:
                             unlock_user(buy_record.user_id)
                     flower_dao.update_trade_record(buy_record)
-                elif (buy_record.create_time - datetime.now()).total_seconds() // global_config.hour_second >= 24:
+                elif (datetime.now() - buy_record.create_time).total_seconds() // global_config.hour_second >= 24:
                     # 对于超出一天的交易直接撤销
                     buy_record.transaction_complete = True
                     flower_dao.update_trade_record(buy_record)
@@ -1108,7 +1108,7 @@ def complete_trade() -> None:
                             flower_dao.update_user_by_qq(user)
                         finally:
                             unlock_user(sell_record.user_id)
-                elif (sell_record.create_time - datetime.now()).total_seconds() // global_config.hour_second >= 24:
+                elif (datetime.now() - sell_record.create_time).total_seconds() // global_config.hour_second >= 24:
                     # 对于超出一天的交易直接撤销
                     sell_record.transaction_complete = True
                     user_account: UserAccount = get_user_account(sell_record.user_id)

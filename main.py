@@ -72,6 +72,7 @@ async def start_event():
     scheduler.start()
     logger.info('背景任务已启动')
     logger.info('FastApi已启动')
+    util.complete_lottery()
 
 
 @app.get("/calibration")
