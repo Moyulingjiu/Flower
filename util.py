@@ -1126,6 +1126,7 @@ def complete_trade() -> None:
                     stock.gold = sell_record.price
                     stock.create_time = sell_record.stock_hold_time
                     user_account.hold_stock.append(stock)
+                    flower_dao.update_user_account(user_account)
                     flower_dao.update_trade_record(sell_record)
     finally:
         flower_dao.unlock(flower_dao.redis_update_price_lock)
