@@ -1011,6 +1011,10 @@ def complete_trade() -> None:
                     prop = 0
                 elif prop >= 0.9:
                     prop = 0.9
+                logger.info('总计秒数：%d，换算小时：%d' % (
+                    (datetime.now() - buy_record.create_time).total_seconds(),
+                    (datetime.now() - buy_record.create_time).total_seconds() // global_config.hour_second
+                ))
                 # 概率小于就完成交易
                 if random.random() <= prop:
                     buy_record.transaction_volume = buy_record.number
@@ -1070,6 +1074,10 @@ def complete_trade() -> None:
                     prop = 0
                 elif prop >= 0.9:
                     prop = 0.9
+                logger.info('总计秒数：%d，换算小时：%d' % (
+                    (datetime.now() - sell_record.create_time).total_seconds(),
+                    (datetime.now() - sell_record.create_time).total_seconds() // global_config.hour_second
+                ))
                 # 概率小于就完成交易
                 if random.random() <= prop:
                     sell_record.transaction_volume = sell_record.number
