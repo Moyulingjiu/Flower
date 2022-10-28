@@ -5741,9 +5741,9 @@ class FlowerService:
         price = yesterday_price.price[hour + 1:] + today_price.price[:hour + 1]
         price = [gold / 100 for gold in price]
         my_font = font_manager.FontProperties(family='SimHei', size=16)
-        plt.plot(range(24), price, color='skyblue')
-        plt.plot([23], price[-1], 'o', color='orange')
-        plt.text(23, price[-1], util.show_gold(price[-1] * 100), fontproperties=my_font, color="black")
+        plt.plot(range(len(price)), price, color='skyblue')
+        plt.plot([len(price) - 1], price[-1], 'o', color='orange')
+        plt.text(len(price) - 1, price[-1], util.show_gold(price[-1] * 100), fontproperties=my_font, color="black")
         plt.xlabel('hour', fontproperties=my_font)
         plt.ylabel('price', fontproperties=my_font)
         plt.title('price in 24 hour', fontproperties=my_font)
