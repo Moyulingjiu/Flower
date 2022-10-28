@@ -1941,7 +1941,8 @@ def get_now_price(flower_name: str) -> FlowerPrice or None:
         item = flower_dao.select_item_by_name(flower.name)
         if not item.valid():
             return None
-        flower_price.insert_price(item.gold, hour)
+        # 初始价格改为原本价格的一百倍
+        flower_price.insert_price(item.gold * 100, hour)
     else:
         flower_price.insert_price(yesterday.get_latest_price(), hour)
     flower_price.flower_id = flower.get_id()
