@@ -5739,7 +5739,9 @@ class FlowerService:
         yesterday_price: FlowerPrice = flower_dao.select_today_flower_price(flower.get_id(), yesterday)
         hour = today.hour
         price = yesterday_price.price[hour + 1:] + today_price.price[:hour + 1]
-        price = [gold / 100 for gold in price]
+        price = [gold / 100 for gold in price if gold > 0]
+        if len(price) == 0:
+            price = [0, 0]
         my_font = font_manager.FontProperties(family='SimHei', size=16)
         plt.plot(range(len(price)), price, color='skyblue')
         plt.plot([len(price) - 1], price[-1], 'o', color='orange')
