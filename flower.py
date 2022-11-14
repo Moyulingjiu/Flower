@@ -3196,8 +3196,8 @@ class ContextHandler:
                 del_context_list.append(origin_list[index])
                 user: User = util.get_user(qq, username)
                 if message == '确认':
-                    if user.gold >= 1000 * 100:
-                        user.gold -= 1000 * 100
+                    if user.gold >= 500 * 100:
+                        user.gold -= 500 * 100
                         user_account: UserAccount = UserAccount()
                         user_account.qq = qq
                         user_account.account_gold = 0
@@ -5263,7 +5263,7 @@ class FlowerService:
             except NoAccount:
                 context: CreateAccountConfirm = CreateAccountConfirm()
                 flower_dao.insert_context(qq, context)
-                return user.username + '，开户将会花费1000金币，确定要开户吗？\n输入“确认”表示确认，其余任何输入表示取消'
+                return user.username + '，开户将会花费500金币，确定要开户吗？\n输入“确认”表示确认，其余任何输入表示取消'
         finally:
             util.unlock_user(qq)
 
