@@ -130,12 +130,12 @@ def update_world():
                     new_child(person)
 
             # 如果年龄太大，就有概率死亡（并且不死人也不会死亡）
-            if age >= person.max_age and not person.immortal:
-                rand = random.random()
-                if rand < 0.3:
-                    person.die_time = datetime.now()
-                    person.die = True
-                    person.die_reason = '衰老'
+            # if age >= person.max_age and not person.immortal:
+            #     rand = random.random()
+            #     if rand < 0.3:
+            #         person.die_time = datetime.now()
+            #         person.die = True
+            #         person.die_reason = '衰老'
 
             # 更新npc
             flower_dao.update_person(person)
