@@ -161,9 +161,9 @@ def get_weather_sojson(city_name: str, city_id: str, can_wait: bool = False) -> 
         url = "http://t.weather.sojson.com/api/weather/city/" + city_index
         response = get_html(url, can_wait)
         ans = json.loads(response)
-        if ans['code'] == '40310003':
+        if 'code' in ans and ans['code'] == '40310003':
             return None
-        if ans['status'] != 200:
+        if 'status' in ans and ans['status'] != 200:
             logger.info('未能获取城市<%s>的天气' % city_name)
             return None
         
